@@ -1,43 +1,38 @@
-# Publication and release evidence
+# 공개 소개와 배포 검증 범위
 
-[한국어](ko/publication.md)
+Blueprint4FastAPI는 FastAPI/React API 계약 검사, 인증, 역할 경계, 실시간 갱신,
+백그라운드 메일, 공통 UI와 Docker 패키징을 제공합니다. 서비스 개발을 시작할 수
+있는 기반이며 특정 운영 배포의 적합성을 자동으로 보증하지 않습니다.
 
-Blueprint4FastAPI provides application foundations and a repeatable development workflow:
-FastAPI/React contract checks, authentication, role boundaries, realtime refresh,
-background mail, shared UI and Docker packaging. It is a starting point for a service;
-its presence alone does not certify a particular deployment.
+## 로컬 미리보기
 
-## Local preview
+루트 README의 빠른 시작을 따라 APP_MODE=development로 실행하고
+`http://localhost:5173/show-case`를 여세요. README 스크린샷은 일회성 SQLite와
+비활성화한 이메일·OAuth·Stripe를 사용한 격리 Docker 앱에서 실제 패키징된
+프론트엔드를 촬영했습니다. 온라인 호스팅 데모가 아닌 기존 컴포넌트 라이브러리이며,
+운영 모드에서는 개발 쇼케이스를 홈으로 이동시킵니다.
 
-Follow the root README quick start, keep APP_MODE=development and open
-`http://localhost:5173/show-case`. The README screenshots were captured from the
-packaged frontend served by an isolated local Docker app, with disposable SQLite and
-external email/OAuth/Stripe disabled. They show the existing component library, not
-an online hosted demo. Production redirects the development showcase to the home page.
+## 공개 소개 문구
 
-## Public description
+“인증, 타입 기반 API 계약, 에이전트와 개발자가 함께 사용하는 작업·검증 절차를 갖춘
+FastAPI + React 블루프린트”로 소개할 수 있습니다. 선택형 연동은 별도 설정이 필요함을
+표시하고, 스크린샷을 고정된 B4React 버전에 맞춰 유지하세요.
 
-Use: “A FastAPI + React blueprint with typed API contracts, authentication and a
-repeatable workflow for agents and developers.” Explain optional integrations as
-configuration-dependent. Keep screenshots current with the pinned B4React version.
+배포 준비 완료를 주장하기 전에 부모/자식 커밋, 실제 Make 결과, 빌드·기동·readiness와
+검증 환경을 기록하세요. 대상 환경에서 도메인 TLS, 로그인·갱신, 활성화된 제공자 콜백,
+DB 백업·복원을 확인해야 합니다. 데스크톱 배포는 서명·설치 검증도 필요합니다.
+수동 GitHub 워크플로와 로컬 검증은 별개이며 자동 CI로 소개하지 않습니다.
 
-Before claiming a release is ready, record the parent/child revisions and actual Make
-results, build/startup/readiness evidence and the environment tested. Validate domain
-TLS, login/refresh, enabled provider callbacks and database backup/restore in the target
-environment. Desktop distribution additionally requires signing and installation checks.
-Manual GitHub workflows and local verification are distinct; do not imply automatic CI.
+## 재사용과 브랜드
 
-## Reuse and identity
+MIT 라이선스와 제3자 고지를 유지하세요. [프로젝트 설정](../PROJECT_SETUP.md)으로
+브랜드를 변경하고 자신의 도메인·제공자 계정을 사용하세요. 템플릿은 호스팅된 데모,
+성능 SLA, 외부 제공자 인증이나 보안 감사를 의미하지 않습니다. 이슈에는 재현 절차와
+민감정보를 가린 설정을 제공하고 토큰·비밀번호·고객 데이터를 공개하지 마세요.
 
-Retain the MIT license and third-party notices. Configure your own identity through
-[project setup](../PROJECT_SETUP.md), and use your own domain and provider accounts.
-No hosted demo, performance SLA, external-provider certification or security audit is
-implied by the template. Report issues with reproduction steps and redacted configuration;
-do not publish tokens, passwords or customer data.
+고정된 프론트엔드에는 MIT 고지와 검토된 의존성 갱신이 포함됩니다. 배포 링크를
+공유하기 전 실제 공개 주소로 [정적 공유 메타데이터](../DEPLOY.md#공개-링크-공유-메타데이터)를
+설정하세요. 의존성 감사 결과는 시점에 따라 달라지므로 이후 릴리스 준비 시
+프론트엔드에서 `npm audit`를 다시 실행하세요.
 
-The pinned frontend includes its MIT notice and reviewed dependency updates. Configure
-[static sharing metadata](../DEPLOY.md#public-sharing-metadata) with your real public
-origin before distributing a deployment link. Audit results are time-bound; rerun
-`npm audit` in the child when preparing a later release.
-
-Search publication and community drafts: [search discovery](search-discovery.md). Keep local implementation, merged source, deployed pages, submitted URLs and indexed results as separate evidence.
+검색 공개와 커뮤니티 초안은 [검색 노출](search-discovery.md)을 참고하세요. 로컬 구현, 소스 병합, 페이지 배포, URL 제출, 실제 색인 결과를 별도 근거로 기록합니다.

@@ -1,229 +1,53 @@
-# Agent Guide
+# Canvanity 에이전트 가이드
 
-Read this file first, then move to the domain guide for your task.
+Canvanity는 B4FastAPI를 포크한 캔버스 기반 커뮤니티다. PROJECT_BRIEF.md와 PROJECT_INITIALIZATION_AUDIT.md에서 현재 범위와 보류 항목을 먼저 확인한다.
 
-## Required Read Order
+## 저장소와 언어
 
-1. `AGENTS.md`
-2. Backend task: `src/backend/BACKEND.md`
-3. Frontend task: `src/frontend/FRONTEND.md`
+- 백엔드와 src/frontend를 한 저장소에서 관리한다. 프런트엔드는 B4React에서 편입한 일반 디렉터리다. 별도 Git 저장소·서브모듈·자식 PR·gitlink 갱신을 사용하지 않는다.
+- 소스·계약·문서 변경은 같은 작업 브랜치/커밋/PR에서 통합한다. Git 작업은 저장소 루트에서 수행한다.
+- UI 기본 언어, 개발 문서, 사용자와의 대화, 커밋·PR 설명은 한국어다. 기존 영어 UI 전환은 유지한다.
+- Conventional Commit 타입, kebab-case 브랜치, 자동화가 읽는 섹션 이름, 코드/API 식별자는 유지한다. AGENTS.ko.md는 이 파일과 동기화한다.
+- project.json은 공개 이름·기능·언어 설정의 기준이다. 인증정보는 ignored env에만 두고 공개 문서/로그에 쓰지 않는다.
+- origin은 Blueprint4Agent/Canvanity, upstream은 Blueprint4Agent/B4FastAPI다. upstream은 읽기 전용으로 취급한다. 라이선스·출처·기존 이력을 유지한다.
 
-## Project Initialization Trigger
+## 읽기 순서
 
-When the developer requests initialization of this project (for example,
-`프로젝트 초기화하기`, `새 프로젝트 시작`, or `initialize this project`), read
-[the project onboarding flow](PROJECT_ONBOARDING.md) and start its staged intake.
-This repository instruction is the trigger; no installed skill, slash command,
-GitHub event or application startup hook is required. Reuse answers already given,
-ask only the next missing stage, and apply the collected setup when intake is complete.
-Requests to explain initialization or edit this workflow do not initialize the project.
-For a resumed session, read `PROJECT_BRIEF.md` if present before asking questions.
-Distinguish actual setup from a rehearsal; use an independent disposable clone for
-trigger checks. Before applying or declaring completion, follow the mandatory
-[surface and rollback audit](PROJECT_ONBOARDING_AUDIT.md), including UI/console/document
-brand remnants, language behavior and evidence for every applicable surface.
+1. 이 가이드와 PROJECT_BRIEF.md
+2. 백엔드: src/backend/BACKEND.md, 테스트 변경 시 src/backend/TEST.md
+3. 프런트엔드: src/frontend/AGENTS.md, FRONTEND.md, 테스트 변경 시 TEST.md
+4. 설정/배포: PROJECT_SETUP.md, DEPLOY.md, notes/monolithic-deployment.md
 
-## Documentation Sync
+도메인 문서의 원본 템플릿에 남은 별도 저장소/서브모듈 설명보다 이 저장소의 단일 저장소 규칙을 우선한다. 과거 worklog는 수정하지 않는다.
 
-If implementation changes behavior, structure, or rules, update related docs in the same work cycle.
+## 작업 순서와 검증
 
-Localized documentation is maintained under `notes/<locale>/...`.
-Keep localized paths synchronized with `README.md`.
+1. git status --short로 사용자 변경을 확인하고 보존한다.
+2. 구현 전에 <type>/<short-kebab-title> 브랜치를 만든다.
+3. .github/WORKLOG_TEMPLATE.md로 다음 worklog/NNNN-description.md를 만들고 계획을 먼저 쓴다.
+4. 구현과 관련 한국어 문서·계약을 함께 수정한다. UI 변경은 기존 페이지/공용 UI를 먼저 확인한다.
+5. 루트에서 make verify-plan 다음 make verify를 실행한다. 브랜치 전체는 VERIFY_BASE=<기준 커밋>으로 지정한다. 불명확한 범위는 전체 검사로 확대하며 수동으로 강등하지 않는다. VERIFY_FULL=1은 receipt 재사용 없이 전체 검사한다.
+6. 결과와 생략 이유를 기록하고 대상 파일만 스테이징한 뒤 COMMIT_TITLE과 COMMIT_BODY_FILE을 지정해 make git-governance-check를 실행한다.
+7. 로컬 commit-msg/pre-push 훅을 우회하지 않는다. 푸시/PR이 작업 범위이면 리뷰 가능한 PR을 만들고 실제 메타데이터를 PR_NUMBER=<번호> make git-governance-pr-check로 검사한다.
+8. 기본 병합은 merge commit이다. squash/rebase는 사용자 명시 요청만 허용한다. 자동 병합 등록 시 실제 방식도 확인한다. main 직접 푸시·삭제·이력 재작성 금지.
 
-## Loop Check Policy
+make init은 환경 파일과 루트 Git 훅을 준비하며 make install은 잠금 의존성을 설치한다. frontend-init은 편입된 소스 존재만 확인한다. 성공한 내용 기반 검증은 24시간 내 동일 입력/환경/출력일 때만 재사용하며 CI와 VERIFY_FULL=1에서는 재사용하지 않는다. GitHub 워크플로는 수동 실행이며 로컬 훅을 서버 CI 보장으로 설명하지 않는다. 원격 보호 규칙 변경은 관리자 권한과 작업 승인이 있을 때만 한다.
 
-When a developer explicitly requests loop engineering or asks whether a backend/frontend loop is needed, check the relevant domain guide before implementing.
+## 커밋·PR·워크로그
 
-Before committing, treat loop alignment as a default verification step:
+- 커밋 제목 예: chore: 프로젝트 기본 설정을 적용한다
+- 단순하지 않은 커밋 본문 필수 섹션: Changes:, Affected Files:, Verification:. 각 내용은 한국어로 쓴다.
+- PR 제목 예: [chore] Canvanity 기본 설정 적용
+- PR 본문 필수 섹션: Summary, Scope, Reason, Verification, Documentation, Risk / Impact. 각 내용은 한국어로 쓴다.
+- 각 작성 커밋은 제목이 정확히 일치하는 worklog를 포함한다. 필수 섹션: Commit Title, Changed File Scope, Reason, Design, Verification Plan, Impact, Loop Alignment, Verification. 통합 merge commit은 제외한다.
+- 프런트엔드 런타임 변경은 State Ownership, Memoization, Performance Evidence를 기록한다. UI 변경은 Page Family 비교와 실제 화면 검증도 기록한다.
 
-1. Backend changes: confirm the request lifecycle, domain event, and background task loops are either followed or not applicable.
-2. Frontend changes: confirm the API state, realtime refresh, desktop connectivity recovery, and UI composition loops are either followed or not applicable.
-3. If a loop is intentionally skipped, record the reason in the final response and worklog when the change is committed.
+## 설계 루프
 
-## Pre-Commit Verification
+백엔드는 요청 → 라우터 → 서비스 → 모델/저장소 → 응답과 도메인 이벤트/작업 경계를 따른다. 프런트엔드는 페이지 → 도메인 훅 → 타입 기반 API → 상태 → UI 및 실시간 복구 루프를 따른다. 데스크톱 복구는 해당 타깃을 선택할 때 적용한다. 이번 변경에서 해당 없는 루프는 이유를 기록한다.
 
-Before finalizing a commit, run validation through the root `Makefile` hooks.
+공용 UI와 상태·성능 규칙은 src/frontend/notes/react-performance.md 및 page-families.md를 따른다. 새 상태 라이브러리나 무차별 memo를 도입하지 않는다. 계약은 contracts/openapi.json과 src/frontend/contracts/openapi.json을 명시적으로 동기화하고 생성 타입을 검증한다.
 
-1. Run `make verify-plan`, then `make verify`. The shared classifier selects the minimum safe checks from actual changes. Set `VERIFY_BASE=<base-sha>` for all branch changes; the default HEAD includes staged, unstaged and untracked files.
-2. Docs and structurally unchanged locale copy use dependency-free text/JSON checks. Runtime, UI, protected/unknown files select progressively broader checks. Use `VERIFY_FULL=1 make verify` to escalate; never manually downgrade an uncertain change.
-3. Do not repeat checks already passed for the same relevant content in the child or through a delegated Make target. Re-run when subsequent changes invalidate that evidence. Parent integration targets still validate packaging/contracts locally.
-4. Record the selected scope and omitted checks/reason in the worklog and a short final summary. Required Git governance, ready PRs and merge protection remain mandatory.
-5. Follow [change-scoped verification](notes/verification.md). Keep related follow-up edits in one task PR until implementation is settled; update the parent gitlink once the child is merged. Read log summaries first, investigate failures selectively, and use a single CI watcher instead of repeated status probes.
+## 초기화와 후속 작업
 
-## Worklog Policy (Required)
-
-1. Every commit must include a matching worklog entry file under `worklog/`.
-2. Worklog filename format: `<number>-<short-kebab-title>.md`.
-3. Worklog must record at least:
-   - commit title
-   - changed file scope
-   - reason
-   - impact
-4. Do not finalize a commit without updating/adding its worklog entry.
-
-## Git Governance
-
-Use the repository harness when preparing branches, commits, or pull requests:
-
-```sh
-make git-governance-check
-```
-
-The harness validates the current branch, commit title, and matching worklog. Use `scripts/validate-git-governance.sh --commit-title "..." --pr-title "..." --pr-body-file <file>` to validate planned metadata before committing or opening a PR.
-
-### Branch Naming
-
-Branch names must use an industry-standard change type and kebab-case description:
-
-```text
-<type>/<short-kebab-title>
-```
-
-Allowed types: `feat`, `fix`, `docs`, `test`, `refactor`, `chore`, `ci`, `build`, `perf`, `style`, `revert`, `hotfix`.
-
-Examples:
-
-- `feat/api-key-pagination`
-- `fix/oauth-callback-state`
-- `docs/frontend-rules`
-- `chore/commit-pr-governance`
-
-### Commit Titles
-
-Commit titles must follow Conventional Commits:
-
-```text
-<type>(optional-scope): <imperative summary>
-```
-
-Examples:
-
-- `feat(frontend): add API key pagination`
-- `fix(auth): preserve oauth callback state`
-- `docs: define PR governance rules`
-
-Commit bodies are required for non-trivial commits and must include:
-
-```text
-Changes:
-- What changed.
-
-Affected Files:
-- Key files or directories changed.
-
-Verification:
-- How the change was tested or reproduced.
-```
-
-Use `COMMIT_BODY_FILE=<file> make git-governance-check` or `scripts/validate-git-governance.sh --commit-body-file <file>` to validate planned commit body sections before committing.
-
-### Pull Request Titles and Descriptions
-
-Create PRs as ready for review by default. Use draft PRs only when the user explicitly requests a draft or when a blocker must be resolved before review.
-
-PR titles must use a visible type tag:
-
-```text
-[type] Concise PR title
-```
-
-Examples:
-
-- `[feat] Add API key pagination`
-- `[fix] Preserve OAuth callback state`
-- `[docs] Define commit and PR governance`
-
-PR descriptions must include:
-
-- Summary
-- Scope
-- Reason
-- Verification
-- Documentation
-- Risk / Impact
-
-When labels are available, apply labels that match the type and affected area, such as `feat`, `fix`, `docs`, `frontend`, `backend`, `infra`, or `tests`.
-
-### Merge Method
-
-Use a merge commit for pull requests by default, including automatic merges:
-
-```sh
-gh pr merge <number> --auto --merge
-```
-
-Do not use squash merge or rebase merge unless the user explicitly requests that method. Validate the planned method through `make git-governance-check`; the default `MERGE_METHOD=merge` rejects other methods unless the explicit-request override `ALLOW_NON_MERGE_METHOD=true` is supplied.
-
-Before enabling auto-merge, confirm the requested method in the resulting `autoMergeRequest`. A merge method cannot be changed after the pull request has merged; if the wrong method is registered, disable auto-merge before required checks complete and register it again with `--merge`.
-
-## B4React Submodule
-
-`src/frontend` is a pinned B4React Git submodule. Initialize with
-`git submodule update --init --recursive` before reading its guides. Frontend source
-changes belong in a named B4React branch and PR; merge there before updating the
-parent gitlink. Parent commits own packaging, integration, and contract validation.
-Do not run `git submodule update --remote` in CI or automatically regenerate child
-contracts from parent files.
-
-## Task Start and Completion Order
-
-1. Read the applicable guides and inspect working tree/submodule status; preserve unrelated edits.
-2. Create a named task branch from the current target branch before implementation.
-3. Copy `.github/WORKLOG_TEMPLATE.md` to the next `worklog/NNNN-description.md`.
-   Fill in the intended commit title, reason, scope, design, verification plan and loop impact
-   before editing implementation. Record actual outcomes in Verification before committing.
-4. Implement and synchronize related documentation. Update the plan if scope changes.
-5. Run the applicable root Make checks. Record skipped checks and reasons for this task;
-   an earlier test-skip request must not silently become a permanent exemption.
-6. Stage the intended files including the completed worklog, then run
-   `COMMIT_TITLE='type(scope): summary' COMMIT_BODY_FILE=/tmp/commit.txt make git-governance-check`.
-   Planned validation reads the Git index, not untracked or unstaged content. Run it again after staging changes.
-7. Commit, push and create a ready PR. Validate PR_TITLE and PR_BODY_FILE together.
-8. Confirm local hook checks and actual PR metadata validation before merge; use merge commits and verify MERGE if auto-merge is registered.
-
-The worklog template requires Design, Verification Plan, Loop Alignment and Verification
-in addition to the existing four sections. Each authored commit must add/modify a worklog
-whose Commit Title exactly matches that commit. Merge commits used to integrate branch
-history are excluded from per-commit checks; changes must be authored in ordinary commits.
-Start-time planning is a human/agent obligation: Git cannot prove when a plan was written.
-Local governance enforces committed evidence, nonempty sections and metadata, not design correctness.
-
-## Local Governance and Manual GitHub Workflows
-
-Install versioned hooks once per clone with `make hooks-install` (also part of `make init`).
-The parent installs hooks in its initialized frontend submodule too. Existing custom
-core.hooksPath settings are preserved and require explicit reconciliation.
-
-`commit-msg` checks the actual message and staged matching worklog. Integration merge
-commits are excluded. `pre-push` requires a clean working tree/submodule and the exact
-checked-out HEAD, fetches remote main, checks every authored commit since its merge base,
-and runs `make verify-plan` then `make verify` against that full branch range. A failed
-check blocks the push. Do not bypass hooks to complete ordinary tasks.
-
-After creating or editing PR metadata run `PR_NUMBER=<number> make git-governance-pr-check`.
-This reads the actual GitHub title/body and verifies the complete commit range locally.
-Planned PR validation with PR_TITLE/PR_BODY_FILE remains available. Rerun the actual PR
-check immediately before merge; metadata edited on GitHub cannot trigger a local hook.
-
-GitHub workflows are workflow_dispatch-only, including image/desktop builds; no automatic
-PR, push, schedule, tag or release runs. Main still requires a PR, resolved conversations,
-and protects deletion/non-fast-forward updates, with zero required approvals. Required
-status checks are removed from `.github/main-ruleset.json` and the live ruleset. Use merge
-commits by default. Local hooks are bypassable and are not a server-side CI guarantee.
-Do not disable PR or history protection. Apply ruleset changes only with repository admin
-permission; never bypass unavailable permissions.
-
-Successful Make command receipts are local and content-bound for at most 24 hours.
-Only unchanged code/docs/config, tool/environment context and required build outputs
-permit reuse; worklog-only outcome edits still receive text and governance validation.
-CI/manual Actions and VERIFY_FULL=1 ignore receipts. See notes/local-hooks.md.
-
-## Frontend state and React performance
-
-Follow the pinned frontend [state/performance policy](src/frontend/notes/react-performance.md) for all frontend runtime work. State ownership review, React.memo at expensive stable-prop boundaries (or an explicit reason not to apply it), and observed evidence are the default workflow. Do not add Zustand/Redux or blanket memo wrappers without a concrete need. Keep independent optimizations in separate branches/worklogs/PRs. Frontend worklogs and enforcement belong in B4React; parent worklogs record integration checks and loop impact.
-
-`make frontend-react-performance-check` delegates static/policy fixtures to the pinned child; it is also included transitively in `make check`. `make frontend-test` covers render/config regressions; `make frontend-test-routes` builds and checks production chunk loading/recovery. Run browser UI checks for layout changes. Parent local verification also runs production route tests, preserving the child harness when integrating a new gitlink.
-
-## Page Family Consistency
-
-For frontend UI changes, follow the pinned [page-family policy](src/frontend/notes/page-families.md). Identify an existing peer before implementation and reuse its shell, spacing, surfaces, typography, actions and responsive rules. A reference screenshot does not override the host family. Record the child Page Family worklog review and actual peer comparisons before committing; shared-control checks alone do not establish page consistency. Keep exceptions scoped and documented.
+기본 초기화 재개 시 PROJECT_BRIEF.md, project.json, 현재 diff와 감사 근거를 읽고 미완료 단계부터 진행한다. 명시적으로 보류한 화면·브랜드·네이티브·제공자 연동을 임의로 구현하지 않는다. 프로젝트 설정은 make project-plan → make project-init → make project-check 순서이며 기존 env/시크릿을 보존한다. 상세 범위는 PROJECT_ONBOARDING.md 및 PROJECT_ONBOARDING_AUDIT.md를 참고하되 사용자 지정 범위를 우선한다.

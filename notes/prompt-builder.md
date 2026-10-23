@@ -1,19 +1,15 @@
-# Guided prompt builder
+# 단계별 프롬프트 만들기
 
-[한국어](ko/prompt-builder.md)
+고정된 프론트엔드의 세 레이아웃 모두 홈 다음에 **프롬프트 만들기**를 표시하며
+프로덕션에도 노출합니다. `/prompt-builder`는 기존 설정·연결 확인을 거쳐 비회원과
+회원이 사용할 수 있고 새 백엔드 API나 환경 스위치는 없습니다.
 
-The pinned frontend exposes **Prompt builder** immediately after Home in all three
-layouts, including production. `/prompt-builder` is available to guests and members
-under the existing configuration/readiness gates; no backend endpoint or environment
-switch is added.
+중앙 캡슐 → 기능 추가/프로젝트 시작 → 기능 이름 → 백엔드/프론트엔드/UI 등 다중 범위
+→ 기능·RBAC 권한 → 완료 방식의 네 단계 → 확인 → 한/영 Markdown 복사·저장으로 이어집니다.
+브라우저 안에서 템플릿을 조립하며 AI 호출·저장소 분석·원격 쓰기·배포를 실행하지 않습니다.
+답변은 페이지 메모리에만 존재하고 화면 이동이나 새로고침 시 초기화됩니다.
 
-The central capsule opens a feature/project chooser. Both paths ask for a feature name
-and multiple implementation areas and elements, then capabilities/RBAC and delivery in four questions,
-review and localized Markdown output with copy/download. This is a client-side template
-builder: it performs no AI call, repository scan, remote write or deployment. Answers
-remain in page memory and reset on leaving/reloading.
-
-See the child [usage and verification guide](../src/frontend/notes/prompt-builder.md).
-Frontend source and tests are owned by B4React; the parent pins its merged revision
-and verifies contracts, packaging and branding. Publish through the normal frontend
-image build/deploy workflow; production availability is not a claim of live deployment.
+[자식 사용·검증 가이드](../src/frontend/notes/prompt-builder.md)를 참고하세요.
+프론트엔드 소스와 테스트는 B4React가 소유하며 부모는 병합된 커밋을 고정하고 계약·패키징·브랜딩을
+검증합니다. 실제 공개 서버 반영은 기존 이미지 빌드·배포 경로로 진행합니다.
+프로덕션 노출 지원이 배포 완료를 의미하지는 않습니다.

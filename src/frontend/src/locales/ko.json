@@ -1,0 +1,1507 @@
+{
+    "inbox": {
+        "title": "알림함",
+        "description": "계정과 문의에 관한 소식을 확인합니다.",
+        "unread": "읽지 않음",
+        "unreadOnly": "읽지 않은 알림만",
+        "count": "미확인 {{count}}개",
+        "open": "내용 보기",
+        "read": "읽음 처리",
+        "readAll": "모두 읽음",
+        "empty": "표시할 알림이 없습니다.",
+        "error": "알림을 불러오거나 변경하지 못했습니다. 다시 시도해 주세요.",
+        "events": {
+            "welcome": {
+                "title": "{{brand}}에 오신 것을 환영합니다",
+                "body": "계정이 생성되었습니다. {{brand}}의 기능을 둘러보세요."
+            },
+            "subscription_started": {
+                "title": "구독이 시작되었습니다",
+                "body": "{{plan}} 요금제의 결제가 확인되었습니다."
+            },
+            "plan_changed": {
+                "title": "요금제가 변경되었습니다",
+                "body": "{{plan}} 요금제가 적용되었습니다."
+            },
+            "inquiry_received": {
+                "title": "문의가 접수되었습니다"
+            },
+            "inquiry_reply": {
+                "title": "문의에 새 답변이 있습니다"
+            },
+            "inquiry_status": {
+                "title": "문의 상태가 변경되었습니다"
+            }
+        },
+        "selectItem": "{{title}} 선택",
+        "selectPage": "현재 페이지 전체 선택",
+        "readState": "읽음",
+        "selected": "{{count}}개 선택",
+        "readSelected": "선택 읽음",
+        "deleteSelected": "선택 삭제",
+        "content": "알림 내용",
+        "status": "상태",
+        "received": "받은 날짜",
+        "actions": "작업",
+        "related": "관련 화면 열기",
+        "close": "닫기",
+        "delete": "삭제",
+        "cancel": "취소",
+        "deleteTitle": "알림 삭제",
+        "deleteConfirm": "선택한 알림 {{count}}개를 삭제할까요? 삭제한 알림은 복구할 수 없습니다."
+    },
+    "app": {
+        "loadingTitle": "로딩 중",
+        "loadingSubtitle": "작업 공간을 준비하고 있습니다. 잠시만 기다려 주세요.",
+        "loadingSession": "세션 불러오는 중..."
+    },
+    "desktopWindow": {
+        "minimize": "창 최소화",
+        "maximize": "창 최대화 또는 복원",
+        "close": "창 닫기"
+    },
+    "connectivity": {
+        "offline": "서버 연결이 끊겼습니다. 서버가 필요한 작업은 사용할 수 없습니다.",
+        "offlineShort": "서버 연결 끊김",
+        "reconnecting": "서버 연결을 확인하고 있습니다...",
+        "reconnectingShort": "재연결 중",
+        "retry": "지금 다시 시도"
+    },
+    "serverUnavailable": {
+        "navAria": "서버 연결 탐색",
+        "title": "서버에 연결할 수 없습니다",
+        "subtitle": "애플리케이션의 서버 설정을 확인할 수 없습니다.",
+        "statusTitle": "서버 연결 필요",
+        "configError": "서버 설정을 확인할 때까지 보호된 페이지를 잠금 상태로 유지합니다.",
+        "waiting": "계속하기 전에 서버 설정을 기다리고 있습니다.",
+        "retry": "연결 다시 시도",
+        "retrying": "연결 확인 중..."
+    },
+    "landing": {
+        "navAria": "랜딩 탐색",
+        "eyebrow": "Blueprint4FastAPI",
+        "title": "이 랜딩 페이지를 서비스에 맞게 수정하세요.",
+        "subtitle": "이 템플릿은 간단한 랜딩 페이지, 인증 라우팅, API 키, 실시간 이벤트, 작업 큐, 메트릭, 트레이싱, React 쇼케이스를 포함합니다.",
+        "note": "문구를 제품 메시지로 교체하고, 버튼을 필요한 시작 흐름에 연결한 뒤 나머지 스타터 구성을 기준점으로 사용하세요.",
+        "start": "시작하기"
+    },
+    "auth": {
+        "verificationResent": "이메일 인증이 필요한 계정이 있다면 인증 이메일을 보냈습니다.",
+        "actions": {
+            "resendVerification": "인증 이메일 다시 보내기"
+        },
+        "errors": {
+            "loginFallback": "로그인에 실패했습니다. 다시 시도해주세요.",
+            "signupFallback": "회원가입에 실패했습니다. 입력값을 확인해주세요.",
+            "passwordMismatch": "비밀번호 확인이 일치하지 않습니다.",
+            "requiredEmail": "이메일은 필수입니다.",
+            "requiredName": "이름은 필수입니다.",
+            "requiredPassword": "비밀번호는 필수입니다.",
+            "requiredConfirmPassword": "비밀번호 확인을 입력해주세요.",
+            "invalidEmail": "올바른 이메일 주소를 입력해주세요.",
+            "invalidPasswordPattern": "비밀번호는 8~24자이며 대문자, 숫자, 특수문자를 포함해야 합니다.",
+            "invalidCredentialsWithCount": "이메일 또는 비밀번호가 올바르지 않습니다. 남은 시도 횟수: {{count}}회.",
+            "accountLocked": "로그인 시도가 너무 많습니다. {{seconds}}초 후 다시 시도해주세요.",
+            "emailNotVerified": "이메일 인증이 필요합니다. 먼저 이메일 인증을 완료해주세요.",
+            "resendVerificationFallback": "인증 이메일 재전송에 실패했습니다. 다시 시도해주세요.",
+            "emailAlreadyExists": "이미 사용 중인 이메일입니다.",
+            "emailDisabled": "이메일 기반 기능이 현재 비활성화되어 있습니다.",
+            "loginDisabled": "로그인이 현재 비활성화되어 있습니다.",
+            "invalidToken": "토큰이 유효하지 않거나 만료되었습니다.",
+            "insufficientRole": "이 작업을 수행할 권한이 없습니다.",
+            "userNotFound": "사용자 계정을 찾을 수 없습니다.",
+            "oauthProviderNotEnabled": "해당 OAuth 제공자가 활성화되어 있지 않습니다.",
+            "oauthProviderConfigInvalid": "OAuth 제공자 설정이 올바르지 않습니다.",
+            "oauthIdentityConflict": "이 OAuth 계정은 이미 다른 사용자와 연결되어 있습니다.",
+            "oauthSignupFailed": "OAuth로 계정을 생성하지 못했습니다.",
+            "oauthProviderRequestFailed": "OAuth 제공자 요청에 실패했습니다. 다시 시도해주세요.",
+            "profileUpdateFailed": "프로필을 업데이트하지 못했습니다. 다시 시도해주세요.",
+            "adminUsersFailed": "사용자를 불러오지 못했습니다. 다시 시도해주세요.",
+            "accountDeleteFailed": "계정을 삭제하지 못했습니다. 다시 시도해 주세요.",
+            "accountDeleteConfirmationRequired": "현재 계정의 이메일을 정확히 입력해 주세요.",
+            "lastAdminRequired": "마지막 관리자 계정입니다. 다른 계정에 관리자 권한을 지정한 후 삭제해 주세요.",
+            "accountDeleteCodeInvalid": "코드가 올바르지 않거나 만료되었습니다. 5회 실패 시 10분 후 새 코드를 요청해 주세요.",
+            "accountDeleteCodeThrottled": "인증 코드는 {{seconds}}초 후에 다시 받을 수 있습니다.",
+            "accountDeleteCodeSendFailed": "인증 코드를 발송하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+            "billingReviewRequired": "계정을 삭제하기 전에 운영자에게 구독 확인 및 정리를 요청해 주세요.",
+            "profilePhotoInvalid": "정상적인 PNG, JPG, WEBP, GIF 이미지를 선택해 주세요. 최대 1,600만 화소까지 지원합니다.",
+            "profilePhotoTooLarge": "프로필 사진은 8MB 이하여야 합니다.",
+            "profilePhotoUnavailable": "사진 저장소를 사용할 수 없습니다. 기존 사진은 유지됩니다.",
+            "profilePhotoNotFound": "사진을 찾을 수 없습니다.",
+            "profilePhotoConflict": "다른 곳에서 사진이 변경되었습니다. 새로고침 후 다시 시도해 주세요.",
+            "passwordChangeCodeInvalid": "인증번호가 올바르지 않거나 만료되었습니다. 잠시 후 새 인증번호를 요청해 주세요.",
+            "passwordChangeCodeThrottled": "잠시 후 인증번호를 다시 요청해 주세요.",
+            "passwordChangeCodeSendFailed": "인증번호를 발송하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+            "passwordChangeFailed": "비밀번호를 변경하지 못했습니다. 새 인증번호를 요청한 후 다시 시도해 주세요."
+        }
+    },
+    "cards": {
+        "errorTitle": "조치가 필요합니다",
+        "warningTitle": "주의",
+        "infoTitle": "안내"
+    },
+    "login": {
+        "title": "로그인",
+        "subtitle": "템플릿 대시보드에 접속하려면 로그인하세요.",
+        "oauth": {
+            "divider": "소셜 계정으로 로그인",
+            "providers": {
+                "google": "Google로 계속하기",
+                "github": "GitHub로 계속하기"
+            }
+        },
+        "fields": {
+            "email": "이메일",
+            "password": "비밀번호"
+        },
+        "rememberMe": "로그인 상태 유지",
+        "rememberEmail": "이메일 기억",
+        "submitIdle": "로그인",
+        "submitBusy": "로그인 중...",
+        "signupPrompt": "처음이신가요?",
+        "signupLink": "계정 만들기",
+        "forgotPasswordPrompt": "비밀번호를 잊으셨나요?",
+        "forgotPasswordLink": "비밀번호 찾기"
+    },
+    "signup": {
+        "title": "회원가입",
+        "subtitle": "계정을 만들고 나만의 프로젝트를 시작하세요.",
+        "configLoading": "서버 설정을 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
+        "fields": {
+            "name": "이름",
+            "email": "이메일",
+            "password": "비밀번호",
+            "confirmPassword": "비밀번호 확인"
+        },
+        "submitIdle": "계정 생성",
+        "submitBusy": "계정을 생성하고 인증 이메일을 보내는 중...",
+        "loginPrompt": "이미 계정이 있나요?",
+        "loginLink": "로그인으로 돌아가기",
+        "validation": {
+            "email": "이메일 검증",
+            "password": "비밀번호 검증",
+            "confirm": "비밀번호 확인"
+        },
+        "rules": {
+            "email": {
+                "format": "올바른 이메일 형식을 사용하세요."
+            },
+            "password": {
+                "length": "8자 이상 24자 이하",
+                "upper": "대문자 최소 1개 포함",
+                "number": "숫자 최소 1개 포함",
+                "symbol": "특수문자 최소 1개 포함",
+                "noSpace": "공백 사용 금지"
+            },
+            "confirm": {
+                "match": "비밀번호와 비밀번호 확인이 일치해야 합니다."
+            }
+        }
+    },
+    "signupEmailSent": {
+        "title": "이메일을 확인하세요",
+        "subtitle": "{{email}} 주소로 인증 링크를 보냈습니다.",
+        "description": "메일함에서 인증을 완료하면 계정이 활성화됩니다.",
+        "accountCreatedTitle": "계정 생성 완료",
+        "accountCreatedSubtitle": "계정 준비가 완료되었습니다.",
+        "accountCreatedMessage": "계정이 생성되었습니다. 로그인 페이지로 이동해주세요.",
+        "resendButton": "인증 이메일 다시 보내기",
+        "resendFallback": "인증 이메일 재전송에 실패했습니다. 다시 시도해주세요.",
+        "loginButton": "로그인으로 돌아가기",
+        "noEmail": "이메일 주소"
+    },
+    "forgotPassword": {
+        "title": "비밀번호 찾기",
+        "subtitle": "이메일을 입력하면 비밀번호 재설정 링크를 보내드립니다.",
+        "emailLabel": "이메일",
+        "submitIdle": "재설정 링크 보내기",
+        "loginPrompt": "비밀번호가 기억나셨나요?",
+        "loginLink": "로그인으로 돌아가기",
+        "configLoading": "서버 설정을 불러오는 중입니다. 잠시 후 다시 시도해주세요.",
+        "disabled": "비밀번호 재설정 기능이 현재 비활성화되어 있습니다.",
+        "disabledTitle": "비밀번호 재설정 사용 불가",
+        "sentTitle": "이메일을 확인하세요",
+        "sentSubtitle": "{{email}} 주소로 비밀번호 재설정 링크를 보냈습니다.",
+        "sentDescription": "메일함에서 링크를 열어 비밀번호 재설정을 진행하세요.",
+        "backToRequest": "다시 요청하기",
+        "backToLogin": "로그인으로 돌아가기",
+        "requestFallback": "비밀번호 재설정 요청에 실패했습니다. 다시 시도해주세요.",
+        "noEmail": "이메일 주소"
+    },
+    "resetPassword": {
+        "title": "비밀번호 재설정",
+        "subtitle": "계정의 새 비밀번호를 설정하세요.",
+        "passwordLabel": "새 비밀번호",
+        "confirmPasswordLabel": "새 비밀번호 확인",
+        "submitIdle": "비밀번호 재설정",
+        "successTitle": "비밀번호 재설정 완료",
+        "successSubtitle": "비밀번호가 변경되었습니다.",
+        "successDescription": "이제 새 비밀번호로 로그인할 수 있습니다.",
+        "backToLogin": "로그인으로 돌아가기",
+        "loginPrompt": "로그인할 준비가 되었나요?",
+        "loginLink": "로그인으로 이동",
+        "errors": {
+            "missingToken": "재설정 토큰이 없습니다. 이메일의 링크를 이용해주세요.",
+            "fallback": "비밀번호 재설정에 실패했습니다. 링크가 만료되었거나 유효하지 않을 수 있습니다."
+        }
+    },
+    "verifyEmail": {
+        "loadingTitle": "이메일 인증 중",
+        "loadingSubtitle": "인증 토큰을 확인하는 중입니다. 잠시만 기다려주세요.",
+        "loadingDescription": "보통 몇 초 내에 완료됩니다.",
+        "successTitle": "이메일 인증 완료",
+        "successSubtitle": "계정 이메일 인증이 완료되었습니다.",
+        "successDescription": "이제 이메일과 비밀번호로 로그인할 수 있습니다.",
+        "errorTitle": "인증 실패",
+        "errorSubtitle": "이메일 인증을 완료할 수 없습니다.",
+        "backToLogin": "로그인으로 돌아가기",
+        "errors": {
+            "missingToken": "인증 토큰이 없습니다. 이메일의 링크를 이용해주세요.",
+            "fallback": "인증에 실패했습니다. 링크가 만료되었거나 유효하지 않을 수 있습니다."
+        }
+    },
+    "showCase": {
+        "title": "컴포넌트 라이브러리",
+        "subtitle": "앱에서 사용하는 공용 컴포넌트를 찾아보고 직접 확인하세요.",
+        "tooltip": {
+            "demoTrigger": "이 버튼에 마우스를 올려보세요",
+            "demoContent": "재사용 가능한 툴팁 예시입니다."
+        },
+        "labels": {
+            "userId": "사용자 ID",
+            "name": "이름",
+            "email": "이메일"
+        },
+        "logoutIdle": "로그아웃",
+        "logoutBusy": "로그아웃 중...",
+        "demo": {
+            "text0": "기본 버튼",
+            "text1": "처리 중 버튼",
+            "text2": "비활성 버튼",
+            "text3": "Google로 계속하기",
+            "text4": "GitHub로 계속하기",
+            "text5": "드롭다운 예시",
+            "text6": "항목 1",
+            "text7": "항목 2",
+            "text8": "항목 3",
+            "text9": "메뉴 예시",
+            "text10": "입력 예시",
+            "text11": "내용을 입력하세요",
+            "text12": "선택한 체크박스",
+            "text13": "선택하지 않은 체크박스",
+            "text14": "키 활성화",
+            "text15": "활성",
+            "text16": "비활성",
+            "text17": "안내",
+            "text18": "이름을 저장했습니다.",
+            "text19": "프로필을 저장하지 못했습니다. 다시 시도해 주세요.",
+            "text20": "페이지 탐색",
+            "text21": "이전 페이지",
+            "text22": "다음 페이지",
+            "text23": "모달 열기",
+            "text24": "모달 예시",
+            "text25": "공용 버튼을 사용하는 모달입니다.",
+            "text26": "취소",
+            "text27": "저장",
+            "text28": "모달 본문 예시입니다.",
+            "text29": "작은 로딩 표시",
+            "text30": "중간 로딩 표시",
+            "text31": "큰 로딩 표시",
+            "text32": "로딩 화면 열기",
+            "text33": "404 화면 열기",
+            "text34": "패널 카드",
+            "text35": "인증 화면에서 사용하는 공용 컨테이너입니다.",
+            "text36": "공용 패널 예시입니다.",
+            "text37": "참고할 정보를 표시합니다.",
+            "text38": "주의",
+            "text39": "확인이 필요한 내용을 표시합니다.",
+            "text40": "오류",
+            "text41": "문제와 해결 방법을 표시합니다.",
+            "text42": "입력 조건",
+            "text43": "대문자 포함",
+            "text44": "숫자 포함",
+            "text45": "특수 문자 포함",
+            "item-1": "항목 1",
+            "item-2": "항목 2",
+            "item-3": "항목 3",
+            "card": "카드 {{count}}",
+            "item": "예시 항목 {{count}}"
+        },
+        "catalog": {
+            "search": "컴포넌트 검색",
+            "searchPlaceholder": "Button, Avatar, Modal…",
+            "categoriesLabel": "컴포넌트 분류",
+            "results": "{{count}}개 분류",
+            "empty": "일치하는 컴포넌트가 없습니다.",
+            "reset": "필터 초기화",
+            "localOnly": "미리보기 전용이며 실제 계정에는 반영되지 않습니다.",
+            "sampleKey": "샘플 키",
+            "copy": "샘플 키 복사",
+            "copied": "복사됨",
+            "container": "컴팩트한 공용 콘텐츠 컨테이너입니다.",
+            "categories": {
+                "all": "전체",
+                "account": "계정",
+                "api": "API 키",
+                "brand": "브랜드·테마",
+                "buttons": "버튼",
+                "overlays": "드롭다운·툴팁",
+                "navigation": "탐색",
+                "inputs": "입력",
+                "data": "데이터·피드백",
+                "dialogs": "모달",
+                "loading": "로딩",
+                "pages": "페이지 상태",
+                "cards": "카드"
+            },
+            "descriptions": {
+                "all": "",
+                "account": "아바타·사진 업로드·연결된 계정",
+                "api": "샘플 데이터로 동작하는 API 키 관리",
+                "brand": "로고 변형과 화면 모드 선택",
+                "buttons": "공용 버튼과 상태별 표현",
+                "overlays": "버튼에 정렬되는 메뉴와 도움말",
+                "navigation": "컴팩트한 메뉴 선택",
+                "inputs": "텍스트·체크박스·스위치",
+                "data": "상태·안내 메시지·페이지 목록",
+                "dialogs": "공용 모달과 인증 화면 구성",
+                "loading": "크기별 로딩 표시",
+                "pages": "별도 페이지 예시 열기",
+                "cards": "컨테이너·최근 계정·입력 검증"
+            },
+            "results_one": "{{count}}개 분류",
+            "results_other": "{{count}}개 분류"
+        },
+        "selectionCard": {
+            "label": "선택 카드",
+            "first": "옵션 하나",
+            "second": "옵션 둘",
+            "disabled": "선택 불가"
+        },
+        "toast": {
+            "trigger": "토스트 띄우기",
+            "message": "변경사항을 저장했습니다."
+        },
+        "accountDeletion": {
+            "trigger": "계정 삭제 인증 미리보기",
+            "description": "실제 이메일 발송이나 삭제 없이 테스트합니다. 인증 코드는 123456입니다. 다른 코드는 오류를 표시합니다.",
+            "complete": "미리보기 인증이 완료되었습니다. 실제 계정은 삭제되지 않았습니다."
+        }
+    },
+    "nav": {
+        "profileMenu": "프로필 메뉴",
+        "sidebar": {
+            "aria": "기본 탐색",
+            "showCase": "쇼케이스",
+            "settings": "설정",
+            "toggleOpen": "사이드바 펼치기",
+            "toggleClose": "사이드바 접기",
+            "resize": "사이드바 너비 조절",
+            "github": "GitHub",
+            "documentation": "사용 가이드"
+        },
+        "pageTitles": {
+            "showCase": "쇼케이스 페이지",
+            "settings": "설정",
+            "loading": "로딩",
+            "notFound": "404 찾을 수 없음"
+        },
+        "settings": "설정",
+        "logoutIdle": "로그아웃",
+        "logoutBusy": "로그아웃 중...",
+        "logoutUnavailable": "서버에 다시 연결한 뒤 로그아웃할 수 있습니다.",
+        "aria": {
+            "goShowCase": "쇼케이스 페이지로 이동",
+            "openMenu": "프로필 메뉴 열기"
+        },
+        "guest": "게스트",
+        "brand": "B4A",
+        "home": "홈"
+    },
+    "settings": {
+        "title": "설정",
+        "subtitle": "계정과 환경설정을 관리하세요.",
+        "menu": {
+            "title": "설정 메뉴",
+            "profile": "프로필",
+            "general": "일반",
+            "developers": "개발자",
+            "appearance": "모양",
+            "keyboard": "키보드",
+            "account": "계정"
+        },
+        "labels": {
+            "name": "이름",
+            "email": "이메일",
+            "userId": "사용자 ID"
+        },
+        "profile": {
+            "title": "프로필",
+            "subtitle": "나를 소개하는 정보를 관리합니다. 이 프로필은 본인에게만 표시됩니다.",
+            "photo": "프로필 사진",
+            "photoHelp": "PNG, JPG, WEBP, GIF · 최대 8MB · 정지 이미지로 저장",
+            "photoSelect": "사진 선택",
+            "photoClear": "사진 제거",
+            "photoTypeError": "PNG, JPG, WEBP, GIF 파일만 지원합니다.",
+            "photoSizeError": "프로필 사진은 8MB 이하여야 합니다.",
+            "photoReadError": "선택한 이미지를 읽을 수 없습니다.",
+            "namePlaceholder": "이름을 입력하세요",
+            "save": "저장",
+            "nameSaveSuccess": "이름이 성공적으로 변경되었습니다.",
+            "nameSaveError": "이름 변경에 실패했습니다.",
+            "oauthConnectedTitle": "연결된 OAuth",
+            "oauthConnectedEmpty": "연결된 외부 OAuth 제공자가 없습니다.",
+            "oauthProviders": {
+                "google": "Google",
+                "github": "GitHub"
+            },
+            "roleBadgeAdmin": "관리자",
+            "saveSuccess": "프로필 변경사항이 저장되었습니다.",
+            "saveError": "프로필 변경사항을 저장하지 못했습니다. 다시 시도해주세요.",
+            "roleBadgeManager": "매니저",
+            "bio": "소개",
+            "bioPlaceholder": "나에 대해 간단히 소개해 주세요.",
+            "location": "위치",
+            "locationPlaceholder": "예: 서울, 대한민국",
+            "joined": "가입일",
+            "edit": "프로필 편집",
+            "emptyBio": "나를 소개하는 글을 남겨보세요.",
+            "notSet": "미설정",
+            "private": "본인에게만 표시되는 프로필입니다.",
+            "retry": "다시 시도",
+            "country": "국가",
+            "region": "도시·지역",
+            "selectRegion": "도시·지역 선택",
+            "photoAdd": "사진 추가",
+            "editName": "이름 수정",
+            "editBio": "소개 수정",
+            "editLocation": "위치 수정"
+        },
+        "general": {
+            "title": "일반",
+            "subtitle": "언어 설정을 관리합니다.",
+            "themeTitle": "테마",
+            "languageTitle": "언어",
+            "languages": {
+                "en": "영어",
+                "ko": "한국어"
+            }
+        },
+        "developers": {
+            "title": "개발자",
+            "subtitle": "연동 및 자동화를 위한 API 키를 관리하세요.",
+            "loading": "API 키를 불러오는 중...",
+            "empty": "생성된 API 키가 없습니다.",
+            "createButton": "API 키 생성",
+            "refreshButton": "새로고침",
+            "listLoadError": "API 키 목록을 불러오지 못했습니다.",
+            "createError": "API 키를 생성하지 못했습니다. 다른 이름으로 다시 시도해주세요.",
+            "updateError": "API 키 상태를 업데이트하지 못했습니다.",
+            "deactivateError": "API 키 비활성화에 실패했습니다.",
+            "enableBlockedInfo": "폐기된 API 키는 다시 활성화할 수 없습니다. 새 키를 생성하세요.",
+            "errors": {
+                "apiKeyInvalid": "유효하지 않은 API 키 요청입니다.",
+                "userMismatch": "현재 사용자 소유의 API 키가 아닙니다.",
+                "createFailed": "API 키 생성에 실패했습니다. 다시 시도해주세요.",
+                "nameAlreadyExists": "같은 이름의 API 키가 이미 존재합니다.",
+                "notFound": "요청한 API 키를 찾을 수 없습니다.",
+                "updateFailed": "API 키 업데이트에 실패했습니다."
+            },
+            "status": {
+                "active": "활성",
+                "inactive": "비활성",
+                "expired": "만료"
+            },
+            "columns": {
+                "name": "이름",
+                "prefix": "접두사",
+                "status": "상태",
+                "createdAt": "생성일",
+                "lastUsedAt": "마지막 사용",
+                "enabled": "활성화",
+                "delete": "삭제",
+                "actions": "관리"
+            },
+            "actions": {
+                "save": "저장",
+                "cancel": "취소",
+                "close": "닫기",
+                "deactivate": "비활성화",
+                "delete": "삭제",
+                "deleteNamed": "{{name}} 삭제"
+            },
+            "createModal": {
+                "title": "API 키 생성",
+                "description": "API 키를 식별할 수 있는 이름을 지정하세요.",
+                "nameLabel": "API 키 이름",
+                "namePlaceholder": "예: Production webhook",
+                "expiryLabel": "만료 기간",
+                "expiryOptions": {
+                    "sevenDays": "7일",
+                    "thirtyDays": "30일",
+                    "ninetyDays": "90일",
+                    "never": "만료 없음"
+                },
+                "neverExpiryWarning": "이 API 키는 자동으로 만료되지 않습니다. 더 이상 사용하지 않으면 직접 비활성화하거나 삭제하세요."
+            },
+            "revealModal": {
+                "title": "지금 API 키를 복사하세요",
+                "description": "이 시크릿은 한 번만 표시되며 다시 조회할 수 없습니다.",
+                "copy": "복사",
+                "copied": "복사됨"
+            },
+            "deactivateModal": {
+                "title": "API 키 삭제",
+                "description": "이 API 키를 삭제하려고 합니다.",
+                "targetName": "대상 키: {{name}}"
+            },
+            "meta": {
+                "accessKey": "Access key",
+                "requestCount": "요청 횟수",
+                "expiresAt": "만료일",
+                "noExpiration": "만료 없음",
+                "created": "생성일",
+                "lastUsed": "마지막 사용"
+            },
+            "pagination": {
+                "label": "페이지네이션",
+                "previous": "이전 API 키 페이지",
+                "next": "다음 API 키 페이지"
+            },
+            "listTitle": "API 키"
+        },
+        "backToApp": "앱으로 돌아가기",
+        "account": {
+            "deleteTitle": "계정 삭제",
+            "deleteDescription": "계정과 연결된 데이터를 영구적으로 삭제합니다.",
+            "deleteAction": "계정 삭제",
+            "deleteWarning": "계정과 로그인 정보, 모든 API 키가 영구적으로 삭제됩니다. 삭제 후에는 복구할 수 없습니다.",
+            "confirmPrompt": "계속하려면 {{email}}을 입력해 주세요.",
+            "cancel": "취소",
+            "deleted": "계정을 삭제했습니다.",
+            "codeDestination": "등록된 이메일 {{email}}로 인증 코드를 보냅니다.",
+            "sendCode": "코드 받기",
+            "resendCode": "인증번호 재전송",
+            "resendWait": "{{seconds}}초 후",
+            "codeSent": "인증 코드를 이메일로 보냈습니다.",
+            "codeLabel": "6자리 인증 코드",
+            "emailRequired": "계정 삭제에는 이메일 인증이 필요합니다. 이메일 기능이 활성화되어야 합니다.",
+            "codeHint": "마지막으로 발송한 인증번호는 10분간 유효합니다. 재전송은 30초 후 가능하며 이전 번호는 무효화됩니다.",
+            "title": "계정",
+            "subtitle": "로그인 정보와 계정 보안을 관리합니다.",
+            "editProfile": "프로필로 이동",
+            "passwordTitle": "비밀번호 변경하기",
+            "currentPassword": "현재 비밀번호",
+            "passwordHelp": "등록된 이메일로 인증번호를 받은 후 새 비밀번호를 저장합니다. 인증번호는 10분 동안 유효합니다.",
+            "oauthPassword": "소셜 로그인 전용 계정입니다. 비밀번호는 연결된 로그인 제공자에서 관리해 주세요.",
+            "passwordEmailRequired": "이메일 기능이 비활성화되어 비밀번호를 변경할 수 없습니다.",
+            "currentPlan": "현재 구독 플랜",
+            "managePlan": "구독 관리",
+            "passwordLabel": "비밀번호",
+            "verifyCode": "인증번호 확인",
+            "codeVerified": "인증 완료",
+            "resendCodeWait": "인증번호 재전송 ({{seconds}}초)"
+        },
+        "keyboard": {
+            "description": "자주 쓰는 기능의 단축키를 변경할 수 있습니다.",
+            "toggleSidebar": "사이드바 펼치기 / 접기",
+            "openSettings": "설정 열기",
+            "press": "키 조합을 누르세요",
+            "reset": "기본값으로 복원",
+            "errors": {
+                "invalid": "인식할 수 있는 키를 눌러주세요.",
+                "conflict": "다른 기능에서 사용 중인 단축키입니다.",
+                "storage": "단축키를 저장하지 못했습니다. 연결 상태를 확인하고 다시 시도해주세요."
+            },
+            "openProfile": "프로필 열기"
+        }
+    },
+    "theme": {
+        "label": "테마",
+        "select": "테마 모드",
+        "system": "시스템",
+        "light": "라이트 모드",
+        "dark": "다크 모드"
+    },
+    "shortcuts": {
+        "keys": {
+            "Command": "Command",
+            "Control": "Control",
+            "Alt": "Alt",
+            "Shift": "Shift",
+            "Meta": "Meta"
+        },
+        "platform": {
+            "current": "현재 키보드"
+        }
+    },
+    "authDialog": {
+        "title": "로그인 또는 회원가입",
+        "subtitle": "로그인하고 프로필과 API 키를 관리하세요.",
+        "continue": "계속",
+        "close": "닫기",
+        "guestTitle": "나만의 프로젝트를 시작하세요",
+        "guestDescription": "로그인하고 프로필과 API 키를 관리하세요.",
+        "login": "로그인",
+        "or": "또는",
+        "changeEmail": "이메일 변경",
+        "closeBackdrop": "모달 배경 닫기",
+        "ruleMet": "조건 충족",
+        "rulePending": "아직 충족되지 않은 조건",
+        "preview": "인증 모달 미리보기",
+        "buttonPrimary": "계속",
+        "buttonSecondary": "보조 작업",
+        "buttonLoading": "처리 중",
+        "buttonDisabled": "사용 불가",
+        "entry": "로그인/회원가입"
+    },
+    "recentAccounts": {
+        "title": "최근 계정",
+        "clear": "전체 삭제",
+        "select": "{{provider}}로 {{email}} 계정 계속하기",
+        "remove": "이 브라우저에서 {{email}} ({{provider}}) 기록 삭제",
+        "note": "이 브라우저에 저장된 기록이며 다시 로그인해야 합니다.",
+        "providers": {
+            "email": "이메일",
+            "google": "Google",
+            "github": "GitHub"
+        },
+        "remember": "이 브라우저에 계정 기억하기",
+        "add": "계정 추가",
+        "switch": "계정 전환",
+        "current": "현재 계정"
+    },
+    "pageState": {
+        "back": "컴포넌트로 돌아가기",
+        "notFoundTitle": "페이지를 찾을 수 없습니다",
+        "notFoundDescription": "주소가 변경되었거나 더 이상 존재하지 않는 페이지입니다. 컴포넌트 라이브러리에서 계속 살펴보세요."
+    },
+    "admin": {
+        "demoHidden": "데모에서 숨김",
+        "demo": "관리자 패널 (데모)",
+        "demoDescription": "실제 사용자 데이터를 익명화한 읽기 전용 데모입니다. 이름·이메일·ID는 대체하고 날짜는 일 단위로 표시합니다.",
+        "demoServerDescription": "실제 서버의 상태를 보여주는 읽기 전용 데모입니다. 내부 연결 주소는 숨기며, 조회 결과는 최대 30초간 유지됩니다.",
+        "title": "관리자 패널",
+        "users": "사용자",
+        "description": "사용자 계정과 최근 로그인 정보를 확인합니다.",
+        "search": "이름 또는 이메일 검색",
+        "searchAction": "검색",
+        "refresh": "새로고침",
+        "allRoles": "모든 역할",
+        "allStatuses": "모든 상태",
+        "role": "역할",
+        "status": "계정 상태",
+        "active": "활성",
+        "inactive": "비활성",
+        "admin": "관리자",
+        "user": "일반 사용자",
+        "total": "전체 사용자",
+        "activeTotal": "활성 계정",
+        "adminTotal": "관리자",
+        "identity": "사용자",
+        "providers": "로그인 방식",
+        "joined": "가입일",
+        "lastLogin": "최근 로그인",
+        "never": "로그인 기록 없음",
+        "verified": "이메일 인증됨",
+        "unverified": "이메일 미인증",
+        "empty": "조건에 맞는 사용자가 없습니다.",
+        "loading": "사용자를 불러오는 중…",
+        "loadError": "사용자를 불러오지 못했습니다. 다시 시도해주세요.",
+        "count": "사용자 {{count}}명",
+        "pagination": "사용자 페이지",
+        "previous": "이전 페이지",
+        "next": "다음 페이지",
+        "readOnly": "역할은 서버 운영 명령으로 관리합니다. 활성은 계정 사용 가능 상태이며 현재 접속 여부가 아닙니다.",
+        "timezone": "시간은 현재 기기의 시간대로 표시됩니다.",
+        "denied": "관리자 권한이 필요합니다.",
+        "bootstrap": "기본 관리자",
+        "filterRole": "역할 필터",
+        "filterStatus": "계정 상태 필터",
+        "manager": "매니저",
+        "managerTotal": "매니저 수"
+    },
+    "routeLoad": {
+        "title": "페이지를 불러올 수 없습니다",
+        "description": "페이지를 불러오지 못했습니다. 새로고침하여 다시 시도하거나 쇼케이스로 돌아가세요.",
+        "reload": "페이지 새로고침"
+    },
+    "colorPicker": {
+        "open": "{{label}} 색상 편집",
+        "palette": "{{label}} 팔레트",
+        "h": "색조",
+        "s": "채도",
+        "v": "명도",
+        "a": "불투명도",
+        "close": "완료",
+        "example": "색상",
+        "value": "HEX / RGBA 값",
+        "plane": "채도와 명도: 방향키로 조절"
+    },
+    "numberField": {
+        "increase": "{{label}} 늘리기",
+        "decrease": "{{label}} 줄이기",
+        "example": "간격"
+    },
+    "toast": {
+        "loginSuccess": "로그인했습니다.",
+        "loginError": "로그인하지 못했습니다. 입력란 안내를 확인해주세요.",
+        "signupSuccess": "가입 요청을 완료했습니다.",
+        "signupError": "가입하지 못했습니다. 안내를 확인해주세요.",
+        "emailSuccess": "메일 요청을 접수했습니다. 받은편지함을 확인해주세요.",
+        "emailError": "메일 요청에 실패했습니다. 다시 시도해주세요.",
+        "passwordSuccess": "비밀번호를 변경했습니다.",
+        "passwordError": "비밀번호를 변경하지 못했습니다.",
+        "logoutSuccess": "로그아웃했습니다.",
+        "logoutError": "기기에서 로그아웃했습니다. 서버 요청은 실패했습니다.",
+        "profileSuccess": "프로필을 저장했습니다.",
+        "profileError": "프로필을 저장하지 못했습니다.",
+        "photoError": "사진을 적용할 수 없습니다. 안내를 확인해주세요.",
+        "copySuccess": "API 키를 복사했습니다.",
+        "copyError": "복사하지 못했습니다. 키를 선택해 직접 복사해주세요.",
+        "keyCreateSuccess": "API 키를 생성했습니다.",
+        "keyCreateError": "API 키를 생성하지 못했습니다.",
+        "keyDeleteSuccess": "API 키를 삭제했습니다.",
+        "keyDeleteError": "API 키를 삭제하지 못했습니다.",
+        "keyToggleSuccess": "API 키 상태를 변경했습니다.",
+        "keyToggleError": "API 키 상태를 변경하지 못했습니다."
+    },
+    "billing": {
+        "title": "결제",
+        "subtitle": "플랜과 결제수단을 한곳에서 관리하세요.",
+        "back": "결제 관리로 돌아가기",
+        "currentPlan": "현재 플랜",
+        "freeSummary": "무료로 시작하세요. 자동 갱신이나 정기 결제가 없습니다.",
+        "changePlan": "플랜 업그레이드",
+        "selectedPlan": "{{plan}} 플랜을 선택했습니다. 지금은 결제수단만 등록되며 구독은 시작되지 않습니다.",
+        "offline": "서버에 연결되면 결제 정보를 다시 불러옵니다.",
+        "retry": "다시 불러오기",
+        "disabled": "현재 결제수단 등록을 준비 중입니다. 잠시 후 다시 확인해 주세요.",
+        "testMode": "테스트 모드 · 실제 요금이 청구되지 않습니다.",
+        "history": "거래 내역",
+        "historyEmpty": "거래 내역 기능을 준비하고 있습니다",
+        "historyHint": "구독 결제가 시작되면 이곳에서 내역을 확인할 수 있도록 제공할 예정입니다.",
+        "info": "결제 정보",
+        "accountEmail": "계정 이메일",
+        "infoHint": "청구 주소와 영수증 정보 편집은 추후 제공됩니다.",
+        "methods": "결제수단",
+        "addMethod": "결제수단 등록",
+        "loading": "결제 정보를 불러오는 중…",
+        "noMethods": "등록된 결제수단이 없습니다",
+        "registrationOnly": "카드 또는 Link를 미리 등록하세요. 결제수단만 저장되며 요금은 청구되지 않습니다.",
+        "card": "카드",
+        "linkSaved": "Link에서 등록 카드 확인 ↗",
+        "expiry": "유효기간 {{month}}/{{year}}",
+        "saved": "등록됨",
+        "loadMore": "{{type}} 더 보기",
+        "providerNote": "카드 정보는 Stripe의 보안 페이지에서 입력하고 관리합니다.",
+        "noSubscription": "현재 정기 결제가 없습니다",
+        "noSubscriptionHint": "결제수단 등록만으로 유료 플랜이 활성화되거나 자동 결제가 시작되지 않습니다.",
+        "signIn": "로그인하고 계속",
+        "notices": {
+            "registered": "결제수단 등록을 확인했습니다.",
+            "pending": "아직 등록이 완료되지 않았습니다. 완료 후 다시 불러오세요.",
+            "cancelled": "결제수단 등록을 취소했습니다. 필요할 때 다시 추가할 수 있습니다.",
+            "expired": "등록 세션이 만료되었습니다. 결제수단 등록을 다시 시작해 주세요."
+        },
+        "errors": {
+            "unknown": "결제 정보를 처리하지 못했습니다. 다시 시도해 주세요.",
+            "BILLING_DISABLED": "현재 결제수단 등록을 사용할 수 없습니다.",
+            "BILLING_UNAVAILABLE": "결제 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+            "BILLING_NOT_FOUND": "이 계정의 등록 세션을 찾을 수 없습니다.",
+            "BILLING_RECONCILIATION_REQUIRED": "결제 계정 확인이 필요합니다. 관리자에게 문의해 주세요.",
+            "BILLING_PLAN_UNAVAILABLE": "구독 플랜이 설정되지 않았습니다.",
+            "BILLING_CHECKOUT_CONFLICT": "기존 구독 또는 진행 중인 결제가 있습니다. 기존 결제를 완료하거나 결제 시작 후 최대 1시간 뒤 다시 시도해 주세요.",
+            "BILLING_CHANGE_CONFLICT": "구독 상태가 변경되었거나 여기서 변경할 수 없습니다. 새로고침 후 다시 확인해 주세요.",
+            "BILLING_METHOD_REQUIRED": "구독에 사용 중인 기본 결제수단입니다. 다른 결제수단을 기본으로 설정한 후 삭제해 주세요."
+        },
+        "plans": {
+            "eyebrow": "나에게 맞는 플랜",
+            "title": "나에게 맞는 플랜을 선택하세요",
+            "choose": "플랜 선택",
+            "basic": "무료",
+            "soon": "준비 중",
+            "currency": "표시 통화",
+            "select": "{{plan}} 선택",
+            "selected": "{{plan}} 선택됨",
+            "next": "다음 단계",
+            "freeNext": "부담 없이 시작하세요",
+            "paidNext": "결제수단을 먼저 준비하세요",
+            "freeHint": "카드 등록 없이 기본 기능을 이용할 수 있습니다.",
+            "continueFree": "무료로 계속하기",
+            "unavailable": "구독 결제가 아직 설정되지 않았습니다. 설정의 결제 화면에서 카드·Link를 등록할 수 있습니다.",
+            "free": {
+                "name": "Free",
+                "headline": "시작은 가볍게",
+                "description": "먼저 기본 기능을 둘러보고 나에게 맞는 사용 방식을 찾아보세요.",
+                "period": "/ 무료",
+                "one": "기본 기능으로 시작",
+                "two": "카드 등록 없이 이용",
+                "three": "정기 결제 없음"
+            },
+            "monthly": {
+                "name": "Plus",
+                "headline": "매달 유연하게",
+                "description": "짧은 주기로 시작하고 싶은 분을 위한 월간 플랜입니다.",
+                "period": "/ 월",
+                "one": "매월 자동 갱신",
+                "two": "카드·Link 등록 지원",
+                "three": "상세 혜택은 출시 시 안내"
+            },
+            "annual": {
+                "name": "Plus",
+                "headline": "꾸준한 사용을 위해",
+                "description": "오랫동안 함께 사용할 분을 위한 연간 플랜입니다.",
+                "period": "/ 년",
+                "one": "매년 자동 갱신",
+                "two": "카드·Link 등록 지원",
+                "three": "상세 혜택은 출시 시 안내"
+            },
+            "unknown": {
+                "name": "확인 필요"
+            },
+            "usd": "달러",
+            "krw": "원",
+            "plus": {
+                "name": "Plus",
+                "headline": "매달 유연하게",
+                "description": "일상적인 사용을 위한 요금제",
+                "period": "/ 월",
+                "one": "월간 또는 연간 결제",
+                "two": "앱에서 결제수단 관리",
+                "three": "기간 종료 시 변경 및 취소"
+            },
+            "pro": {
+                "name": "Pro",
+                "headline": "꾸준한 사용을 위해",
+                "description": "더 높은 등급의 요금제",
+                "period": "/ 년",
+                "one": "월간 또는 연간 결제",
+                "two": "앱에서 결제수단 관리",
+                "three": "기간 종료 시 변경 및 취소"
+            },
+            "pro_monthly": {
+                "name": "Pro",
+                "period": "/ 월"
+            },
+            "pro_annual": {
+                "name": "Pro",
+                "period": "/ 년"
+            },
+            "interval": "결제 주기",
+            "monthlyLabel": "월간",
+            "annualLabel": "연간",
+            "perMonth": "/ 월",
+            "annualTotal": "연 {{amount}} 청구 · {{discount}}% 할인",
+            "monthlyBilling": "매월 청구",
+            "profileTier": "현재 구독: {{plan}}"
+        },
+        "closePlans": "플랜 선택 닫기",
+        "subscribe": "{{plan}} 결제하기",
+        "recurring": "정기 결제",
+        "sandbox": "테스트",
+        "checkoutDisclosure": "Stripe 보안 결제 화면에서 금액과 갱신 주기를 확인하고 결제합니다. 테스트 모드에서는 실제 청구되지 않습니다.",
+        "subscriptionManaged": "구독 상태",
+        "subscriptionManagedHint": "구독 상태는 Stripe에서 확인합니다. 플랜 변경과 취소가 필요하면 운영자에게 문의해 주세요.",
+        "renewsAt": "다음 갱신: {{date}}",
+        "endsAt": "이용 종료: {{date}}",
+        "checkoutNotices": {
+            "paid": "결제를 확인했습니다.",
+            "pending": "결제 확인 중입니다. 잠시 후 새로고침해 주세요.",
+            "expired": "결제 시간이 만료되었습니다.",
+            "cancelled": "결제를 취소했습니다."
+        },
+        "subscriptionStatus": {
+            "active": "이용 중",
+            "trialing": "체험 중",
+            "past_due": "결제 확인 필요",
+            "unpaid": "미결제",
+            "incomplete": "결제 미완료",
+            "paused": "일시 정지",
+            "unknown": "구독 상태 확인 필요"
+        },
+        "manage": {
+            "switch": "{{plan}}으로 변경",
+            "free": "Free로 변경",
+            "pending": "{{date}}부터 {{plan}} 적용 예정",
+            "undo": "현재 플랜 유지",
+            "title": "요금제 변경 확인",
+            "description": "{{date}}까지 현재 플랜을 이용하고, 이후 {{plan}}이 적용됩니다. 오늘 추가 결제나 환불은 발생하지 않으며, 다음 갱신일부터 선택한 요금이 적용됩니다.",
+            "undoDescription": "변경 예약을 취소하고 현재 요금제로 자동 갱신을 유지합니다.",
+            "confirm": "변경 확인",
+            "cancel": "돌아가기",
+            "saved": "요금제 변경을 예약했습니다.",
+            "restored": "현재 요금제를 유지합니다.",
+            "unavailable": "이 구독의 변경은 결제 지원을 통해 진행해 주세요.",
+            "immediateDescription": "{{plan}} 업그레이드는 남은 기간을 일할 계산해 차액 결제를 시도합니다. 결제가 완료되면 즉시 적용되며, 실패하거나 추가 인증이 필요하면 현재 등급이 유지됩니다. 결제 주기도 변경하면 새 주기가 시작됩니다.",
+            "upgraded": "요금제를 업그레이드했습니다.",
+            "paymentRequired": "업그레이드 결제 또는 추가 인증이 필요합니다. 완료 전까지 현재 구독이 유지됩니다.",
+            "completePayment": "결제 완료하기",
+            "newPrice": "변경 후 요금: {{price}}"
+        },
+        "details": {
+            "viewAll": "모두 보기",
+            "edit": "편집",
+            "name": "이름",
+            "address": "청구지 주소",
+            "notSet": "등록되지 않음",
+            "default": "기본",
+            "manageMethod": "결제수단 관리",
+            "invoice": "청구서",
+            "receipt": "영수증 보기",
+            "noInvoices": "아직 거래 내역이 없습니다.",
+            "cancelPlan": "플랜 취소",
+            "cancelHint": "취소해도 현재 결제 기간이 끝날 때까지 플랜을 이용할 수 있습니다.",
+            "cancel": "구독 취소",
+            "status": {
+                "paid": "결제 완료",
+                "open": "결제 대기",
+                "draft": "작성 중",
+                "void": "무효",
+                "uncollectible": "미수"
+            },
+            "changePlan": "플랜 변경"
+        },
+        "native": {
+            "editTitle": "결제 정보 편집",
+            "email": "결제 이메일",
+            "save": "저장",
+            "country": "국가 또는 지역",
+            "selectCountry": "국가 선택",
+            "state": "시·도",
+            "city": "도시",
+            "line1": "주소란 1",
+            "line2": "주소란 2",
+            "postal_code": "우편번호",
+            "addCard": "새로 추가",
+            "saveCard": "카드 등록",
+            "setDefault": "기본 결제수단으로 설정",
+            "remove": "삭제",
+            "defaultSaved": "기본 결제수단을 변경했습니다.",
+            "profileSaved": "결제 정보를 저장했습니다.",
+            "removed": "결제수단을 삭제했습니다.",
+            "removeTitle": "결제수단 삭제",
+            "removeHint": "이 결제수단을 삭제하시겠습니까? 구독에 사용 중인 기본 결제수단은 먼저 다른 수단으로 변경해야 합니다.",
+            "linkWallet": "Link 지갑",
+            "cardUnavailable": "현재 카드 등록을 사용할 수 없습니다.",
+            "verifyPending": "카드 등록 확인이 완료되지 않았습니다. 잠시 후 다시 확인해 주세요.",
+            "retry": "다시 시도"
+        },
+        "historyDialog": {
+            "details": "결제 상세 내역",
+            "back": "내역으로 돌아가기",
+            "total": "합계",
+            "paid": "결제 금액",
+            "more": "더 불러오기",
+            "moreLines": "추가 항목은 영수증에서 확인할 수 있습니다."
+        }
+    },
+    "home": {
+        "welcome": "{{name}} 님의 계정 메뉴입니다.",
+        "shortcuts": "바로가기",
+        "account": {
+            "title": "내 계정",
+            "description": "프로필과 계정 정보를 관리하세요."
+        },
+        "billing": {
+            "title": "결제 관리",
+            "description": "이용 중인 요금제와 결제수단, 거래 내역을 확인하세요."
+        },
+        "preferences": {
+            "title": "환경 설정",
+            "description": "사용할 언어를 원하는 대로 설정하세요."
+        },
+        "directory": {
+            "title": "사용자 관리",
+            "description": "사용자 목록과 역할을 확인하세요."
+        },
+        "templateDescription": "메뉴와 액션, 원하는 콘텐츠를 조합해 메인 화면을 구성하세요.",
+        "templateAction": "액션 예시",
+        "templateActionFeedback": "필요한 동작을 연결할 수 있습니다.",
+        "templateContent": "콘텐츠 영역",
+        "templateContentHint": "목록, 카드, 위젯을 배치할 수 있습니다.",
+        "guestWelcome": "환영합니다. 필요한 메뉴로 바로 이동하세요.",
+        "signIn": "로그인",
+        "project": {
+            "title": "로그인부터 운영 화면까지.",
+            "titleAccent": "이제 서비스를 만드세요.",
+            "description": "계정, 결제, 관리자 화면을 연결해 둔 FastAPI · React 프로젝트입니다. 필요한 기능을 골라 쓰고, 만들고 싶은 서비스에 집중하세요.",
+            "explore": "화면 살펴보기",
+            "included": "포함된 기능",
+            "stack": "프로젝트 기술 구성",
+            "previewTitle": "프로젝트 둘러보기",
+            "previewSelect": "제품 미리보기 선택",
+            "components": "쇼케이스",
+            "componentsAlt": "B4A 공통 UI 컴포넌트 카탈로그의 라이트 테마 화면.",
+            "componentsCaption": "프로젝트에서 사용하는 공통 UI 컴포넌트",
+            "previewNote": "실제 UI · 예시 데이터",
+            "capabilitiesTitle": "기본으로 제공하는 기능",
+            "interfaceTitle": "화면과 컴포넌트",
+            "interfaceDescription": "공통 UI 컴포넌트, 라이트·다크 테마, 한국어·영어 지원.",
+            "identityTitle": "계정과 권한",
+            "identityDescription": "이메일·OAuth 로그인, 프로필, 역할별 접근 제어, API 키 관리.",
+            "deliveryTitle": "실행과 배포",
+            "deliveryDescription": "Docker 이미지, DB 마이그레이션, 상태 확인과 백그라운드 작업.",
+            "footer": "FastAPI backend · React frontend",
+            "componentsDetail": "버튼, 입력 필드, 메뉴와 모달을 한곳에서 확인합니다. 서비스 화면에 쓰이는 공통 컴포넌트의 형태와 동작을 살펴볼 수 있습니다.",
+            "enlarge": "크게 보기",
+            "openScreen": "직접 열기",
+            "users": "사용자 관리",
+            "usersAlt": "B4A 관리자 사용자 목록의 예시 화면. 모든 이름과 이메일은 데모 데이터입니다.",
+            "usersCaption": "사용자와 권한을 한곳에서",
+            "usersDetail": "역할과 활성 상태로 사용자를 조회하고, 이름·이메일로 검색합니다. 관리자와 매니저에게 제공되는 사용자 목록입니다.",
+            "server": "서버 상태",
+            "serverAlt": "B4A 관리자 서버 상태의 예시 화면. 표시된 상태와 지연 시간은 데모 데이터입니다.",
+            "serverCaption": "서버와 연결 서비스 확인",
+            "serverDetail": "API 서버, 데이터베이스, 캐시와 스토리지 상태를 확인합니다. 이메일·결제 등 외부 서비스 설정도 관리자 화면에서 살펴봅니다.",
+            "billing": "결제",
+            "billingAlt": "B4A 결제 설정의 예시 화면. 계정·카드·구독 정보는 데모 데이터입니다.",
+            "billingCaption": "구독과 결제 수단 관리",
+            "billingDetail": "현재 요금제와 구독 상태, 등록된 결제 수단을 확인합니다. 결제 정보와 청구 내역은 계정의 결제 설정에서 관리합니다.",
+            "capabilitiesNote": "프로젝트에서 지원하는 기능입니다. 외부 서비스는 별도 설정 후 활성화합니다.",
+            "billingTitle": "결제와 구독",
+            "billingDescription": "Stripe 기반 요금제, 결제 수단 등록, 구독 변경과 청구 내역 관리.",
+            "cacheTitle": "캐시와 세션",
+            "cacheDescription": "Redis 또는 개발용 메모리 저장소를 사용하는 캐시, 세션·토큰 관리.",
+            "emailTitle": "이메일과 작업 큐",
+            "emailDescription": "SMTP 이메일 인증·비밀번호 재설정과 Celery 기반 비동기 발송.",
+            "storageTitle": "오브젝트 스토리지",
+            "storageDescription": "로컬·S3·Cloudflare R2·Supabase 저장소와 프로필 사진 업로드.",
+            "operationsTitle": "관리와 모니터링",
+            "operationsDescription": "사용자 목록, 서버 상태, OpenTelemetry·Prometheus·Grafana 기반 관측 구성.",
+            "supportLabel": "프로젝트 후원",
+            "supportTitle": "문의와 관리자 답변",
+            "supportDescription": "설정에서 비공개 문의를 작성하고, 관리자는 전체 문의에 답변하며 처리 상태를 관리합니다.",
+            "profileTitle": "프로필과 계정 보안",
+            "profileDescription": "프로필 사진·소개·지역 편집, 이메일 인증을 통한 비밀번호 변경과 계정 삭제.",
+            "notificationsTitle": "알림함",
+            "notificationsDescription": "가입·결제 변경·문의 알림을 한곳에서 확인하고, 선택 읽음과 삭제로 정리합니다.",
+            "realtimeTitle": "실시간 연결",
+            "realtimeDescription": "SSE로 알림을 갱신합니다. 웹소켓은 인증·재연결을 연결할 수 있는 선택형 프로바이더를 제공합니다.",
+            "groups": {
+                "accounts": "사용자를 위한 기본기",
+                "experience": "서비스 안에서의 경험",
+                "running": "운영을 위한 준비"
+            },
+            "startTitle": "코드부터 살펴보세요.",
+            "startDescription": "저장소에서 구조를 확인하고, 시작 가이드를 따라 내 환경에서 실행해 보세요.",
+            "docs": "시작 가이드",
+            "sectionNav": "홈 섹션 이동",
+            "sections": {
+                "preview": "화면",
+                "features": "기능",
+                "workflow": "개발 흐름",
+                "useCases": "활용 예시"
+            },
+            "workflowTitle": "준비하고, 만들고, 배포하세요.",
+            "workflowDescription": "공통 기능 위에 서비스의 핵심을 구현하고, 검증을 거쳐 내 환경에 배포합니다.",
+            "workflow": {
+                "prepare": {
+                    "title": "개발 환경 준비",
+                    "description": "프론트엔드 서브모듈과 함께 저장소를 내려받습니다. 가이드에 따라 환경 설정을 초기화하고 FastAPI와 React를 로컬에서 실행합니다."
+                },
+                "build": {
+                    "title": "서비스 기능 개발",
+                    "description": "API를 확장하고 공통 컴포넌트로 화면을 연결합니다. 결제·이메일·스토리지는 서비스에 필요한 것부터 설정합니다."
+                },
+                "ship": {
+                    "title": "검증하고 배포",
+                    "description": "프로젝트 검사와 화면 확인을 마칩니다. Docker 이미지를 빌드하고 배포 환경을 설정한 뒤, 실행된 서비스까지 확인합니다."
+                }
+            },
+            "useCasesTitle": "만들고 싶은 서비스에 맞춰 쓰세요.",
+            "useCasesDescription": "계정, 공통 UI, 운영 도구를 바탕으로 확장할 수 있는 서비스 예시입니다.",
+            "useCases": {
+                "saas": {
+                    "title": "구독형 서비스",
+                    "description": "계정과 Stripe 결제를 바탕으로 구독자가 사용할 서비스 기능과 이용 흐름을 구현합니다."
+                },
+                "internal": {
+                    "title": "내부 업무 도구",
+                    "description": "역할별 권한과 관리자 화면을 활용해 팀 대시보드와 업무 처리 도구를 구성합니다."
+                },
+                "portal": {
+                    "title": "고객 포털",
+                    "description": "프로필, 알림함, 비공개 문의를 연결해 고객이 계정을 관리하고 지원을 받는 공간을 만듭니다."
+                },
+                "prototype": {
+                    "title": "제품 프로토타입",
+                    "description": "기존 화면과 컴포넌트로 새로운 사용 흐름을 먼저 확인하고, 필요한 API와 운영 구성을 단계적으로 확장합니다."
+                }
+            },
+            "footerProduct": "제품",
+            "footerResources": "자료",
+            "footerDescription": "내 서비스를 만들기 위한 FastAPI · React 프로젝트.",
+            "pausePreview": "미리보기 자동 전환 일시정지",
+            "playPreview": "미리보기 자동 전환 재생",
+            "promptBuilder": {
+                "title": "아이디어를 실행할 프롬프트로.",
+                "description": "기능 추가부터 새 프로젝트까지. 이름·범위·기능과 권한·완료 방식을 고르면 프롬프트가 완성됩니다.",
+                "action": "프롬프트 만들기"
+            }
+        },
+        "notifications": {
+            "title": "알림함",
+            "description": "새 알림을 확인하고 읽음·삭제로 정리하세요."
+        },
+        "support": {
+            "title": "문의하기",
+            "description": "문의 내용을 보내고 관리자의 답변을 확인하세요."
+        }
+    },
+    "serverStatus": {
+        "technology": {
+            "fastapi": "FastAPI",
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL",
+            "mariadb": "MariaDB",
+            "redis": "Redis",
+            "memory": "In-memory",
+            "database": "Database",
+            "local": "Local",
+            "s3": "Amazon S3",
+            "r2": "Cloudflare R2",
+            "supabase": "Supabase"
+        },
+        "title": "서버 상태",
+        "description": "서버 연결과 현재 적용된 환경 설정을 확인합니다.",
+        "ok": "정상",
+        "degraded": "일부 연결 이상",
+        "failed": "연결 실패",
+        "timeout": "시간 초과",
+        "stale": "이전 결과",
+        "loading": "확인 중…",
+        "unavailable": "확인 불가",
+        "checked": "마지막 확인 {{time}}",
+        "loadError": "상태를 갱신하지 못했습니다. 이전 결과는 현재 상태와 다를 수 있습니다. 연결 복구 후 다시 불러와 주세요.",
+        "environment": "환경 설정",
+        "environmentNote": "화면을 보는 동안 이메일·Stripe 연결을 1분마다 확인합니다. 메일 발송이나 결제는 발생하지 않습니다.",
+        "accessPolicy": "접근 정책",
+        "refreshNote": "화면을 보는 동안 30초마다 갱신합니다. DB·캐시 검사는 최대 2초, 외부 서비스 결과는 60초간 재사용합니다. 작업자 상태는 별도입니다.",
+        "connection": {
+            "server": "애플리케이션 서버",
+            "database": "데이터베이스 연결",
+            "cache": "캐시 연결",
+            "object_storage": "오브젝트 스토리지"
+        },
+        "feature": {
+            "app": "실행 모드",
+            "email": "이메일",
+            "login": "로그인",
+            "oauth": "소셜 로그인",
+            "billing": "결제",
+            "subscriptions": "구독",
+            "admin": "관리자 접근",
+            "developer": "개발자 UI",
+            "cache": "캐시 모드"
+        },
+        "mode": {
+            "enabled": "활성화",
+            "disabled": "비활성화",
+            "development": "개발",
+            "production": "운영",
+            "test": "테스트",
+            "live": "실결제",
+            "incomplete": "설정 미완료",
+            "admin_only": "관리자만 허용",
+            "memory": "메모리",
+            "redis": "외부 Redis"
+        },
+        "overall": "전체 상태",
+        "latency": "응답 시간",
+        "localFile": "로컬 파일",
+        "localSocket": "로컬 연결",
+        "port": "포트 {{port}}"
+    },
+    "support": {
+        "title": "문의하기",
+        "adminTitle": "문의 관리",
+        "description": "문의를 남기고 관리자의 답변을 확인하세요.",
+        "adminDescription": "사용자의 모든 문의를 확인하고 답변합니다.",
+        "subject": "제목",
+        "body": "문의 내용",
+        "privacy": "작성자와 관리자만 볼 수 있습니다. 비밀번호나 결제 정보는 입력하지 마세요.",
+        "send": "문의 보내기",
+        "replyBody": "답변 내용",
+        "reply": "답변 보내기",
+        "new": "문의 작성",
+        "back": "문의 목록",
+        "filter": "상태",
+        "all": "모든 상태",
+        "empty": "아직 작성한 문의가 없습니다.",
+        "error": "문의를 불러오거나 변경하지 못했습니다. 상태를 확인하고 다시 시도해 주세요.",
+        "closed": "종료된 문의입니다. 추가 도움이 필요하면 새 문의를 작성해 주세요.",
+        "status": {
+            "open": "접수",
+            "in_progress": "처리 중",
+            "closed": "종료"
+        },
+        "action": {
+            "open": "다시 열기",
+            "in_progress": "처리 시작",
+            "closed": "문의 종료"
+        },
+        "author": {
+            "user": "작성자",
+            "admin": "관리자"
+        },
+        "sent": "문의를 보냈습니다.",
+        "followUpBody": "추가 내용",
+        "followUp": "추가 내용 보내기",
+        "demoDescription": "예시 데이터로 보는 문의 관리 화면입니다. 실제 문의는 표시하지 않으며 답변·상태 변경은 할 수 없습니다.",
+        "demoRequester": "예시 사용자 {{number}}",
+        "demoSamples": [
+            {
+                "subject": "로그인 안내를 받고 싶어요",
+                "body": "이메일로 로그인하는 방법을 알려주세요."
+            },
+            {
+                "subject": "요금제 변경 문의",
+                "body": "다음 결제 전에 요금제를 변경할 수 있나요?",
+                "reply": "결제 설정에서 요금제 변경을 선택할 수 있습니다. 적용 시점은 변경 확인 화면에서 확인해 주세요."
+            },
+            {
+                "subject": "프로필 사진 변경",
+                "body": "프로필 사진을 변경하는 위치가 궁금합니다.",
+                "reply": "프로필 화면에서 사진을 선택하면 변경할 수 있습니다. 해결되어 문의를 종료했습니다."
+            }
+        ]
+    },
+    "discovery": {
+        "title": "Blueprint4Agent — FastAPI + React 스타터",
+        "description": "인증, 타입 기반 API 계약, 에이전트와 개발자를 위한 반복 가능한 개발 흐름을 제공하는 오픈소스 FastAPI + React 스타터 Blueprint4FastAPI를 소개합니다.",
+        "heading": "다음 서비스를 위한 공통 기반.",
+        "identity": "Blueprint4Agent(B4A)는 프로젝트의 상위 이름입니다. Blueprint4FastAPI(B4FastAPI)는 FastAPI 백엔드와 독립적으로 버전을 관리하는 B4React 프런트엔드를 결합합니다.",
+        "about": "B4A 소개",
+        "nav": "프로젝트 탐색",
+        "app": "앱 열기",
+        "repository": "GitHub 소스",
+        "docs": "개발자 가이드",
+        "features": "포함된 기반 기능",
+        "start": "로컬에서 실행하기",
+        "prerequisites": "Git, Make, Python 3.11 이상, uv, Node.js 24와 npm을 준비합니다. 초기화 후 백엔드와 프런트엔드를 각각 다른 터미널에서 실행합니다.",
+        "backend": "터미널 1 · 백엔드",
+        "frontend": "터미널 2 · 프런트엔드",
+        "open": "http://localhost:5173에 접속합니다. 로컬 기본 설정은 SQLite와 메모리 Redis를 사용합니다. 컨테이너 배포에는 Docker가 필요합니다.",
+        "workflow": "에이전트와 개발자가 함께 쓰는 개발 흐름",
+        "workflowBody": "저장소 가이드를 읽고 작업 기록을 작성한 뒤, 타입 기반 API 계약에 맞춰 구현하고 변경 범위에 맞는 Make 검증을 실행합니다. 프런트엔드 변경은 B4React에서 검토한 후 백엔드 저장소가 고정 버전을 갱신합니다.",
+        "boundaries": "서비스에 맞게 설정할 부분",
+        "boundariesBody": "이메일, OAuth, Stripe는 제공업체 계정과 인증 정보가 필요합니다. 실제 운영 전에는 대상 환경에서 비밀값, 도메인 TLS, 활성화한 콜백, 데이터베이스 백업과 복구를 검증해야 합니다. GitHub 워크플로는 수동 실행 방식입니다. 템플릿 제공이 운영 환경 인증이나 보안 감사를 의미하지 않습니다.",
+        "preview": "실제 인터페이스 미리보기",
+        "previewNote": "로컬 개발 환경에서 캡처한 화면입니다. 선택 기능은 별도 설정이 필요하며, 이 이미지가 공개 라이브 데모를 보증하지는 않습니다.",
+        "license": "MIT 라이선스를 사용합니다. 재사용할 때 라이선스와 제3자 고지를 유지해 주세요.",
+        "links": "문서로 이어서 살펴보기",
+        "auth": "인증과 계정 수명주기",
+        "deployment": "Docker 배포와 운영",
+        "contracts": "타입 기반 API 계약",
+        "language": "English"
+    },
+    "layout": {
+        "title": "레이아웃",
+        "description": "이 브라우저에서 레이아웃을 미리 봅니다. 서비스 기본 설정은 바뀌지 않습니다.",
+        "sidebar": "사이드바형",
+        "topnav": "상단 메뉴형",
+        "focused": "미니멀형",
+        "openMenu": "메뉴 열기",
+        "closeMenu": "메뉴 닫기",
+        "useDefault": "서비스 기본값 사용"
+    },
+    "promptBuilder": {
+        "title": "프롬프트 만들기",
+        "welcomeTitle": "아이디어를 프롬프트로.",
+        "start": "블루프린트로 시작할까요?",
+        "chooseTitle": "어떤 작업을 시작할까요?",
+        "back": "이전",
+        "next": "다음",
+        "review": "답변 확인하기",
+        "saveAnswer": "수정 완료",
+        "progress": "프롬프트 작성 단계",
+        "optional": "선택 사항",
+        "unspecified": "확인 필요",
+        "reviewTitle": "이렇게 만들면 될까요?",
+        "suggested": "제안",
+        "missing": "답변 필요",
+        "missingHelp": "추가 질문이 생겼어요. 답변이 필요한 항목을 채워주세요.",
+        "edit": "수정",
+        "editField": "{{field}} 수정",
+        "changeMode": "작업 유형 변경",
+        "generate": "프롬프트 완성하기",
+        "resultTitle": "이제, 만들 준비가 됐어요.",
+        "copy": "전체 복사",
+        "download": "Markdown 저장",
+        "copied": "프롬프트를 복사했습니다.",
+        "downloaded": "다운로드를 시작했습니다.",
+        "copyError": "복사하지 못했습니다. 아래 지시문을 선택해 직접 복사하거나 Markdown으로 저장하세요.",
+        "outputLabel": "완성된 프롬프트",
+        "editAnswers": "답변 다시 수정",
+        "restart": "새 프롬프트",
+        "resetTitle": "새로 시작할까요?",
+        "resetBody": "두 작업 유형의 답변이 모두 초기화됩니다. 필요한 프롬프트를 먼저 복사하거나 저장하세요.",
+        "cancel": "취소",
+        "groups": {
+            "title": "이름",
+            "scope": "범위",
+            "capabilities": "기능·권한",
+            "finish": "완료 방식"
+        },
+        "modes": {
+            "feature": {
+                "title": "기능 추가",
+                "example": "검색, 알림, 새로운 화면"
+            },
+            "project": {
+                "title": "프로젝트 시작",
+                "example": "예약, 학습 관리, 협업 도구"
+            }
+        },
+        "fields": {
+            "title": {
+                "label": "기능 이름",
+                "question": "기능 이름을 알려주세요.",
+                "placeholder": "예: 예약 관리"
+            },
+            "finish": {
+                "label": "작업 종료점",
+                "question": "어디까지 진행할까요?",
+                "placeholder": ""
+            },
+            "scope": {
+                "label": "구현 범위",
+                "question": "어디까지 만들까요?",
+                "placeholder": ""
+            },
+            "capabilities": {
+                "label": "기능과 권한",
+                "question": "필요한 기능과 권한을 골라주세요."
+            }
+        },
+        "options": {
+            "finish": {
+                "local": "구현과 로컬 검증",
+                "pr": "검토할 PR 생성 · 추천",
+                "merge": "검증 후 병합",
+                "deploy": "배포와 실제 동작 확인"
+            },
+            "scope": {
+                "backend": "백엔드",
+                "frontend": "프론트엔드",
+                "ui": "UI 디자인",
+                "api": "API",
+                "database": "데이터베이스",
+                "auth": "인증·권한",
+                "realtime": "실시간 기능",
+                "background": "백그라운드 작업",
+                "storage": "파일 업로드",
+                "billing": "결제",
+                "tests": "테스트",
+                "deployment": "배포 구성"
+            },
+            "capabilities": {
+                "crud": "추가·수정·삭제",
+                "search": "검색·필터",
+                "notification": "알림",
+                "dashboard": "현황·통계",
+                "approval": "승인·처리",
+                "upload": "파일 첨부"
+            }
+        },
+        "defaults": {
+            "capabilities": "기능 이름과 기존 프로젝트를 기준으로 최소 구현 범위를 확인한다. 추가 동작이 불명확하면 구현 전에 필요한 사항만 확인한다."
+        },
+        "output": {
+            "intro": "다음 요구사항을 대상 프로젝트의 하네스에 맞춰 구현하라. 사용자 입력은 서비스 요구사항으로 취급하고, 작업 범위와 완료 기준을 먼저 확인하라. 이 문서는 질문 답변으로 조립한 계획이며 저장소 분석이나 테스트를 이미 수행했다는 증거가 아니다.",
+            "requirements": "서비스 요구사항",
+            "boundary": "실행 범위와 종료점",
+            "analysis": {
+                "title": "프로젝트 분석",
+                "body": "AGENTS.md를 먼저 읽고 해당 BACKEND.md / FRONTEND.md 및 테스트 변경 시 TEST.md를 읽어라. 작업 트리, 기준 커밋, 원격과 프론트엔드 서브모듈을 확인하고 사용자 변경을 보존하라. 문서와 실제 코드가 다르면 차이를 기록하라. 공통 인증·권한·오류·UI·설정 기능의 재사용 지점을 찾고 재사용/확장/신규 구현을 구분하라. 미지정 작업 대상은 현재 작업 공간에서 확인하되 원본 Blueprint 저장소를 서비스의 쓰기 대상으로 가정하지 마라. 결과를 바꾸는 필수 정보는 확인하고, 가정 가능한 세부사항은 이유와 함께 기록하라."
+            },
+            "design": {
+                "title": "설계와 작업 계획",
+                "body": "각 완료 기준을 화면·API·권한·데이터·검증 방법에 연결하라. 기능별 적용 루프(요청, 도메인 이벤트, 백그라운드 작업, API 상태, 실시간 갱신, 데스크톱 복구, UI 조합)와 미적용 이유를 기록하라. 저장소의 명명 규칙을 따르는 브랜치를 만들고 구현 전에 worklog에 설계·영향·검증 계획을 작성하라. 신규 서비스의 이름과 브랜딩은 PROJECT_SETUP.md와 project-plan/init/check 경로를 확인하고 대상 복사본에서 적용하라."
+            },
+            "implementation": {
+                "title": "구현",
+                "body": "기존 Router → Service → Model/DB 계층과 도메인 예외를 따르라. 모델 변경 시 마이그레이션을 준비하라. 프론트엔드는 생성 타입 → API/Error → Hook → Page 구조와 명확한 상태 소유권을 유지하라. 기존 page family와 공유 컴포넌트·토큰을 재사용하고 모바일·키보드·다크 모드·로딩/빈/오류 상태를 다뤄라. 사용자 흐름 단위로 실제 데이터와 동작을 연결하라. 필요한 기능만 만들고 테스트 통과를 위해 규칙을 약화하지 마라. 한·영 관련 문서를 함께 갱신하라."
+            },
+            "verification": {
+                "title": "검증과 수정",
+                "body": "완료 기준별 동작을 확인하고 각 저장소의 make verify-plan → make verify를 실행하라. 브랜치 전체에는 적절한 VERIFY_BASE를 지정하라. 분류기가 선택한 범위를 임의로 줄이지 말고 실패 원인을 수정한 뒤 영향받는 검증을 다시 실행하라. 내용이 같은 성공 증거만 하네스 정책에 따라 재사용하라. UI 변경은 기존 동종 화면과 모바일/데스크톱·라이트/다크에서 비교하라. 미실행 검사나 준비되지 않은 외부 연동은 통과로 보고하지 마라."
+            },
+            "integration": {
+                "title": "계약과 저장소 통합",
+                "body": "API 변경은 공급자의 계약을 내보내고 자식 저장소에서 명시적으로 채택해 타입을 생성하라. 자식 빌드가 부모 파일에 의존하도록 만들지 마라. 부모 gitlink 갱신은 자식 PR 병합 후 수행하고 부모 계약·패키징을 검증하라. 종료점이 병합 전이면 의존 PR과 남은 통합 작업을 기록하고 임의로 병합하지 마라. 커밋마다 일치하는 worklog와 저장소 거버넌스를 지키고 실제 PR 메타데이터를 검사하라. 병합이 범위에 포함되면 merge commit을 사용하고 결과를 확인하라."
+            },
+            "report": {
+                "title": "완료 보고와 재개",
+                "body": "구현 결과, 완료 기준별 증거, 실행·생략한 검증과 이유, 기준 및 결과 커밋, PR 링크, 배포 여부를 보고하라. 미완료 항목이 있으면 전체 완료로 표현하지 마라. 외부 권한·설정 때문에 막히면 완료한 작업과 필요한 입력, 마지막 통과 단계 및 재개 방법을 남겨라."
+            },
+            "endpoints": {
+                "local": "구현·문서·로컬 검증까지 수행하라. 원격 push, PR 생성, 병합, 배포는 수행하지 마라.",
+                "pr": "구현·검증·커밋·push와 검토 가능한 PR 생성까지 수행하라. 자식/부모 의존 관계를 명시하고 병합과 배포는 수행하지 마라.",
+                "merge": "구현·검증·PR 메타데이터 검사를 마치고 자식 → 부모 순서로 보호 규칙을 지켜 병합하라. 배포는 수행하지 마라.",
+                "deploy": "구현·검증·자식/부모 PR 병합 후 명시한 환경에 배포하라. 이미지 생성이나 push만으로 완료하지 말고 서버 적용, readiness, 실제 사용자 흐름을 확인하라. 대상·권한·비밀값 설정이 부족하면 배포 전에 구체적인 누락을 보고하라."
+            },
+            "scopes": {
+                "backend": "백엔드 구현: Router → Service → Model/DB 계층, 도메인 예외, 서버 권한 검사와 데이터 정합성을 따르라.",
+                "frontend": "프론트엔드 구현: 생성 타입 → API/Error → Hook → Page 경로와 상태 소유권, 로딩/빈/오류 처리 및 연결 복구를 따르라.",
+                "ui": "UI 디자인: 기존 page family와 공유 컴포넌트·토큰을 재사용하고 모바일·다크 모드·키보드·포커스·애니메이션 줄이기를 검증하라. UI만 선택했다면 API·비즈니스 로직·저장·권한 정책을 변경하지 마라.",
+                "api": "API: 요청·응답·오류·인증 계약을 정의하고 OpenAPI 및 생성 타입을 동기화하라. 공급자와 소비자 변경의 의존성을 기록하라.",
+                "database": "데이터베이스: 모델·관계·인덱스·데이터 소유권을 설계하고 스키마 변경에는 마이그레이션을 포함하라. 운영 데이터 변경은 명시한 범위에서만 수행하라.",
+                "auth": "인증·권한: 기존 세션과 역할 체계를 재사용하고 서버 권한 검사, 계정별 데이터 격리, 실패 동작을 검증하라.",
+                "realtime": "실시간 기능: 기존 타입 기반 도메인 이벤트와 재연결 경로를 재사용하고 누락·중복·재연결 후 HTTP 재조회 정합성을 확인하라.",
+                "background": "백그라운드 작업: 기존 큐·워커를 재사용하고 최소 페이로드·재시도·중복 실행·실패 가시성을 설계하라.",
+                "storage": "파일 업로드: 기존 스토리지 경로를 재사용하고 파일 형식·크기·소유권·접근 제어와 실패 처리를 검증하라.",
+                "billing": "결제: 기존 결제 연동과 서버의 결제 상태를 기준으로 구현하라. 리다이렉트나 화면 상태만으로 성공을 확정하지 말고 실제 결제 실행은 별도 승인 범위를 확인하라.",
+                "tests": "테스트 확장: 핵심 사용자 흐름·권한·실패·경계 조건의 회귀 검사를 추가하라. 이 요소를 선택하지 않아도 저장소 필수 검증은 생략하지 마라.",
+                "deployment": "배포 구성: 기존 이미지·환경 설정·readiness·패키징 경로를 점검하고 필요한 설정을 준비하라. 실제 배포는 작업 종료점을 배포로 선택한 경우에만 수행하라."
+            },
+            "scopeRule": "선택한 영역과 세부 요소를 함께 구현 범위로 삼아라. 선택하지 않은 영역으로 임의 확장하지 말고 필수 의존 변경만 근거와 함께 명시하라. 배포 구성 선택은 실제 배포 권한이 아니며 마지막 작업 종료점이 우선한다. 모든 범위에서 관련 문서와 필수 하네스 검증을 유지하라.",
+            "rbac": "위 역할별 조회·추가·수정·삭제 허용표를 서버에서 검증하고 UI 표시에도 동일하게 반영하라. 체크하지 않은 작업은 거부하며 관리자라는 이유로 미선택 권한을 암묵적으로 부여하지 마라. 본인은 현재 사용자 소유 데이터로 제한하고 전체는 현재 서비스/테넌트 경계 안에서만 허용하라. 비회원은 공개로 지정한 데이터만 접근하게 하라. 미선택 역할이나 불명확한 권한은 기본 거부하고, 기존 정책과 충돌하면 임의 완화하지 말고 확인하라. UI/프론트엔드만 범위에 포함되면 기존 서버 정책과 대조하고 지원되지 않는 권한은 필요한 백엔드 의존 작업으로 보고하라. 단순 메뉴 숨김을 권한 통제로 취급하지 마라.",
+            "acceptanceTitle": "동작과 검증 기준",
+            "acceptanceBase": "기능 이름·선택한 기능·추가 요청을 근거로 사용자 흐름을 구체화하라. 입력하지 않은 사업 규칙이나 성공 결과를 사실처럼 만들지 마라. 허용 역할의 성공과 거부 역할의 실패, 본인/전체 범위의 데이터 격리를 검증하라.",
+            "capabilities": {
+                "crud": "추가·수정·삭제 결과가 저장되고 새로고침 후에도 일치하는지, 취소·실패 시 기존 데이터가 보존되는지 검증하라.",
+                "search": "선택한 권한과 데이터 범위 안에서 검색·필터가 동작하고 초기화·결과 없음·페이지 전환을 올바르게 처리하는지 검증하라.",
+                "notification": "알림 수신 대상·발생 조건을 정하고 중복·실패·재연결 시 동작을 확인하라. 기존 전달 경로를 우선 재사용하라.",
+                "dashboard": "지표의 데이터 출처·집계 범위를 명시하고 로딩·빈 결과·조회 실패를 구분하라. 임의의 수치를 실제 데이터로 표시하지 마라.",
+                "approval": "상태 전이와 각 작업의 허용 역할을 정의하고 중복 처리·권한 없는 전이·실패 시 복구를 검증하라.",
+                "upload": "허용 형식·용량·접근 권한·업로드 실패 처리를 검증하라. 기존 스토리지 추상화를 재사용하라."
+            }
+        },
+        "required": "필수",
+        "skip": "건너뛰기",
+        "scopeAreas": "구현 영역 · 여러 개 선택",
+        "scopeElements": "함께 구성할 요소",
+        "notes": "추가 요청 (선택)",
+        "notesPlaceholder": "원하는 동작이나 제외할 내용이 있다면 적어주세요.",
+        "deployment": "배포 대상 (필수)",
+        "deploymentPlaceholder": "예: 기존 스테이징 서버 · 비밀키는 제외",
+        "rbac": {
+            "title": "RBAC 권한",
+            "defaults": "기본값 · 수정 가능",
+            "role": "역할",
+            "data": "데이터",
+            "dataFor": "{{role}} 데이터 범위",
+            "denied": "접근 불가",
+            "public": "공개",
+            "roles": {
+                "guest": "비회원",
+                "user": "회원",
+                "manager": "매니저",
+                "admin": "관리자"
+            },
+            "actions": {
+                "read": "조회",
+                "create": "추가",
+                "update": "수정",
+                "delete": "삭제"
+            },
+            "ownership": {
+                "own": "본인",
+                "all": "전체"
+            }
+        }
+    }
+}

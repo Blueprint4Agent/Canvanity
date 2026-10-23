@@ -1,0 +1,243 @@
+import { PasswordRequirements } from "../../components/features/auth/PasswordRequirements";
+import { useToast } from "../../hooks/useToast";
+import { AuthPageFrame } from "../../components/layout/AuthPageFrame";
+import { FormEvent, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
+
+import { InlineMessage } from "../../components/ui/status/InlineMessage";
+import { ErrorCard, WarningCard } from "../../components/ui/status/StatusCard";
+import { Button, InputField, ValidationCard, type ValidationRule } from "../../components/ui";
+import { useAuthContext } from "../../hooks/useAuth";
+import { useAuthApi } from "../../hooks/api/auth/useAuthApi";
+import { useAppConfig } from "../../hooks/useFeatures";
+import { isValidEmail, isValidPassword } from "../../utils/validation";
+
+export function SignupPage({ embedded = false }: { embedded?: boolean }) {
+    const { t } = useTranslation();
+    const showToast = useToast();
+    const { signup, user } = useAuthContext();
+    const { extractApiDetail, resolveAuthErrorMessage } = useAuthApi();
+    const { data: appConfig, loading: configLoading } = useAppConfig();
+    const navigate = useNavigate();
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [submitting, setSubmitting] = useState(false);
+    const [nameErrorMessage, setNameErrorMessage] = useState("");
+    const [emailErrorMessage, setEmailErrorMessage] = useState("");
+    const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+    const [confirmPasswordErrorMessage, setConfirmPasswordErrorMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const [warningMessage, setWarningMessage] = useState("");
+
+    const passwordMismatch = confirmPassword.length > 0 && confirmPassword !== password;
+    const hasFeedback = useMemo(
+        () => Boolean(errorMessage || warningMessage),
+        [errorMessage, warningMessage],
+    );
+    const emailRules = useMemo<ValidationRule[]>(
+        () => [
+            {
+                label: t("signup.rules.email.format"),
+                isValid: isValidEmail(email),
+            },
+        ],
+        [email, t],
+    );
+    const confirmRules = useMemo<ValidationRule[]>(
+        () => [
+            {
+                label: t("signup.rules.confirm.match"),
+                isValid: confirmPassword.length > 0 && !passwordMismatch,
+            },
+        ],
+        [confirmPassword.length, passwordMismatch, t],
+    );
+    const emailEnabled = appConfig?.email_enabled === true;
+
+    const onSubmit = async (event: FormEvent) => {
+        event.preventDefault();
+        setSubmitting(true);
+        setNameErrorMessage("");
+        setEmailErrorMessage("");
+        setPasswordErrorMessage("");
+        setConfirmPasswordErrorMessage("");
+        setErrorMessage("");
+        setWarningMessage("");
+
+        if (configLoading) {
+            setWarningMessage(t("signup.configLoading"));
+            setSubmitting(false);
+            return;
+        }
+
+        let hasEmptyField = false;
+        if (!name.trim()) {
+            setNameErrorMessage(t("auth.errors.requiredName"));
+            hasEmptyField = true;
+        }
+        if (!email.trim()) {
+            setEmailErrorMessage(t("auth.errors.requiredEmail"));
+            hasEmptyField = true;
+        }
+        if (!password.trim()) {
+            setPasswordErrorMessage(t("auth.errors.requiredPassword"));
+            hasEmptyField = true;
+        }
+        if (!confirmPassword.trim()) {
+            setConfirmPasswordErrorMessage(t("auth.errors.requiredConfirmPassword"));
+            hasEmptyField = true;
+        }
+
+        if (hasEmptyField) {
+            setSubmitting(false);
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setWarningMessage(t("auth.errors.invalidEmail"));
+            setSubmitting(false);
+            return;
+        }
+        if (!isValidPassword(password)) {
+            setWarningMessage(t("auth.errors.invalidPasswordPattern"));
+            setSubmitting(false);
+            return;
+        }
+        if (passwordMismatch) {
+            setWarningMessage(t("auth.errors.passwordMismatch"));
+            setSubmitting(false);
+            return;
+        }
+
+        const normalizedEmail = email.trim();
+        try {
+            await signup({ name, email: normalizedEmail, password });
+            showToast(t("toast.signupSuccess"));
+            navigate("/signup/email-sent", {
+                replace: true,
+                state: emailEnabled ? { email: normalizedEmail } : undefined,
+            });
+        } catch (nextError) {
+            setErrorMessage(
+                resolveAuthErrorMessage(
+                    t,
+                    extractApiDetail(nextError),
+                    "auth.errors.signupFallback",
+                ),
+            );
+            showToast(t("toast.signupError"));
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <AuthPageFrame
+            embedded={embedded}
+            title={t("signup.title")}
+            subtitle={t("signup.subtitle")}
+        >
+            <form onSubmit={onSubmit} className="form" noValidate>
+                <InputField
+                    label={t("signup.fields.name")}
+                    type="text"
+                    autoComplete="name"
+                    minLength={2}
+                    maxLength={50}
+                    value={name}
+                    onValueChange={(value) => {
+                        setName(value);
+                        if (nameErrorMessage) {
+                            setNameErrorMessage("");
+                        }
+                        if (warningMessage || errorMessage) {
+                            setWarningMessage("");
+                            setErrorMessage("");
+                        }
+                    }}
+                />
+                {nameErrorMessage ? <InlineMessage>{nameErrorMessage}</InlineMessage> : null}
+                <InputField
+                    label={t("signup.fields.email")}
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onValueChange={(value) => {
+                        setEmail(value);
+                        if (emailErrorMessage) {
+                            setEmailErrorMessage("");
+                        }
+                        if (warningMessage || errorMessage) {
+                            setWarningMessage("");
+                            setErrorMessage("");
+                        }
+                    }}
+                />
+                {emailErrorMessage ? <InlineMessage>{emailErrorMessage}</InlineMessage> : null}
+                <ValidationCard title={t("signup.validation.email")} rules={emailRules} />
+                <InputField
+                    label={t("signup.fields.password")}
+                    type="password"
+                    autoComplete="new-password"
+                    value={password}
+                    onValueChange={(value) => {
+                        setPassword(value);
+                        if (passwordErrorMessage) {
+                            setPasswordErrorMessage("");
+                        }
+                        if (warningMessage || errorMessage) {
+                            setWarningMessage("");
+                            setErrorMessage("");
+                        }
+                    }}
+                />
+                {passwordErrorMessage ? (
+                    <InlineMessage>{passwordErrorMessage}</InlineMessage>
+                ) : null}
+                <PasswordRequirements password={password} />
+                <InputField
+                    label={t("signup.fields.confirmPassword")}
+                    type="password"
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onValueChange={(value) => {
+                        setConfirmPassword(value);
+                        if (confirmPasswordErrorMessage) {
+                            setConfirmPasswordErrorMessage("");
+                        }
+                        if (warningMessage || errorMessage) {
+                            setWarningMessage("");
+                            setErrorMessage("");
+                        }
+                    }}
+                />
+                {confirmPasswordErrorMessage ? (
+                    <InlineMessage>{confirmPasswordErrorMessage}</InlineMessage>
+                ) : null}
+                <ValidationCard title={t("signup.validation.confirm")} rules={confirmRules} />
+                {hasFeedback && warningMessage ? (
+                    <WarningCard title={t("cards.warningTitle")} message={warningMessage} />
+                ) : null}
+                {hasFeedback && errorMessage ? (
+                    <ErrorCard title={t("cards.errorTitle")} message={errorMessage} />
+                ) : null}
+                <Button
+                    appearance={embedded ? "pill" : "default"}
+                    type="submit"
+                    disabled={submitting || passwordMismatch || configLoading}
+                >
+                    {t("signup.submitIdle")}
+                </Button>
+            </form>
+            <p className="muted auth-footer">
+                {t("signup.loginPrompt")}{" "}
+                <Link to={user ? "/login?switch=1" : "/login"} className="text-link">
+                    {t("signup.loginLink")}
+                </Link>
+            </p>
+        </AuthPageFrame>
+    );
+}

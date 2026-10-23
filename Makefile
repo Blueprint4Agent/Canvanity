@@ -102,7 +102,7 @@ frontend-desktop-dev: ## Run the frontend in the Tauri desktop shell
 	cd $(FRONTEND_DIR) && $(NPM) run tauri:dev
 
 .PHONY: frontend-build
-frontend-build: project-brand ## Build only B4React dist artifacts
+frontend-build: project-brand ## Build only 통합 프런트엔드 dist artifacts
 	cd $(FRONTEND_DIR) && $(NPM) run build
 
 .PHONY: frontend-desktop-build
@@ -110,7 +110,7 @@ frontend-desktop-build: ## Build the Tauri desktop application
 	cd $(FRONTEND_DIR) && $(NPM) run tauri -- build
 
 .PHONY: frontend-build-sync
-frontend-build-sync: ## Regenerate local pinned types, then build B4React dist
+frontend-build-sync: ## Regenerate local pinned types, then build 통합 프런트엔드 dist
 	cd $(FRONTEND_DIR) && $(NPM) run build:sync
 
 .PHONY: contract-export contract-check frontend-api-generate frontend-typecheck
@@ -120,7 +120,7 @@ contract-export: ## Export the OpenAPI baseline without running a server
 contract-check: frontend-contract-check ## Check backend export and pinned frontend baseline
 	cd $(BACKEND_DIR) && $(UV) run python -m app.export_openapi ../../contracts/openapi.json --check
 
-frontend-api-generate: ## Generate types from B4React own pinned baseline
+frontend-api-generate: ## Generate types from 통합 프런트엔드 own pinned baseline
 	cd $(FRONTEND_DIR) && $(NPM) run generate:api:contract
 
 frontend-typecheck: ## Check frontend TypeScript without building static artifacts
@@ -173,8 +173,8 @@ docker-observability-down: ## Stop only local observability services
 	cd $(DOCKER_DIR) && $(DOCKER_COMPOSE) --env-file .env --profile observability stop grafana prometheus otel-collector tempo loki
 
 .PHONY: frontend-init frontend-package frontend-contract-check frontend-api-check
-frontend-init: ## Initialize submodules at their committed versions
-	git submodule update --init --recursive
+frontend-init: ## 통합 프런트엔드 소스 확인
+	@test -f "$(FRONTEND_DIR)/package.json" || (echo "src/frontend 소스를 확인하세요." >&2; exit 1)
 
 frontend-package: frontend-build ## Build and package frontend into backend static dist
 	node scripts/package-frontend.mjs "$(FRONTEND_DIR)/dist" "$(BACKEND_DIR)/app/static/dist"
@@ -291,7 +291,6 @@ docker-celery-down: ## Stop Celery processes without stopping API or Redis
 .PHONY: hooks-install hooks-test
 hooks-install: ## Install commit-msg and pre-push hooks in this clone
 	python3 scripts/git_hooks.py install
-	$(MAKE) -C $(FRONTEND_DIR) hooks-install
 hooks-test: ## Test Git hooks and verification receipt invalidation
 	python3 -m unittest discover -s scripts -p 'test_git_hooks.py'
 	python3 -m unittest discover -s scripts -p 'test_verification_cache.py'
@@ -320,5 +319,6 @@ base-path-deployment-test: ## Verify two isolated monolithic apps behind real Ng
 verification-harness-test: ## Verify classifier, scheduler, receipts and Git governance in isolation
 	python3 -m unittest discover -s scripts -p 'test_verification*.py'
 	python3 -m unittest discover -s scripts -p 'test_git_hooks.py'
+	python3 -m unittest discover -s scripts -p '*_governance.py'
 deployment-check: env-contract-check project-init-check project-init-test ## Test deployment orchestration with fake Docker; no deployment
 	cd $(BACKEND_DIR) && TRACING_ENABLED=false $(UV) run python -m pytest tests/unit/core/test_deployment_flow.py tests/unit/core/test_docker_mail.py

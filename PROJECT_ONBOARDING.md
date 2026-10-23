@@ -1,161 +1,144 @@
-# Agent-led project initialization
+# 에이전트와 함께 프로젝트 초기화
 
-[한국어](notes/ko/PROJECT_ONBOARDING.md)
+> Canvanity 적용: 개발 문서·커밋·PR은 한국어이며, src/frontend는 같은 저장소의 일반 디렉터리입니다. 아래 기반 템플릿의 별도 저장소·서브모듈 절차는 적용하지 않습니다. 루트 AGENTS.md와 PROJECT_BRIEF.md를 우선합니다.
 
-This is the repository's conversational setup procedure, entered through
-[AGENTS.md](AGENTS.md). A developer says **“프로젝트 초기화하기”** or
-**“initialize this project”** to an agent working in their copied/forked repository.
-An agent must read and follow AGENTS.md for this routing to work; this is not an
-executable listener or an automatic fork/clone event. Do not initialize the blueprint
-when asked only to explain, review or change this procedure.
+[AGENTS.md](AGENTS.md)에서 진입하는 저장소 내 대화형 초기화 절차입니다.
+개발자가 복사하거나 포크한 프로젝트에서 에이전트에게 **“프로젝트 초기화하기”** 또는
+**“initialize this project”**라고 요청하면 시작합니다. 에이전트가 AGENTS.md를 읽고
+따라야 동작하며, 실행형 리스너나 fork/clone 자동 이벤트가 아닙니다.
+이 절차의 설명·검토·수정만 요청했다면 블루프린트 자체를 초기화하지 않습니다.
 
-## Select the target and intent
+## 대상과 실행 의도
 
-Determine whether the request is actual downstream initialization or a trigger rehearsal.
-Reuse explicit context: “init trigger check” means rehearsal. Rehearsals run only in an
-independent disposable clone with example env and the pinned child, never in the source
-workspace. Do not apply project-specific changes to upstream or open upstream PRs from
-that rehearsal. If real initialization is requested inside the upstream template and no
-downstream target is known, collect the intended destination before writing product files.
-Follow [the coverage and rollback audit](PROJECT_ONBOARDING_AUDIT.md) before generators
-run. For actual targets, create PROJECT_INITIALIZATION_AUDIT.md with the complete surface
-inventory and rollback record. Do not create a real service merely to demonstrate intake.
+실제 downstream 초기화인지 트리거 리허설인지 먼저 구분합니다. “init 트리거 확인용”처럼
+명시한 목적을 재사용하며 리허설은 예제 env와 고정 자식을 갖춘 독립 임시 복제본에서만
+진행합니다. 원본 작업공간에 프로젝트별 변경을 적용하거나 리허설에서 upstream PR을
+만들지 않습니다. upstream 템플릿 안에서 실제 초기화를 요청했는데 대상이 없다면 제품
+파일 작성 전에 downstream 위치를 수집합니다. 정보 수집 시연을 실제 서비스 생성으로
+바꾸지 않습니다.
+생성기 실행 전에 [적용 범위와 복구 감사](PROJECT_ONBOARDING_AUDIT.md)를 따릅니다.
+실제 대상에 PROJECT_INITIALIZATION_AUDIT.md를 작성해 전체 표면과 복구 기록을 남깁니다.
 
-## Intake
+## 정보 수집
 
-Use the developer's conversation language. First read existing public project files
-and any `PROJECT_BRIEF.md`, inspect parent/child status, and preserve unrelated edits.
-Follow the repository's task-branch and planned-worklog rules before writing files.
-Ask one stage per turn, skipping questions already answered. A stage can group
-closely related choices; do not present the whole questionnaire at once. Wait for
-answers rather than inventing project intent or treating silence as approval.
+개발자의 대화 언어를 사용합니다. 기존 공개 프로젝트 파일과 `PROJECT_BRIEF.md`를 먼저
+읽고 부모/자식 작업 상태를 확인하며 무관한 변경을 보존합니다. 파일 작성 전 저장소의
+작업 브랜치·계획 워크로그 규칙을 따릅니다. 한 번에 한 단계씩 질문하고 이미 답한
+항목은 건너뜁니다. 밀접한 선택은 같은 단계에서 묶되 전체 설문을 한꺼번에 내놓지
+않습니다. 답변을 기다리며 프로젝트 의도를 지어내거나 침묵을 승인으로 취급하지 않습니다.
 
-| Stage | Collect | Example next question |
+| 단계 | 수집 항목 | 다음 질문 예시 |
 | --- | --- | --- |
-| 1. Name | Display name; propose a short name, kebab-case slug and reverse-DNS ID for acceptance or correction | What is the project name? I can propose the technical names from it. |
-| 2. Overview | Purpose, target users, main problem, first working user journey and initial scope | Who uses it, and what should they accomplish on the first screen? |
-| 3. Screens | Images, URLs, local files or a written screen description; priority screens and what to adopt | Do you have a reference screen, or should we define the first screen in words? |
-| 4. Brand | Existing icon/logo source; light/dark treatment; create a simple asset, use a temporary one, or defer; web/native targets | Do you have a brand icon, or should we create a simple one from a direction you choose? |
-| 5. Languages | UI default and supported locales; development-document primary language and translation scope; agent conversation language if different | What should the UI and development-document languages be? For example: Korean UI with English available, Korean primary docs. |
-| 6. Features | Login, email and OAuth; web/desktop targets and requirements needed for the first journey | Does the first version need login, email or OAuth, and will it run on web or desktop? |
+| 1. 이름 | 표시 이름, 제안 후 수락/수정할 짧은 이름·kebab-case slug·역도메인 앱 ID | 프로젝트 이름은 무엇인가요? 기술 식별자는 이름을 기준으로 제안할 수 있습니다. |
+| 2. 개요 | 목적, 대상 사용자, 해결할 문제, 첫 사용자 동선과 초기 범위 | 누가 사용하며 첫 화면에서 무엇을 완료해야 하나요? |
+| 3. 화면 | 이미지·URL·로컬 파일 또는 글로 된 화면 설명, 우선 구현 화면과 참고할 요소 | 예시 화면이 있나요? 없다면 첫 화면 구성을 글로 정할까요? |
+| 4. 브랜드 | 아이콘/로고 원본, 라이트/다크 처리, 간단한 제작·임시 사용·보류, 웹/네이티브 대상 | 브랜드 아이콘이 있나요? 없다면 원하는 방향으로 간단한 아이콘을 만들까요? |
+| 5. 언어 | UI 기본/지원 언어, 개발 문서 기본 언어와 번역 범위, 다른 경우 에이전트 대화 언어 | UI와 개발 문서는 어떤 언어로 할까요? 예: UI 한국어 기본·영어 지원, 문서는 한국어 우선. |
+| 6. 기능 | 로그인·이메일·OAuth, 웹/데스크톱 대상과 첫 동선에 필요한 요구사항 | 첫 버전에 로그인·이메일·OAuth가 필요한가요? 웹과 데스크톱 중 어디서 실행하나요? |
 
-Proposals are suggestions until accepted. A user may explicitly choose “no reference,”
-“temporary icon,” “web only,” or another deferral. Record it with its effect instead
-of repeatedly blocking intake. If a supplied image/link cannot be accessed, explain
-which input is missing and ask for an accessible file or written direction. Never
-claim to have inspected a reference that was not read. Do not collect secrets in the
-conversation or public files; provider credentials belong in ignored env/secret stores.
+제안은 수락되기 전까지 확정값이 아닙니다. 사용자가 “참고 화면 없음”, “임시 아이콘”,
+“웹만” 등을 명시적으로 선택하면 그 영향과 함께 기록하고 반복해서 막지 않습니다.
+이미지나 링크를 읽을 수 없다면 어떤 입력이 빠졌는지 설명하고 접근 가능한 파일이나
+글로 된 방향을 요청합니다. 보지 못한 자료를 확인했다고 말하지 않습니다.
+인증 정보는 대화나 공개 파일에서 수집하지 않고 무시된 env/비밀 저장소에서 관리합니다.
 
-Record accepted public answers incrementally in root `PROJECT_BRIEF.md`, in the
-chosen document language once known. Tell the developer this file is committed
-project documentation; redact private source material or use an approved public
-summary. Keep screenshots/source assets in agreed local project paths; record
-external references with their purpose. Do not copy third-party logos or screen
-assets into the product without permission to use them.
+확정된 공개 답변은 루트 `PROJECT_BRIEF.md`에 단계별로 기록합니다. 문서 언어가 정해지면
+해당 언어로 정리합니다. 이 파일이 커밋되는 프로젝트 문서임을 알리고 비공개 자료는
+제외하거나 합의한 공개 요약만 기록합니다. 화면/원본 자산은 합의한 프로젝트 경로에
+보관하고 외부 참고자료는 용도와 함께 기록합니다. 사용 권한 없이 타사 로고나 화면의
+자산을 제품에 복사하지 않습니다.
 
-The brief is the resumable source of truth for intent and progress. Include:
+브리프는 의도와 진행 상태를 이어가는 기준이며 다음을 포함합니다.
 
-- Status: `collecting`, `applying`, `blocked`, or `complete`; current/next stage.
-- Accepted name, short name, slug, identifier, overview, audience and first journey.
-- Screen references and intended UI scope; branding source, target surfaces and deferrals.
-- UI default/supported languages, primary document language and document inventory/scope.
-- Feature/target choices, unresolved required inputs and explicit deferrals.
-- Execution checklist with affected paths, completed steps, verification evidence and blockers.
+- 상태: `collecting`, `applying`, `blocked`, `complete`와 현재/다음 단계.
+- 확정한 이름·짧은 이름·slug·identifier, 개요·사용자·첫 동선.
+- 화면 참고자료·구현 범위, 브랜드 원본·적용 대상·보류 항목.
+- UI 기본/지원 언어, 개발 문서 기본 언어와 문서 목록/번역 범위.
+- 기능/대상 선택, 필수 미응답과 명시적으로 미룬 항목.
+- 실행 체크리스트: 대상 경로, 완료 단계, 검증 근거와 차단 사유.
 
-Use `project.json` as the executable identity/features source and the brief for
-intent and workflow state. Keep overview, references and document/conversation languages out of
-`project.json`. UI default language is supported as optional `default_language` (`en` or `ko`). Resolve disagreements with
-the developer instead of silently overwriting an existing project's configuration.
+실행 가능한 이름/기능 설정은 `project.json`, 의도와 진행 상태는 브리프에서 관리합니다.
+개요·참고자료와 문서/대화 언어는 `project.json`에 추가하지 않습니다. UI 기본 언어는 선택 필드 `default_language`(`en` 또는 `ko`)로 지원합니다.
+기존 프로젝트 설정과 답변이 충돌하면 개발자와 해소하고 조용히 덮어쓰지 않습니다.
 
-## Start initialization
+## 초기화 시작
 
-When required answers are collected and optional omissions are explicitly resolved,
-show a concise accepted setup and announce **“프로젝트 초기화를 시작합니다.”**
-(or its conversation-language equivalent). Start implementation without another
-blanket permission question. Ask again only for a genuinely unresolved input or an
-action requiring separate authorization. An initialization request does not authorize
-production migration, deployment, purchasing assets or external submission.
+필수 답변을 모으고 선택 항목의 생략 여부까지 명확해지면 확정 설정을 짧게 보여주고
+**“프로젝트 초기화를 시작합니다.”**라고 알린 뒤 구현합니다. 다시 포괄적인 허락을
+묻지 않습니다. 미해결 입력이나 별도 승인이 필요한 작업만 추가로 확인합니다.
+초기화 요청은 운영 마이그레이션·배포·자산 구매·외부 제출을 허가하지 않습니다.
 
-Before editing product code, inventory all requested surfaces with the audit guide,
-identify initializer gaps and record their implementation owners. A generated name/logo
-file is not evidence that hardcoded UI/console/document references were handled.
+제품 코드 수정 전에 감사 가이드의 전체 요구 표면과 초기화 도구의 미지원 부분을
+조사하고 적용 소유자를 기록합니다. 이름/로고 파일 생성만으로 UI·콘솔·문서의 고정
+브랜드까지 반영했다고 판단하지 않습니다.
 
-1. **Prepare.** Follow root and applicable domain guides. Initialize the pinned child
-   before reading its guides with `make frontend-init`. Set the brief to `applying`,
-   update the task worklog design/verification/loop plan, and use the required named
-   branch. For child source changes use a B4React task branch and PR, merge there
-   before updating the parent gitlink. Do not commit source edits on a detached child.
-2. **Apply identity.** Run `make init` and `make install` as needed, create/update
-   public root `project.json` from the accepted values, and place approved source
-   logos under `branding/`. Run `make project-plan`, `make project-init`, then
-   `make project-check`. Preserve unrelated env values and configured secrets.
-   Follow [PROJECT_SETUP.md](PROJECT_SETUP.md) for schema, asset limits and ownership.
-3. **Implement screens.** Build the agreed first journey using the frontend domain,
-   page-family and state/performance policies. Compare an existing peer page before
-   adapting layout and components to the references. A reference establishes intent;
-   it does not replace the host UI rules. Do not stop at recording reference URLs or
-   changing the title. Implement backend contracts only when the agreed journey needs
-   them, following the backend guide. Do not fabricate working integrations or data.
-4. **Finish branding.** Check visible navigation, page/browser title, favicon and
-   agreed product surfaces. The existing initializer generates the web brand and
-   desktop product identity; favicon and Tauri installer/native icons are separate
-   source/generated assets and must be handled explicitly for selected targets.
-   Use available asset tooling when generation is requested; if unavailable, ask for
-   a source or agreed temporary alternative. Do not mark an unbuilt native package
-   or an uncreated asset as verified. Keep original brand sources in the parent;
-   ignored child `project.local.json` and `public/project-brand/` are regenerated inputs.
-5. **Apply UI language.** Inspect the actual locale initialization, persistence,
-   fallback and document language metadata before changing defaults. Ensure a fresh
-   browser gets the chosen default, existing explicit user preferences remain valid,
-   and retained locales still work. Adding a language field to the brief does not
-   change runtime behavior. Change the child's source through its governed workflow
-   if the current identity generator cannot express the selection.
-6. **Localize development documents.** Inventory active entrypoints and linked domain,
-   setup, verification and deployment docs. For Korean primary docs, use the maintained
-   `notes/ko/` counterparts where available and translate missing material; put Korean
-   content in the active root/domain entrypoints, including AGENTS.md and README.md.
-   Update linked first-party guides in the agreed inventory so developers do not
-   immediately return to English-only instructions. Preserve commands, paths, code
-   identifiers, API names, obligations and historical worklogs. Keep English copies
-   and language navigation at explicit paths when requested; adjust links relative
-   to each destination and update README's locale map. Do not mass-replace English
-   tokens in code or merely link to a Korean document and claim translation is done.
-   Record deliberately excluded third-party/generated/history files and remaining
-   agreed translations in the brief. Validate links and instruction parity.
-7. **Verify and deliver.** Review each accepted item against actual changes. Run root
-   `make verify-plan` then `make verify` with branch scope, and follow child/parent
-   integration checks. Run browser checks for screen changes, inspect brand surfaces
-   and test language defaults in a fresh context and with a saved language choice.
-   Verify document links, language navigation and retained governance rules. Record
-   selected/omitted checks and evidence in the worklog and brief; follow commit/PR
-   governance. Report completed items, deferrals and unresolved blockers. Set status
-   to `complete` only when the agreed scope, required verification and every applicable
-   row of PROJECT_INITIALIZATION_AUDIT.md have evidence or an explicit scoped decision.
-   Rerun the old-name inventory and disclose remaining references before completion. A blocked check or inaccessible required asset stays visible.
+1. **준비.** 루트와 해당 도메인 가이드를 따릅니다. `make frontend-init`으로 고정된
+   자식을 준비한 뒤 가이드를 읽습니다. 브리프를 `applying`으로 바꾸고 작업 워크로그의
+   설계·검증·루프 계획을 갱신하며 명명된 브랜치를 사용합니다. 자식 소스 변경은 B4React
+   작업 브랜치/PR에서 병합한 후 부모 gitlink를 갱신합니다. detached 자식에서 소스
+   변경을 커밋하지 않습니다.
+2. **이름/설정 적용.** 필요에 따라 `make init`, `make install`을 실행하고 확정값으로
+   공개 루트 `project.json`을 작성/갱신합니다. 승인된 로고 원본은 `branding/`에 두고
+   `make project-plan` → `make project-init` → `make project-check`를 실행합니다.
+   무관한 env와 설정된 비밀키는 보존합니다. 스키마·자산 제한·관리 범위는
+   [PROJECT_SETUP.md](PROJECT_SETUP.md)를 따릅니다.
+3. **화면 구현.** 프론트엔드 도메인·페이지 패밀리·상태/성능 정책을 따라 첫 동선을
+   구현합니다. 기존 동료 페이지와 먼저 비교한 후 참고자료에 맞게 레이아웃과 컴포넌트를
+   조정합니다. 참고자료는 의도를 전달하며 기존 UI 규칙을 대체하지 않습니다.
+   URL 기록이나 제목 변경만 하고 끝내지 않습니다. 합의한 동선에 필요한 경우에만
+   백엔드 가이드를 따라 계약을 구현하며 작동하지 않는 연동이나 데이터를 지어내지 않습니다.
+4. **브랜드 마무리.** 내비게이션·페이지/브라우저 제목·favicon 등 합의한 제품 표면을
+   확인합니다. 기존 초기화 도구는 웹 브랜드와 데스크톱 제품 식별자를 생성하지만
+   favicon과 Tauri 설치/네이티브 아이콘은 별도 소스/생성 자산이므로 선택한 대상에 맞게
+   처리합니다. 제작 요청 시 사용 가능한 자산 도구를 쓰고, 불가능하면 원본이나 합의한
+   임시 대안을 요청합니다. 만들지 않은 자산이나 빌드하지 않은 네이티브 패키지를 검증
+   완료로 표시하지 않습니다. 브랜드 원본은 부모에 두고 무시된 자식 `project.local.json`,
+   `public/project-brand/`는 재생성 입력으로 유지합니다.
+5. **UI 언어 적용.** 실제 locale 초기화·저장·fallback·문서 언어 메타데이터를 확인한 뒤
+   기본값을 변경합니다. 새 브라우저에서는 선택한 기본 언어가 적용되고 기존 사용자의
+   명시적 선택은 유효하며 유지하는 다른 언어도 동작해야 합니다. 브리프에 언어를
+   적는 것만으로 동작은 바뀌지 않습니다. 기존 생성 도구가 표현할 수 없다면 자식 소스를
+   해당 저장소 절차에 따라 수정합니다.
+6. **개발 문서 현지화.** 실제 진입 문서와 연결된 도메인·설정·검증·배포 가이드의 목록을
+   만듭니다. 한국어 우선이면 유지 중인 `notes/ko/` 대응 문서를 활용하고 빠진 내용은
+   번역하며 AGENTS.md·README.md와 도메인 진입 문서 본문을 한국어로 구성합니다.
+   합의한 목록의 연결된 자체 가이드도 함께 반영해 바로 영어 전용 지침으로 돌아가지
+   않도록 합니다. 명령·경로·코드 식별자·API 이름·준수 의무·과거 워크로그는 보존합니다.
+   영어 사본/언어 이동이 필요하면 명시적인 경로에 유지하고 목적지별 상대 링크와
+   README의 언어 경로를 맞춥니다. 코드의 영어 토큰을 일괄 치환하거나 한국어 링크만
+   추가하고 번역 완료라고 말하지 않습니다. 외부/생성/과거 파일 등 제외한 범위와 남은
+   합의 번역을 브리프에 기록하고 링크와 지침 동등성을 확인합니다.
+7. **검증/전달.** 확정 항목마다 실제 변경을 대조합니다. 브랜치 범위로 루트
+   `make verify-plan` → `make verify`를 실행하고 자식/부모 통합 검증을 따릅니다.
+   화면 변경은 브라우저에서 확인하고 브랜드 표면·새 컨텍스트의 기본 언어·언어 선택
+   저장을 검증합니다. 문서 링크·언어 이동·거버넌스 의무 보존도 확인합니다.
+   선택/생략 검사와 근거를 워크로그·브리프에 기록하고 커밋/PR 규칙을 따릅니다.
+   완료 항목·보류·차단 사유를 보고하며 합의한 구현·필수 검증과 PROJECT_INITIALIZATION_AUDIT.md의 해당 행마다
+   근거 또는 명시적 범위 결정을 갖춰야 `complete`로 표시합니다. 이전 이름을 다시 조사하고
+   남은 참조를 공개합니다. 검증 실패나 접근 불가한 필수 자산은 미완료로 남깁니다.
 
-## Resume or change direction
+## 재개 또는 방향 변경
 
-Read the brief, current manifest, Git diff, child status and recorded check evidence.
-Continue from the next incomplete stage; do not repeat accepted questions or blindly
-reapply everything. If the developer changes a choice, update the brief and reconcile
-only affected outputs, invalidating checks as needed. Never reset unrelated changes,
-rotate configured secrets, reset history or delete prior work to restart intake.
-For an existing running deployment, resolve resource/migration impact before changing
-identity or Compose namespaces; the new-project initializer is not a migration tool.
+브리프·현재 manifest·Git diff·자식 상태·검증 기록을 읽고 다음 미완료 단계부터 이어갑니다.
+이미 답한 질문이나 전체 적용을 무작정 반복하지 않습니다. 사용자가 선택을 바꾸면 브리프와
+영향받는 결과만 조정하고 관련 검증 근거를 갱신합니다. 수집을 다시 시작하려고 무관한
+변경 초기화·설정된 비밀키 교체·히스토리 초기화·기존 작업 삭제를 하지 않습니다.
+운영 중인 프로젝트는 이름/Compose 네임스페이스를 바꾸기 전 리소스·마이그레이션 영향을
+해소해야 합니다. 새 프로젝트 초기화 도구는 운영 이전 도구가 아닙니다.
 
-## Acceptance examples
+## 수용 사례
 
-- **Bare request:** “프로젝트 초기화하기” starts by asking the project name, then
-  proceeds through the missing stages. It does not immediately apply template defaults.
-- **Prefilled request:** “Acme, a Korean team dashboard; docs in Korean; web only”
-  reuses those answers and asks about the missing first journey/references/brand/features.
-- **No assets:** An explicit temporary-icon/no-reference choice permits the agreed
-  first screen to proceed; the brief records the temporary asset and its surfaces.
-- **Korean docs:** Verify active root/domain instructions and their linked inventory,
-  not just a `language: ko` note. Commands and governance requirements remain intact.
-- **Interrupted run:** Read `PROJECT_BRIEF.md`, inspect what was actually applied,
-  then resume without overwriting completed or unrelated work.
-- **Explain/change flow:** “How is init triggered?” or “add an initialization flow”
-  explains/edits this procedure without collecting a real project name or applying it.
+- **요청만 있는 경우:** “프로젝트 초기화하기”는 이름부터 다음 미응답 단계로 진행하며
+  템플릿 기본값을 바로 적용하지 않습니다.
+- **정보가 포함된 경우:** “Acme, 한국어 팀 대시보드, 문서 한국어, 웹만”은 해당 답을
+  재사용하고 빠진 첫 동선·참고자료·브랜드·기능을 질문합니다.
+- **자산이 없는 경우:** 명시적 임시 아이콘/참고자료 없음 선택으로 합의한 첫 화면을
+  진행하고 임시 자산과 적용 표면을 기록합니다.
+- **문서 한국어:** `language: ko` 기록만이 아니라 루트/도메인의 실제 진입 지침과
+  연결 문서 목록을 확인합니다. 명령과 거버넌스 의무는 유지합니다.
+- **중단/재개:** `PROJECT_BRIEF.md`와 실제 적용 상태를 확인하고 완료·무관한 작업을
+  덮어쓰지 않으며 이어갑니다.
+- **플로우 설명/수정:** “init 트리거가 뭐야?”, “초기화 플로우를 추가해줘”는 이 절차를
+  설명/수정하며 실제 프로젝트명 수집이나 초기화 적용을 시작하지 않습니다.
 
-A rehearsal must verify the original source/env/pin remain unchanged. For rollback, follow the recorded pre-application snapshot; never guess which ignored generated files were pre-existing.
+리허설에서는 원본 소스/env/pin이 바뀌지 않았는지 확인합니다. 롤백은 적용 전 기록을 따르며 무시된 생성물이 원래 존재했는지 추측하지 않습니다.

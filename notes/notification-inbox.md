@@ -1,11 +1,11 @@
-# Notification inbox
+# 알림함
 
-Signed-in users open `/notifications` from the profile menu. Lists, unread filters, pagination and individual/bulk read actions are scoped to the current authenticated user (bearer token or owner API key), including admins. No public demo access or creation endpoint exists.
+로그인한 사용자는 프로필 메뉴의 알림함(`/notifications`)에서 본인의 알림만 조회합니다. 읽지 않은 알림 필터, 페이지 이동, 개별/전체 읽음 처리를 제공합니다. 관리자도 타인의 알림함을 조회할 수 없습니다. 공개 데모는 포함하지 않습니다.
 
-`inbox_notifications` stores durable user-facing records separately from the mail outbox. Internal producers add records in their domain transaction; email is not required. This PR provides the inbox foundation; inquiry producers are connected in a separate inquiry PR.
+알림은 `inbox_notifications`에 저장하고 이메일 발송용 `mail_notifications`와 분리합니다. 내부 도메인 작업이 같은 트랜잭션에서 알림을 생성하며 공개 생성 API는 없습니다. 알림함 자체는 이메일 설정과 무관합니다. 이 PR은 알림함 기반이며 문의 알림 생산자는 별도 문의 PR에서 연결합니다.
 
-After commit, `inbox.changed` SSE invalidates data without broadcasting message content. Reconnect and focus reload authoritative SQL state. Bulk read uses the snapshot high-water ID to preserve newly arriving unread records. Account deletion cascades inbox records. Apply Alembic migrations through 0018 when deploying; container images are not built automatically.
+커밋 후 `inbox.changed` SSE 이벤트로 갱신하고 재접속·탭 복귀 시 DB를 재조회합니다. SSE는 알림 본문을 전달하지 않으며 유실되어도 저장된 알림은 유지됩니다. 전체 읽음은 마지막 조회 ID까지 적용합니다. 계정 삭제 시 알림도 삭제됩니다. 배포 시 Alembic 0017 마이그레이션이 필요하며 이미지 빌드는 자동 실행하지 않습니다.
 
-Empty/loading states are centered in a 240px content area, matching the admin collection state. Email and OAuth signup create a welcome record in the same transaction. Confirmed subscription starts and applied plan changes use the validated Stripe webhook, deduplicated by a unique delivery key, even with email disabled. Existing accounts are not backfilled. No browser popup or payment is simulated.
+빈 상태와 로딩은 관리자 목록과 동일한 240px 콘텐츠 영역 중앙에 표시합니다. 이메일·OAuth 신규 가입 시 같은 트랜잭션에서 환영 알림을 저장합니다. 구독 시작과 실제 적용된 요금제 변경은 검증된 Stripe 웹훅을 통해 생성하며, 고유 전달 키로 재전송 중복을 방지합니다. 이메일 비활성화 상태에서도 동작합니다. 기존 계정에는 소급 생성하지 않습니다. 배포 시 0018 마이그레이션까지 적용해야 합니다.
 
-Opening Inbox preserves the originating sidebar family, like Profile. The profile dropdown places Inbox directly after Profile with a trailing count badge (99+ display cap). The inbox reuses the admin table: row checkboxes and a mixed-state header checkbox select only the visible page. Bulk read/delete act on an explicit bounded list of owned IDs. Details opens the complete notification in the shared modal and marks it read. The detail modal only provides Close; deletion is available from the list selection toolbar and requires confirmation. Filter/page refresh keeps the previous table visible with actions disabled until the response arrives, without replacing it with a loading screen. Migration 0020 erases deleted titles/bodies/action paths while retaining delivery-key tombstones, preventing webhook retries from recreating removed billing notifications. Deleted records are excluded from lists, counts and reads.
+알림함을 열어도 프로필과 동일하게 기존 사이드바 구성을 유지합니다. 프로필 드롭다운에서 알림함은 프로필 바로 아래에 위치하며, 읽지 않은 개수는 오른쪽 배지(최대 99+)로 표시합니다. 관리자 목록과 같은 표를 사용하며 행 체크박스와 부분 선택 가능한 헤더 체크박스는 현재 페이지만 선택합니다. 선택 읽음·삭제는 명시한 본인 알림 ID에만 적용됩니다. 내용 보기는 전체 본문을 모달로 표시하고 읽음 처리합니다. 내용 창에는 닫기만 제공하며, 삭제는 목록에서 선택 삭제로만 진행하고 확인을 받습니다. 필터·페이지 변경 중에는 기존 표를 유지하고 응답이 올 때까지 작업 버튼을 비활성화해 로딩 화면 전환에 따른 깜빡임을 방지합니다. 0020 마이그레이션은 삭제한 알림의 제목·본문·이동 경로를 비우고 전달 키만 남겨 결제 웹훅 재시도로 알림이 다시 생성되지 않도록 합니다. 삭제된 알림은 목록·개수·조회에서 제외합니다.

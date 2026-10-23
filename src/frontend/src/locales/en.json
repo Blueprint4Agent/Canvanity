@@ -1,0 +1,1507 @@
+{
+    "inbox": {
+        "title": "Notifications",
+        "description": "Updates for your account and support requests.",
+        "unread": "Unread",
+        "unreadOnly": "Unread only",
+        "count": "Unread: {{count}}",
+        "open": "View details",
+        "read": "Mark read",
+        "readAll": "Mark all read",
+        "empty": "No notifications to show.",
+        "error": "Could not update notifications. Please try again.",
+        "events": {
+            "welcome": {
+                "title": "Welcome to {{brand}}",
+                "body": "Your account is ready. Explore what {{brand}} has to offer."
+            },
+            "subscription_started": {
+                "title": "Your subscription has started",
+                "body": "Payment for your {{plan}} plan has been confirmed."
+            },
+            "plan_changed": {
+                "title": "Your plan has changed",
+                "body": "Your {{plan}} plan is now active."
+            },
+            "inquiry_received": {
+                "title": "Inquiry received"
+            },
+            "inquiry_reply": {
+                "title": "New inquiry reply"
+            },
+            "inquiry_status": {
+                "title": "Inquiry status changed"
+            }
+        },
+        "selectItem": "Select {{title}}",
+        "selectPage": "Select all on this page",
+        "readState": "Read",
+        "selected": "{{count}} selected",
+        "readSelected": "Mark selected read",
+        "deleteSelected": "Delete selected",
+        "content": "Notification",
+        "status": "Status",
+        "received": "Received",
+        "actions": "Actions",
+        "related": "Open related page",
+        "close": "Close",
+        "delete": "Delete",
+        "cancel": "Cancel",
+        "deleteTitle": "Delete notifications",
+        "deleteConfirm": "Delete {{count}} selected notifications? This cannot be undone."
+    },
+    "app": {
+        "loadingTitle": "Loading",
+        "loadingSubtitle": "Preparing your workspace. This will only take a moment.",
+        "loadingSession": "Loading session..."
+    },
+    "desktopWindow": {
+        "minimize": "Minimize window",
+        "maximize": "Maximize or restore window",
+        "close": "Close window"
+    },
+    "connectivity": {
+        "offline": "Server connection lost. Changes that require the server are unavailable.",
+        "offlineShort": "Server disconnected",
+        "reconnecting": "Checking the server connection...",
+        "reconnectingShort": "Reconnecting",
+        "retry": "Retry now"
+    },
+    "serverUnavailable": {
+        "navAria": "Server connection navigation",
+        "title": "Server unavailable",
+        "subtitle": "The application cannot verify its server configuration.",
+        "statusTitle": "Connection required",
+        "configError": "Protected pages remain locked until the server configuration is available.",
+        "waiting": "Waiting for the server configuration before continuing.",
+        "retry": "Retry connection",
+        "retrying": "Checking connection..."
+    },
+    "landing": {
+        "navAria": "Landing navigation",
+        "eyebrow": "Blueprint4FastAPI",
+        "title": "Customize this landing page for your service.",
+        "subtitle": "This template includes a small landing page, auth-ready routing, API keys, realtime events, task queues, metrics, tracing, and a React showcase.",
+        "note": "Replace this copy with your product message, connect the button to the flow you need, and keep the rest of the starter as your baseline.",
+        "start": "Get started"
+    },
+    "auth": {
+        "verificationResent": "If an unverified account exists, a verification email has been sent.",
+        "actions": {
+            "resendVerification": "Resend verification email"
+        },
+        "errors": {
+            "loginFallback": "Login failed. Please try again.",
+            "signupFallback": "Signup failed. Please check your input.",
+            "passwordMismatch": "Password confirmation does not match.",
+            "requiredEmail": "Email is required.",
+            "requiredName": "Name is required.",
+            "requiredPassword": "Password is required.",
+            "requiredConfirmPassword": "Please confirm your password.",
+            "invalidEmail": "Please enter a valid email address.",
+            "invalidPasswordPattern": "Password must be 8-24 chars and include uppercase, number, and symbol.",
+            "invalidCredentialsWithCount": "Incorrect credentials. {{count}} attempt(s) remaining.",
+            "accountLocked": "Too many failed attempts. Try again in {{seconds}} seconds.",
+            "emailNotVerified": "Email verification is required. Please verify your email first.",
+            "resendVerificationFallback": "Could not resend verification email. Please try again.",
+            "emailAlreadyExists": "This email is already in use.",
+            "emailDisabled": "Email-based features are currently unavailable.",
+            "loginDisabled": "Login is currently disabled.",
+            "invalidToken": "The token is invalid or has expired.",
+            "insufficientRole": "You do not have permission to perform this action.",
+            "userNotFound": "User account was not found.",
+            "oauthProviderNotEnabled": "This OAuth provider is not enabled.",
+            "oauthProviderConfigInvalid": "OAuth provider settings are invalid.",
+            "oauthIdentityConflict": "This OAuth account is already linked to another user.",
+            "oauthSignupFailed": "Could not create an account with OAuth.",
+            "oauthProviderRequestFailed": "OAuth provider request failed. Please try again.",
+            "profileUpdateFailed": "Could not update your profile. Please try again.",
+            "adminUsersFailed": "Could not load users. Please retry.",
+            "accountDeleteFailed": "Unable to delete your account. Please try again.",
+            "accountDeleteConfirmationRequired": "Enter your current account email to confirm.",
+            "lastAdminRequired": "Assign another active administrator before deleting the last administrator account.",
+            "accountDeleteCodeInvalid": "The code is invalid or expired. After five failed attempts, wait 10 minutes and request a new code.",
+            "accountDeleteCodeThrottled": "You can request another code in {{seconds}} seconds.",
+            "accountDeleteCodeSendFailed": "Unable to send a verification code. Please try again shortly.",
+            "billingReviewRequired": "Contact the operator to reconcile subscriptions before deleting this account.",
+            "profilePhotoInvalid": "Choose a valid PNG, JPG, WEBP or GIF image (up to 16 million pixels).",
+            "profilePhotoTooLarge": "Profile photo must be 8MB or smaller.",
+            "profilePhotoUnavailable": "Photo storage is temporarily unavailable. Your previous photo is unchanged.",
+            "profilePhotoNotFound": "The photo is no longer available.",
+            "profilePhotoConflict": "Your photo changed elsewhere. Refresh and try again.",
+            "passwordChangeCodeInvalid": "The code is invalid, expired or locked. Request a new code after the cooldown.",
+            "passwordChangeCodeThrottled": "Please wait before requesting another code.",
+            "passwordChangeCodeSendFailed": "Unable to send the verification code. Please try again later.",
+            "passwordChangeFailed": "Unable to change the password. Request a new code and try again."
+        }
+    },
+    "cards": {
+        "errorTitle": "Action required",
+        "warningTitle": "Warning",
+        "infoTitle": "Info"
+    },
+    "login": {
+        "title": "Login",
+        "subtitle": "Sign in to access the template dashboard.",
+        "oauth": {
+            "divider": "Sign in with a social account",
+            "providers": {
+                "google": "Continue with Google",
+                "github": "Continue with GitHub"
+            }
+        },
+        "fields": {
+            "email": "Email",
+            "password": "Password"
+        },
+        "rememberMe": "Remember me",
+        "rememberEmail": "Remember email",
+        "submitIdle": "Sign in",
+        "submitBusy": "Signing in...",
+        "signupPrompt": "New here?",
+        "signupLink": "Create an account",
+        "forgotPasswordPrompt": "Forgot your password?",
+        "forgotPasswordLink": "Find your password"
+    },
+    "signup": {
+        "title": "Sign up",
+        "subtitle": "Create your account to get started.",
+        "configLoading": "Loading server configuration. Please try again in a moment.",
+        "fields": {
+            "name": "Name",
+            "email": "Email",
+            "password": "Password",
+            "confirmPassword": "Confirm password"
+        },
+        "submitIdle": "Create account",
+        "submitBusy": "Creating account and sending verification email...",
+        "loginPrompt": "Already have an account?",
+        "loginLink": "Back to login",
+        "validation": {
+            "email": "Email validation",
+            "password": "Password validation",
+            "confirm": "Password confirmation"
+        },
+        "rules": {
+            "email": {
+                "format": "Use a valid email format."
+            },
+            "password": {
+                "length": "8 to 24 characters.",
+                "upper": "Include at least one uppercase letter.",
+                "number": "Include at least one number.",
+                "symbol": "Include at least one symbol.",
+                "noSpace": "Do not use spaces."
+            },
+            "confirm": {
+                "match": "Password and confirmation must match."
+            }
+        }
+    },
+    "signupEmailSent": {
+        "title": "Check your email",
+        "subtitle": "We sent a verification link to {{email}}.",
+        "description": "Open your inbox and verify your email to activate your account.",
+        "accountCreatedTitle": "Account created",
+        "accountCreatedSubtitle": "Your account is ready.",
+        "accountCreatedMessage": "Account has been created. Please go to the login page.",
+        "resendButton": "Resend verification email",
+        "resendFallback": "Could not resend verification email. Please try again.",
+        "loginButton": "Back to login",
+        "noEmail": "your email address"
+    },
+    "forgotPassword": {
+        "title": "Find your password",
+        "subtitle": "Enter your email and we will send a password reset link.",
+        "emailLabel": "Email",
+        "submitIdle": "Send reset link",
+        "loginPrompt": "Remember your password?",
+        "loginLink": "Back to login",
+        "configLoading": "Loading server configuration. Please try again in a moment.",
+        "disabled": "Password reset is currently unavailable.",
+        "disabledTitle": "Password reset unavailable",
+        "sentTitle": "Check your email",
+        "sentSubtitle": "We sent a password reset link to {{email}}.",
+        "sentDescription": "Open your inbox and use the link to continue resetting your password.",
+        "backToRequest": "Request again",
+        "backToLogin": "Back to login",
+        "requestFallback": "Could not request password reset. Please try again.",
+        "noEmail": "your email address"
+    },
+    "resetPassword": {
+        "title": "Reset password",
+        "subtitle": "Set a new password for your account.",
+        "passwordLabel": "New password",
+        "confirmPasswordLabel": "Confirm new password",
+        "submitIdle": "Reset password",
+        "successTitle": "Password reset complete",
+        "successSubtitle": "Your password has been updated.",
+        "successDescription": "You can now sign in with your new password.",
+        "backToLogin": "Back to login",
+        "loginPrompt": "Ready to sign in?",
+        "loginLink": "Go to login",
+        "errors": {
+            "missingToken": "Reset token is missing. Please use the link from your email.",
+            "fallback": "Password reset failed. The link may be expired or invalid."
+        }
+    },
+    "verifyEmail": {
+        "loadingTitle": "Verifying your email",
+        "loadingSubtitle": "Please wait while we confirm your verification token.",
+        "loadingDescription": "This usually takes a few seconds.",
+        "successTitle": "Email verified",
+        "successSubtitle": "Your account is now verified.",
+        "successDescription": "You can now sign in with your email and password.",
+        "errorTitle": "Verification failed",
+        "errorSubtitle": "We could not verify your email.",
+        "backToLogin": "Back to login",
+        "errors": {
+            "missingToken": "Verification token is missing. Please use the link from your email.",
+            "fallback": "Verification failed. The link may be expired or invalid."
+        }
+    },
+    "showCase": {
+        "title": "Component library",
+        "subtitle": "Find and try the shared components used throughout the app.",
+        "tooltip": {
+            "demoTrigger": "Hover this button",
+            "demoContent": "This is a reusable tooltip."
+        },
+        "labels": {
+            "userId": "User ID",
+            "name": "Name",
+            "email": "Email"
+        },
+        "logoutIdle": "Sign out",
+        "logoutBusy": "Signing out...",
+        "demo": {
+            "text0": "Primary button",
+            "text1": "Loading button",
+            "text2": "Disabled button",
+            "text3": "Continue with Google",
+            "text4": "Continue with GitHub",
+            "text5": "Demo dropdown",
+            "text6": "Item 1",
+            "text7": "Item 2",
+            "text8": "Item 3",
+            "text9": "Sample menu list",
+            "text10": "Sample input",
+            "text11": "Type something...",
+            "text12": "Checked checkbox",
+            "text13": "Unchecked checkbox",
+            "text14": "Active key",
+            "text15": "Active",
+            "text16": "Inactive",
+            "text17": "Info",
+            "text18": "Name updated successfully.",
+            "text19": "Failed to update your profile. Please try again.",
+            "text20": "Pagination",
+            "text21": "Previous page",
+            "text22": "Next page",
+            "text23": "Open modal",
+            "text24": "Sample modal",
+            "text25": "Reusable modal with modal buttons.",
+            "text26": "Cancel",
+            "text27": "Save",
+            "text28": "This is a modal body content sample.",
+            "text29": "Small spinner",
+            "text30": "Medium spinner",
+            "text31": "Large spinner",
+            "text32": "Open loading page",
+            "text33": "Open 404 page",
+            "text34": "Panel Card",
+            "text35": "Generic container card used across auth screens.",
+            "text36": "Reusable top-level card sample.",
+            "text37": "Information status card example.",
+            "text38": "Warning",
+            "text39": "Warning status card example.",
+            "text40": "Error",
+            "text41": "Error status card example.",
+            "text42": "Validation sample",
+            "text43": "Contains uppercase",
+            "text44": "Contains number",
+            "text45": "Contains special character",
+            "item-1": "Item 1",
+            "item-2": "Item 2",
+            "item-3": "Item 3",
+            "card": "Card {{count}}",
+            "item": "Sample item {{count}}"
+        },
+        "catalog": {
+            "search": "Find a component",
+            "searchPlaceholder": "Button, Avatar, Modal…",
+            "categoriesLabel": "Component categories",
+            "results": "{{count}} sections",
+            "empty": "No matching components.",
+            "reset": "Reset filters",
+            "localOnly": "Preview only. Changes do not affect your account.",
+            "sampleKey": "Sample key",
+            "copy": "Copy sample key",
+            "copied": "Copied",
+            "container": "A compact shared content container.",
+            "categories": {
+                "all": "All",
+                "account": "Account",
+                "api": "API keys",
+                "brand": "Brand & theme",
+                "buttons": "Buttons",
+                "overlays": "Dropdown & tooltip",
+                "navigation": "Navigation",
+                "inputs": "Inputs",
+                "data": "Data & feedback",
+                "dialogs": "Dialogs",
+                "loading": "Loading",
+                "pages": "Page states",
+                "cards": "Cards"
+            },
+            "descriptions": {
+                "all": "",
+                "account": "Avatar, upload and connected accounts.",
+                "api": "Interactive examples with sample data only.",
+                "brand": "Logo variants and appearance controls.",
+                "buttons": "Shared actions and their states.",
+                "overlays": "Anchored menus and contextual hints.",
+                "navigation": "Compact menu selection.",
+                "inputs": "Text fields, checkboxes and switches.",
+                "data": "Statuses, messages and paginated collections.",
+                "dialogs": "Shared dialogs and authentication composition.",
+                "loading": "Loading indicators in three sizes.",
+                "pages": "Open standalone page examples.",
+                "cards": "Containers, account history and validation."
+            },
+            "results_one": "{{count}} section",
+            "results_other": "{{count}} sections"
+        },
+        "selectionCard": {
+            "label": "Selection cards",
+            "first": "Option one",
+            "second": "Option two",
+            "disabled": "Unavailable"
+        },
+        "toast": {
+            "trigger": "Show toast",
+            "message": "Your changes have been saved."
+        },
+        "accountDeletion": {
+            "trigger": "Preview account deletion verification",
+            "description": "Preview only: no emails or accounts are changed. Use code 123456, or another code to preview an error.",
+            "complete": "Preview verification completed. No account was deleted."
+        }
+    },
+    "nav": {
+        "profileMenu": "Profile menu",
+        "sidebar": {
+            "aria": "Primary navigation",
+            "showCase": "ShowCase",
+            "settings": "Settings",
+            "toggleOpen": "Expand sidebar",
+            "toggleClose": "Collapse sidebar",
+            "resize": "Resize sidebar",
+            "github": "GitHub",
+            "documentation": "User guide"
+        },
+        "pageTitles": {
+            "showCase": "ShowCase Page",
+            "settings": "Settings",
+            "loading": "Loading",
+            "notFound": "Not Found 404"
+        },
+        "settings": "Settings",
+        "logoutIdle": "Sign out",
+        "logoutBusy": "Signing out...",
+        "logoutUnavailable": "Reconnect to the server before signing out.",
+        "aria": {
+            "goShowCase": "Go to ShowCase page",
+            "openMenu": "Open profile menu"
+        },
+        "guest": "Guest",
+        "brand": "B4A",
+        "home": "Home"
+    },
+    "settings": {
+        "title": "Settings",
+        "subtitle": "Manage your account and preferences.",
+        "menu": {
+            "title": "Settings menu",
+            "profile": "Profile",
+            "general": "General",
+            "developers": "Developers",
+            "appearance": "Appearance",
+            "keyboard": "Keyboard",
+            "account": "Account"
+        },
+        "labels": {
+            "name": "Name",
+            "email": "Email",
+            "userId": "User ID"
+        },
+        "profile": {
+            "title": "Profile",
+            "subtitle": "Manage your personal details. This profile is visible only to you.",
+            "photo": "Profile Photo",
+            "photoHelp": "PNG, JPG, WEBP, GIF · max 8MB · saved as a still image",
+            "photoSelect": "Choose photo",
+            "photoClear": "Remove photo",
+            "photoTypeError": "Only PNG, JPG, WEBP, and GIF files are supported.",
+            "photoSizeError": "Profile photo must be 8MB or smaller.",
+            "photoReadError": "Could not read the selected image.",
+            "namePlaceholder": "Enter your name",
+            "save": "Save",
+            "nameSaveSuccess": "Name has been changed successfully.",
+            "nameSaveError": "Failed to change the name.",
+            "oauthConnectedTitle": "Connected OAuth",
+            "oauthConnectedEmpty": "No external OAuth providers are connected.",
+            "oauthProviders": {
+                "google": "Google",
+                "github": "GitHub"
+            },
+            "roleBadgeAdmin": "Admin",
+            "saveSuccess": "Profile changes were saved successfully.",
+            "saveError": "Could not save your profile changes. Please try again.",
+            "roleBadgeManager": "Manager",
+            "bio": "Bio",
+            "bioPlaceholder": "A little about yourself.",
+            "location": "Location",
+            "locationPlaceholder": "e.g. Seoul, South Korea",
+            "joined": "Joined",
+            "edit": "Edit profile",
+            "emptyBio": "Tell a little about yourself.",
+            "notSet": "Not set",
+            "private": "This profile is visible only to you.",
+            "retry": "Try again",
+            "country": "Country",
+            "region": "City / region",
+            "selectRegion": "Select city / region",
+            "photoAdd": "Add photo",
+            "editName": "Edit name",
+            "editBio": "Edit bio",
+            "editLocation": "Edit location"
+        },
+        "general": {
+            "title": "General",
+            "subtitle": "Language preference.",
+            "themeTitle": "Theme",
+            "languageTitle": "Language",
+            "languages": {
+                "en": "English",
+                "ko": "Korean"
+            }
+        },
+        "developers": {
+            "title": "Developers",
+            "subtitle": "Manage API keys for integrations and automation.",
+            "loading": "Loading API keys...",
+            "empty": "No API keys have been created yet.",
+            "createButton": "Create API key",
+            "refreshButton": "Refresh list",
+            "listLoadError": "Failed to load API keys.",
+            "createError": "Failed to create API key. Please try a different name.",
+            "updateError": "Failed to update API key status.",
+            "deactivateError": "Failed to deactivate API key.",
+            "enableBlockedInfo": "Revoked API keys cannot be reactivated. Create a new key instead.",
+            "errors": {
+                "apiKeyInvalid": "Invalid API key request.",
+                "userMismatch": "This API key does not belong to the current user.",
+                "createFailed": "Failed to create API key. Please try again.",
+                "nameAlreadyExists": "An API key with this name already exists.",
+                "notFound": "The requested API key does not exist.",
+                "updateFailed": "Failed to update API key."
+            },
+            "status": {
+                "active": "Active",
+                "inactive": "Inactive",
+                "expired": "Expired"
+            },
+            "columns": {
+                "name": "Name",
+                "prefix": "Prefix",
+                "status": "Status",
+                "createdAt": "Created",
+                "lastUsedAt": "Last used",
+                "enabled": "Enabled",
+                "delete": "Delete",
+                "actions": "Actions"
+            },
+            "actions": {
+                "save": "Save",
+                "cancel": "Cancel",
+                "close": "Close",
+                "deactivate": "Deactivate",
+                "delete": "Delete",
+                "deleteNamed": "Delete {{name}}"
+            },
+            "createModal": {
+                "title": "Create API key",
+                "description": "Set a name that helps identify this API key.",
+                "nameLabel": "API key name",
+                "namePlaceholder": "e.g. Production webhook",
+                "expiryLabel": "Expiration",
+                "expiryOptions": {
+                    "sevenDays": "7 days",
+                    "thirtyDays": "30 days",
+                    "ninetyDays": "90 days",
+                    "never": "No expiration"
+                },
+                "neverExpiryWarning": "This API key never expires automatically. Disable or delete it when it is no longer needed."
+            },
+            "revealModal": {
+                "title": "Copy API key now",
+                "description": "This secret is shown once and cannot be retrieved again.",
+                "copy": "Copy",
+                "copied": "Copied"
+            },
+            "deactivateModal": {
+                "title": "Delete API key",
+                "description": "You are about to delete this API key.",
+                "targetName": "Target key: {{name}}"
+            },
+            "meta": {
+                "accessKey": "Access key",
+                "requestCount": "Request count",
+                "expiresAt": "Expires",
+                "noExpiration": "No expiration",
+                "created": "Created",
+                "lastUsed": "Last used"
+            },
+            "pagination": {
+                "label": "Pagination",
+                "previous": "Previous API key page",
+                "next": "Next API key page"
+            },
+            "listTitle": "API keys"
+        },
+        "backToApp": "Back to app",
+        "account": {
+            "deleteTitle": "Delete account",
+            "deleteDescription": "Permanently delete your account and its associated data.",
+            "deleteAction": "Delete account",
+            "deleteWarning": "Your account, sign-in details and all API keys will be permanently deleted. This cannot be undone.",
+            "confirmPrompt": "Enter {{email}} to confirm.",
+            "cancel": "Cancel",
+            "deleted": "Your account has been deleted.",
+            "codeDestination": "A verification code will be sent to your registered email: {{email}}.",
+            "sendCode": "Send code",
+            "resendCode": "Resend code",
+            "resendWait": "In {{seconds}}s",
+            "codeSent": "Verification code sent to your email.",
+            "codeLabel": "6-digit verification code",
+            "emailRequired": "Account deletion requires email verification. Email delivery must be enabled.",
+            "codeHint": "The latest code is valid for 10 minutes. Resend after 30 seconds; the previous code becomes invalid.",
+            "title": "Account",
+            "subtitle": "Manage your sign-in details and account security.",
+            "editProfile": "Go to profile",
+            "passwordTitle": "Change password",
+            "currentPassword": "Current password",
+            "passwordHelp": "Receive a verification code at your registered email, then save your new password. The code expires in 10 minutes.",
+            "oauthPassword": "This account uses social sign-in. Manage your password with your sign-in provider.",
+            "passwordEmailRequired": "Password changes require email delivery to be enabled.",
+            "currentPlan": "Current plan",
+            "managePlan": "Manage plan",
+            "passwordLabel": "Password",
+            "verifyCode": "Verify code",
+            "codeVerified": "Verified",
+            "resendCodeWait": "Resend code ({{seconds}}s)"
+        },
+        "keyboard": {
+            "description": "Customize shortcuts for frequently used actions.",
+            "toggleSidebar": "Toggle sidebar",
+            "openSettings": "Open settings",
+            "press": "Press a key combination",
+            "reset": "Restore defaults",
+            "errors": {
+                "invalid": "Press a recognized key.",
+                "conflict": "Another action already uses this shortcut.",
+                "storage": "Could not save shortcuts. Check your connection and try again."
+            },
+            "openProfile": "Open profile"
+        }
+    },
+    "theme": {
+        "label": "Theme",
+        "select": "Theme mode",
+        "system": "System",
+        "light": "Light mode",
+        "dark": "Dark mode"
+    },
+    "shortcuts": {
+        "keys": {
+            "Command": "Command",
+            "Control": "Control",
+            "Alt": "Alt",
+            "Shift": "Shift",
+            "Meta": "Meta"
+        },
+        "platform": {
+            "current": "Your keyboard"
+        }
+    },
+    "authDialog": {
+        "title": "Log in or sign up",
+        "subtitle": "Sign in to manage your profile and API keys.",
+        "continue": "Continue",
+        "close": "Close",
+        "guestTitle": "Start your own project",
+        "guestDescription": "Log in to manage your profile and API keys.",
+        "login": "Log in",
+        "or": "or",
+        "changeEmail": "Change email",
+        "closeBackdrop": "Close modal backdrop",
+        "ruleMet": "Requirement met",
+        "rulePending": "Requirement not yet met",
+        "preview": "Preview authentication dialog",
+        "buttonPrimary": "Continue",
+        "buttonSecondary": "Secondary action",
+        "buttonLoading": "Please wait",
+        "buttonDisabled": "Unavailable",
+        "entry": "Log in / Sign up"
+    },
+    "recentAccounts": {
+        "title": "Recent accounts",
+        "clear": "Clear all",
+        "select": "Continue as {{email}} with {{provider}}",
+        "remove": "Remove {{email}} ({{provider}}) from this browser",
+        "note": "Saved on this browser. Sign-in is still required.",
+        "providers": {
+            "email": "Email",
+            "google": "Google",
+            "github": "GitHub"
+        },
+        "remember": "Remember accounts on this browser",
+        "add": "Add account",
+        "switch": "Switch account",
+        "current": "Current account"
+    },
+    "pageState": {
+        "back": "Back to components",
+        "notFoundTitle": "Page not found",
+        "notFoundDescription": "This address may have changed or no longer exists. Return to the component library to continue."
+    },
+    "admin": {
+        "demoHidden": "Hidden in demo",
+        "demo": "Admin panel (demo)",
+        "demoDescription": "Read-only demo of real user data. Names, emails and IDs are replaced; dates are rounded to UTC days.",
+        "demoServerDescription": "Read-only view of real server health. Internal connection addresses are hidden; results are cached for up to 30 seconds.",
+        "title": "Admin panel",
+        "users": "Users",
+        "description": "Review accounts and their latest successful sign-in.",
+        "search": "Search name or email",
+        "searchAction": "Search",
+        "refresh": "Refresh",
+        "allRoles": "All roles",
+        "allStatuses": "All statuses",
+        "role": "Role",
+        "status": "Account status",
+        "active": "Active",
+        "inactive": "Inactive",
+        "admin": "Administrator",
+        "user": "User",
+        "total": "Total users",
+        "activeTotal": "Active accounts",
+        "adminTotal": "Administrators",
+        "identity": "User",
+        "providers": "Sign-in methods",
+        "joined": "Joined",
+        "lastLogin": "Last sign-in",
+        "never": "No recorded sign-in",
+        "verified": "Email verified",
+        "unverified": "Email unverified",
+        "empty": "No matching users.",
+        "loading": "Loading users…",
+        "loadError": "Could not load users. Please retry.",
+        "count": "{{count}} users",
+        "pagination": "User pages",
+        "previous": "Previous page",
+        "next": "Next page",
+        "readOnly": "Roles are managed by server operators. Active means the account is enabled, not currently online.",
+        "timezone": "Times are shown in your local time zone.",
+        "denied": "Administrator access required.",
+        "bootstrap": "Bootstrap",
+        "filterRole": "Filter by role",
+        "filterStatus": "Filter by account status",
+        "manager": "Manager",
+        "managerTotal": "Managers"
+    },
+    "routeLoad": {
+        "title": "Unable to load this page",
+        "description": "The page could not load. Reload to try again or return to the showcase.",
+        "reload": "Reload page"
+    },
+    "colorPicker": {
+        "open": "Edit {{label}} color",
+        "palette": "{{label}} palette",
+        "h": "Hue",
+        "s": "Saturation",
+        "v": "Brightness",
+        "a": "Opacity",
+        "close": "Done",
+        "example": "Color",
+        "value": "HEX / RGBA",
+        "plane": "Saturation and brightness; use arrow keys"
+    },
+    "numberField": {
+        "increase": "Increase {{label}}",
+        "decrease": "Decrease {{label}}",
+        "example": "Spacing"
+    },
+    "toast": {
+        "loginSuccess": "Signed in.",
+        "loginError": "Sign-in failed. Check the form for details.",
+        "signupSuccess": "Registration completed.",
+        "signupError": "Registration failed. Please try again.",
+        "emailSuccess": "Email request received. Check your inbox.",
+        "emailError": "Email request failed. Please try again.",
+        "passwordSuccess": "Password updated.",
+        "passwordError": "Password update failed.",
+        "logoutSuccess": "Signed out.",
+        "logoutError": "Signed out locally; server sign-out failed.",
+        "profileSuccess": "Profile updated.",
+        "profileError": "Profile update failed.",
+        "photoError": "Unable to use this photo. Check the details.",
+        "copySuccess": "API key copied.",
+        "copyError": "Copy failed. Select and copy the key manually.",
+        "keyCreateSuccess": "API key created.",
+        "keyCreateError": "API key creation failed.",
+        "keyDeleteSuccess": "API key deleted.",
+        "keyDeleteError": "API key deletion failed.",
+        "keyToggleSuccess": "API key status updated.",
+        "keyToggleError": "API key status update failed."
+    },
+    "billing": {
+        "title": "Billing",
+        "subtitle": "Manage your plan and payment methods in one place.",
+        "back": "Back to billing",
+        "currentPlan": "Current plan",
+        "freeSummary": "Start for free. No automatic renewal or recurring charges.",
+        "changePlan": "Upgrade plan",
+        "selectedPlan": "You selected {{plan}}. You can save a payment method now; this does not start a subscription.",
+        "offline": "Billing will refresh when the server reconnects.",
+        "retry": "Refresh",
+        "disabled": "Payment registration is not available yet. Please check back later.",
+        "testMode": "Test mode · No real charges.",
+        "history": "Transactions",
+        "historyEmpty": "Transaction history is coming soon",
+        "historyHint": "This section will show your history when subscription payments become available.",
+        "info": "Billing information",
+        "accountEmail": "Account email",
+        "infoHint": "Billing address and receipt details will be editable in a future update.",
+        "methods": "Payment methods",
+        "addMethod": "Add payment method",
+        "loading": "Loading billing information…",
+        "noMethods": "No saved payment methods",
+        "registrationOnly": "Save a card or Link payment method in advance. Registration stores a payment method without charging you.",
+        "card": "Card",
+        "linkSaved": "View saved cards in Link ↗",
+        "expiry": "Expires {{month}}/{{year}}",
+        "saved": "Saved",
+        "loadMore": "More {{type}} methods",
+        "providerNote": "Enter and manage card details on Stripe’s secure hosted page.",
+        "noSubscription": "No recurring payments are active",
+        "noSubscriptionHint": "Saving a payment method does not activate a paid plan or start automatic payments.",
+        "signIn": "Sign in to continue",
+        "notices": {
+            "registered": "Your payment method registration is confirmed.",
+            "pending": "Registration is not complete yet. Refresh after you finish.",
+            "cancelled": "Registration was cancelled. You can add a method whenever you are ready.",
+            "expired": "This registration session has expired. Add a payment method to start again."
+        },
+        "errors": {
+            "unknown": "We could not process your billing information. Please try again.",
+            "BILLING_DISABLED": "Payment method registration is currently unavailable.",
+            "BILLING_UNAVAILABLE": "The payment service is temporarily unavailable. Please try again shortly.",
+            "BILLING_NOT_FOUND": "We could not find that registration session for this account.",
+            "BILLING_RECONCILIATION_REQUIRED": "Your billing account needs review. Please contact your administrator.",
+            "BILLING_PLAN_UNAVAILABLE": "Subscription pricing is not configured.",
+            "BILLING_CHECKOUT_CONFLICT": "A subscription or checkout already exists. Complete that checkout, or retry up to one hour after it was started.",
+            "BILLING_CHANGE_CONFLICT": "Your subscription changed or cannot be changed here. Refresh and review it again.",
+            "BILLING_METHOD_REQUIRED": "Choose another default payment method before removing the one used by your subscription."
+        },
+        "plans": {
+            "eyebrow": "A plan for you",
+            "title": "Choose your plan",
+            "choose": "Choose a plan",
+            "basic": "Free",
+            "soon": "Coming soon",
+            "currency": "Display currency",
+            "select": "Select {{plan}}",
+            "selected": "{{plan}} selected",
+            "next": "Next step",
+            "freeNext": "Start without a commitment",
+            "paidNext": "Get your payment method ready",
+            "freeHint": "Explore the basics without adding a card.",
+            "continueFree": "Continue for free",
+            "unavailable": "Subscription checkout is not configured yet. Card and Link registration remains available in Billing settings.",
+            "free": {
+                "name": "Free",
+                "headline": "A simple place to start",
+                "description": "Explore the essentials and find the way you like to work.",
+                "period": "/ free",
+                "one": "Start with the basics",
+                "two": "No card required",
+                "three": "No recurring charges"
+            },
+            "monthly": {
+                "name": "Plus",
+                "headline": "Flexibility, every month",
+                "description": "A monthly option for those who prefer a shorter commitment.",
+                "period": "/ month",
+                "one": "Renews monthly",
+                "two": "Save a card or Link method",
+                "three": "Full benefits announced at launch"
+            },
+            "annual": {
+                "name": "Plus",
+                "headline": "Built for the long run",
+                "description": "An annual option for those planning to stay a little longer.",
+                "period": "/ year",
+                "one": "Renews annually",
+                "two": "Save a card or Link method",
+                "three": "Full benefits announced at launch"
+            },
+            "unknown": {
+                "name": "Needs review"
+            },
+            "usd": "Dollar",
+            "krw": "Won",
+            "plus": {
+                "name": "Plus",
+                "headline": "Flexibility, every month",
+                "description": "A plan for everyday use",
+                "period": "/ month",
+                "one": "Monthly or annual billing",
+                "two": "Manage payment methods in the app",
+                "three": "Change or cancel at period end"
+            },
+            "pro": {
+                "name": "Pro",
+                "headline": "Built for the long run",
+                "description": "A higher-tier subscription",
+                "period": "/ year",
+                "one": "Monthly or annual billing",
+                "two": "Manage payment methods in the app",
+                "three": "Change or cancel at period end"
+            },
+            "pro_monthly": {
+                "name": "Pro",
+                "period": "/ month"
+            },
+            "pro_annual": {
+                "name": "Pro",
+                "period": "/ year"
+            },
+            "interval": "Billing interval",
+            "monthlyLabel": "Monthly",
+            "annualLabel": "Annual",
+            "perMonth": "/ month",
+            "annualTotal": "{{amount}} billed annually · Save {{discount}}%",
+            "monthlyBilling": "Billed monthly",
+            "profileTier": "Current subscription: {{plan}}"
+        },
+        "closePlans": "Close plan selection",
+        "subscribe": "Subscribe {{plan}}",
+        "recurring": "Recurring",
+        "sandbox": "Test mode",
+        "checkoutDisclosure": "Review the amount and renewal interval on Stripe’s secure checkout. Test mode does not charge real money.",
+        "subscriptionManaged": "Subscription status",
+        "subscriptionManagedHint": "Subscription status is verified with Stripe. Contact the operator for plan changes or cancellation.",
+        "renewsAt": "Next renewal: {{date}}",
+        "endsAt": "Access ends: {{date}}",
+        "checkoutNotices": {
+            "paid": "Payment confirmed.",
+            "pending": "Payment is pending. Refresh shortly.",
+            "expired": "Checkout expired.",
+            "cancelled": "Checkout cancelled."
+        },
+        "subscriptionStatus": {
+            "active": "Active",
+            "trialing": "Trial",
+            "past_due": "Payment overdue",
+            "unpaid": "Unpaid",
+            "incomplete": "Payment incomplete",
+            "paused": "Paused",
+            "unknown": "Subscription needs review"
+        },
+        "manage": {
+            "switch": "Change to {{plan}}",
+            "free": "Switch to Free",
+            "pending": "{{plan}} starts on {{date}}.",
+            "undo": "Keep current plan",
+            "title": "Confirm plan change",
+            "description": "Your current plan remains available until {{date}}. {{plan}} starts then. No payment or refund is processed today. The selected plan price applies from the next renewal.",
+            "undoDescription": "Remove the scheduled change and continue renewing your current plan.",
+            "confirm": "Confirm change",
+            "cancel": "Go back",
+            "saved": "Plan change scheduled.",
+            "restored": "Your current plan will continue.",
+            "unavailable": "This subscription requires billing support to make changes.",
+            "immediateDescription": "Upgrade to {{plan}} immediately after payment. Stripe prorates unused time and attempts to collect the difference. Your current tier remains until payment succeeds. Changing the billing interval starts a new billing cycle.",
+            "upgraded": "Your plan has been upgraded.",
+            "paymentRequired": "Complete the upgrade payment or authentication. Your current subscription remains until payment succeeds.",
+            "completePayment": "Complete payment",
+            "newPrice": "New recurring price: {{price}}"
+        },
+        "details": {
+            "viewAll": "View all",
+            "edit": "Edit",
+            "name": "Name",
+            "address": "Billing address",
+            "notSet": "Not provided",
+            "default": "Default",
+            "manageMethod": "Manage payment methods",
+            "invoice": "Invoice",
+            "receipt": "View receipt",
+            "noInvoices": "No transactions yet.",
+            "cancelPlan": "Cancel plan",
+            "cancelHint": "Keep using your plan until the current billing period ends.",
+            "cancel": "Cancel subscription",
+            "status": {
+                "paid": "Paid",
+                "open": "Payment due",
+                "draft": "Draft",
+                "void": "Voided",
+                "uncollectible": "Uncollectible"
+            },
+            "changePlan": "Change plan"
+        },
+        "native": {
+            "editTitle": "Edit billing information",
+            "email": "Billing email",
+            "save": "Save",
+            "country": "Country or region",
+            "selectCountry": "Select country",
+            "state": "State / province",
+            "city": "City",
+            "line1": "Address line 1",
+            "line2": "Address line 2",
+            "postal_code": "Postal code",
+            "addCard": "Add new",
+            "saveCard": "Save card",
+            "setDefault": "Set as default",
+            "remove": "Remove",
+            "defaultSaved": "Default payment method updated.",
+            "profileSaved": "Billing information saved.",
+            "removed": "Payment method removed.",
+            "removeTitle": "Remove payment method",
+            "removeHint": "Remove this payment method? Choose another default first if this method is used by an active subscription.",
+            "linkWallet": "Link wallet",
+            "cardUnavailable": "Card registration is currently unavailable.",
+            "verifyPending": "Card registration is not confirmed yet. Please try again shortly.",
+            "retry": "Try again"
+        },
+        "historyDialog": {
+            "details": "Invoice details",
+            "back": "Back to history",
+            "total": "Total",
+            "paid": "Paid",
+            "more": "Load more",
+            "moreLines": "Additional line items are available on the receipt."
+        }
+    },
+    "home": {
+        "welcome": "Signed in as {{name}}.",
+        "shortcuts": "Quick links",
+        "account": {
+            "title": "My account",
+            "description": "Manage your profile and account details."
+        },
+        "billing": {
+            "title": "Billing",
+            "description": "Review your plan, payment methods and invoices."
+        },
+        "preferences": {
+            "title": "Preferences",
+            "description": "Choose your preferred language."
+        },
+        "directory": {
+            "title": "User directory",
+            "description": "View users and their roles."
+        },
+        "templateDescription": "Compose a home page with menus, actions and your own content.",
+        "templateAction": "Sample action",
+        "templateActionFeedback": "Connect this action to your workflow.",
+        "templateContent": "Content area",
+        "templateContentHint": "Add lists, cards or widgets here.",
+        "guestWelcome": "Welcome. Choose where you would like to start.",
+        "signIn": "Log in",
+        "project": {
+            "title": "Accounts. Billing. Admin.",
+            "titleAccent": "Make the rest yours.",
+            "description": "A FastAPI and React starting point with the everyday foundations already connected. Add your own features, choose the services you need, and make it yours.",
+            "explore": "View the screens",
+            "included": "Included features",
+            "stack": "Built with",
+            "previewTitle": "Inside the project",
+            "previewSelect": "Choose a product preview",
+            "components": "Showcase",
+            "componentsAlt": "B4A shared UI component catalogue in light theme.",
+            "componentsCaption": "The shared UI components used throughout the project",
+            "previewNote": "Actual UI · Demo data",
+            "capabilitiesTitle": "Included in the project",
+            "interfaceTitle": "Interface and components",
+            "interfaceDescription": "Shared UI components, light and dark themes, and Korean and English support.",
+            "identityTitle": "Accounts and access",
+            "identityDescription": "Email and OAuth sign-in, profiles, role-based access and API key management.",
+            "deliveryTitle": "Runtime and deployment",
+            "deliveryDescription": "Docker images, database migrations, health checks and background tasks.",
+            "footer": "FastAPI backend · React frontend",
+            "componentsDetail": "Browse buttons, inputs, menus and dialogs in one place. See the appearance and behavior of the shared components used in the service.",
+            "enlarge": "Enlarge",
+            "openScreen": "Open screen",
+            "users": "Users",
+            "usersAlt": "B4A administrator user directory. All names and email addresses are demo data.",
+            "usersCaption": "Users and access in one place",
+            "usersDetail": "Browse users by role and active status, or search by name and email. The directory is available to administrators and managers.",
+            "server": "Server status",
+            "serverAlt": "B4A administrator server status. All displayed health and latency values are demo data.",
+            "serverCaption": "Check your connected services",
+            "serverDetail": "Inspect the API server, database, cache and storage, along with email and billing configuration in the administrator view.",
+            "billing": "Billing",
+            "billingAlt": "B4A billing settings. Account, card and subscription details are demo data.",
+            "billingCaption": "Subscriptions and payment methods",
+            "billingDetail": "Review the current plan, subscription status and saved payment methods. Manage billing details and invoice history in account settings.",
+            "capabilitiesNote": "Features supported by the project. External services require separate configuration.",
+            "billingTitle": "Billing and subscriptions",
+            "billingDescription": "Stripe plans, payment methods, subscription changes and invoice history.",
+            "cacheTitle": "Cache and sessions",
+            "cacheDescription": "Redis or an in-memory development store for caching, sessions and token management.",
+            "emailTitle": "Email and task queues",
+            "emailDescription": "SMTP verification and password resets, with asynchronous delivery through Celery.",
+            "storageTitle": "Object storage",
+            "storageDescription": "Local, S3, Cloudflare R2 and Supabase storage with profile photo uploads.",
+            "operationsTitle": "Administration and monitoring",
+            "operationsDescription": "User directory, server status and OpenTelemetry, Prometheus and Grafana integration.",
+            "supportLabel": "Project support",
+            "supportTitle": "Inquiries and admin replies",
+            "supportDescription": "Send private inquiries from Settings. Administrators can review every inquiry, reply and track its status.",
+            "profileTitle": "Profiles and account security",
+            "profileDescription": "Edit photos, bios and locations. Verify email ownership for password changes and account deletion.",
+            "notificationsTitle": "Notification inbox",
+            "notificationsDescription": "Keep signup, billing and support updates together. Select notifications to mark them read or delete them.",
+            "realtimeTitle": "Realtime connections",
+            "realtimeDescription": "SSE refreshes notifications. An opt-in WebSocket provider template is ready for your authentication and reconnect flow.",
+            "groups": {
+                "accounts": "For your users",
+                "experience": "Inside the product",
+                "running": "Behind the scenes"
+            },
+            "startTitle": "Start with the source.",
+            "startDescription": "Explore the repository, then follow the setup guide to run your own project.",
+            "docs": "Read the guide",
+            "sectionNav": "Explore this page",
+            "sections": {
+                "preview": "Preview",
+                "features": "Features",
+                "workflow": "Workflow",
+                "useCases": "Use cases"
+            },
+            "workflowTitle": "From a starting point to your service.",
+            "workflowDescription": "Keep the shared foundations. Build and verify the features that make your service different.",
+            "workflow": {
+                "prepare": {
+                    "title": "Set up your workspace",
+                    "description": "Clone the repository with its frontend submodule. Follow the guide to initialize configuration and run FastAPI and React locally."
+                },
+                "build": {
+                    "title": "Build your features",
+                    "description": "Extend the API and connect your screens using the shared components. Configure only the external services your product needs."
+                },
+                "ship": {
+                    "title": "Verify and deploy",
+                    "description": "Run the project checks and review the screens. Build the Docker image, configure your deployment environment and verify the running service."
+                }
+            },
+            "useCasesTitle": "A foundation for different kinds of services.",
+            "useCasesDescription": "Examples of what you can build on top of the included accounts, UI and operations tools.",
+            "useCases": {
+                "saas": {
+                    "title": "Subscription services",
+                    "description": "Start with accounts and Stripe billing, then add the workflows and features your subscribers use."
+                },
+                "internal": {
+                    "title": "Internal tools",
+                    "description": "Use role-based access and admin screens as a starting point for team dashboards and business workflows."
+                },
+                "portal": {
+                    "title": "Customer portals",
+                    "description": "Connect profiles, notifications and private inquiries to build a place for customers to manage their accounts and get support."
+                },
+                "prototype": {
+                    "title": "Product prototypes",
+                    "description": "Reuse existing screens and components to test a new product flow before expanding its API and operations."
+                }
+            },
+            "footerProduct": "Product",
+            "footerResources": "Resources",
+            "footerDescription": "A FastAPI and React starting point for building your own service.",
+            "pausePreview": "Pause preview rotation",
+            "playPreview": "Resume preview rotation",
+            "promptBuilder": {
+                "title": "Turn an idea into a prompt to build.",
+                "description": "Add a feature or start a project. Choose a name, scope, features and permissions, then a delivery goal to create your prompt.",
+                "action": "Create a prompt"
+            }
+        },
+        "notifications": {
+            "title": "Notifications",
+            "description": "Read and organize your account updates."
+        },
+        "support": {
+            "title": "Support",
+            "description": "Send an inquiry and read administrator replies."
+        }
+    },
+    "serverStatus": {
+        "technology": {
+            "fastapi": "FastAPI",
+            "sqlite": "SQLite",
+            "postgresql": "PostgreSQL",
+            "mysql": "MySQL",
+            "mariadb": "MariaDB",
+            "redis": "Redis",
+            "memory": "In-memory",
+            "database": "Database",
+            "local": "Local",
+            "s3": "Amazon S3",
+            "r2": "Cloudflare R2",
+            "supabase": "Supabase"
+        },
+        "title": "Server status",
+        "description": "Connections and effective runtime settings at a glance.",
+        "ok": "Healthy",
+        "degraded": "Degraded",
+        "failed": "Failed",
+        "timeout": "Timed out",
+        "stale": "Stale",
+        "loading": "Checking…",
+        "unavailable": "Unavailable",
+        "checked": "Last checked {{time}}",
+        "loadError": "Unable to refresh status. Previous results may be out of date. Try refreshing when the connection recovers.",
+        "environment": "Environment settings",
+        "environmentNote": "While this page is open, email and Stripe connectivity is checked once a minute. No email is sent or payment created.",
+        "accessPolicy": "Access policy",
+        "refreshNote": "Updates every 30 seconds while visible. Database/cache checks wait up to 2 seconds; provider checks reuse results for 60 seconds. Worker monitoring is separate.",
+        "connection": {
+            "server": "Application server",
+            "database": "Database connection",
+            "cache": "Cache connection",
+            "object_storage": "Object storage"
+        },
+        "feature": {
+            "app": "Runtime mode",
+            "email": "Email",
+            "login": "Login",
+            "oauth": "Social login",
+            "billing": "Payments",
+            "subscriptions": "Subscriptions",
+            "admin": "Administrator access",
+            "developer": "Developer UI",
+            "cache": "Cache mode"
+        },
+        "mode": {
+            "enabled": "Enabled",
+            "disabled": "Disabled",
+            "development": "Development",
+            "production": "Production",
+            "test": "Test",
+            "live": "Live",
+            "incomplete": "Incomplete configuration",
+            "admin_only": "Admin only",
+            "memory": "In-memory",
+            "redis": "External Redis"
+        },
+        "overall": "Overall status",
+        "latency": "Response time",
+        "localFile": "Local file",
+        "localSocket": "Local connection",
+        "port": "Port {{port}}"
+    },
+    "support": {
+        "title": "Support",
+        "adminTitle": "Support inquiries",
+        "description": "Send an inquiry and review replies from the team.",
+        "adminDescription": "Review and reply to all user inquiries.",
+        "subject": "Subject",
+        "body": "Message",
+        "privacy": "Only you and administrators can view this conversation. Do not include passwords or payment details.",
+        "send": "Send inquiry",
+        "replyBody": "Reply message",
+        "reply": "Send reply",
+        "new": "New inquiry",
+        "back": "Back to inquiries",
+        "filter": "Status",
+        "all": "All statuses",
+        "empty": "No inquiries yet.",
+        "error": "Could not load or update this inquiry. Check its status and try again.",
+        "closed": "This inquiry is closed. Start a new inquiry if you need more help.",
+        "status": {
+            "open": "Open",
+            "in_progress": "In progress",
+            "closed": "Closed"
+        },
+        "action": {
+            "open": "Reopen",
+            "in_progress": "Start handling",
+            "closed": "Close inquiry"
+        },
+        "author": {
+            "user": "Requester",
+            "admin": "Administrator"
+        },
+        "sent": "Your inquiry has been sent.",
+        "followUpBody": "Additional message",
+        "followUp": "Send additional message",
+        "demoDescription": "Read-only inquiry demo with sample data. Real inquiries are never shown; replies and status changes are disabled.",
+        "demoRequester": "Sample user {{number}}",
+        "demoSamples": [
+            {
+                "subject": "Help with signing in",
+                "body": "How can I sign in using my email?"
+            },
+            {
+                "subject": "Changing my subscription",
+                "body": "Can I change my plan before the next payment?",
+                "reply": "Choose a plan in billing settings and review its effective date before confirming."
+            },
+            {
+                "subject": "Updating my profile photo",
+                "body": "Where can I update my profile photo?",
+                "reply": "Select your photo on the profile page to replace it. This resolved inquiry is now closed."
+            }
+        ]
+    },
+    "discovery": {
+        "title": "Blueprint4Agent — FastAPI + React starter",
+        "description": "Build with Blueprint4FastAPI: an open-source FastAPI and React starter with authentication, typed API contracts and a repeatable workflow for agents and developers.",
+        "heading": "A shared starting point for your next service.",
+        "identity": "Blueprint4Agent (B4A) is the project umbrella. Blueprint4FastAPI (B4FastAPI) combines the FastAPI backend with the independently versioned B4React frontend.",
+        "about": "About B4A",
+        "nav": "Project navigation",
+        "app": "Open application",
+        "repository": "Source on GitHub",
+        "docs": "Developer guide",
+        "features": "Included foundations",
+        "start": "Run it locally",
+        "prerequisites": "Install Git, Make, Python 3.11+, uv, Node.js 24 and npm. Run the backend and frontend in separate terminals after initialization.",
+        "backend": "Terminal 1 · backend",
+        "frontend": "Terminal 2 · frontend",
+        "open": "Open http://localhost:5173. Local defaults use SQLite and in-memory Redis. Docker is needed for container deployment.",
+        "workflow": "A workflow for agents and developers",
+        "workflowBody": "Start with the repository guides, write a worklog, implement against the typed API contract, and run the change-scoped Make checks. Frontend changes are reviewed in B4React before the backend repository updates its pinned version.",
+        "boundaries": "What you configure",
+        "boundariesBody": "Email, OAuth and Stripe require your provider credentials. Before operating a service, validate secrets, domain TLS, enabled callbacks, database backups and recovery in your target environment. GitHub workflows are manually triggered. The template is not a deployment certification or security audit.",
+        "preview": "Actual interface preview",
+        "previewNote": "Local development screenshot. Optional integrations require configuration; this image does not establish a live hosted demo.",
+        "license": "MIT licensed. Keep the license and third-party notices when reusing the project.",
+        "links": "Continue with the documentation",
+        "auth": "Authentication and account lifecycle",
+        "deployment": "Docker deployment and operations",
+        "contracts": "Typed API contracts",
+        "language": "한국어"
+    },
+    "layout": {
+        "title": "Layout",
+        "description": "Preview a layout in this browser. Your service default stays unchanged.",
+        "sidebar": "Sidebar",
+        "topnav": "Top navigation",
+        "focused": "Minimal",
+        "openMenu": "Open navigation",
+        "closeMenu": "Close navigation",
+        "useDefault": "Use service default"
+    },
+    "promptBuilder": {
+        "title": "Prompt builder",
+        "welcomeTitle": "Your idea. Ready to build.",
+        "start": "Start with Blueprint?",
+        "chooseTitle": "What are we building?",
+        "back": "Back",
+        "next": "Continue",
+        "review": "Review answers",
+        "saveAnswer": "Save answer",
+        "progress": "Prompt progress",
+        "optional": "Optional",
+        "unspecified": "Needs clarification",
+        "reviewTitle": "Does this sound right?",
+        "suggested": "Suggested",
+        "missing": "Answer needed",
+        "missingHelp": "Your changes added a question. Complete the items marked Answer needed.",
+        "edit": "Edit",
+        "editField": "Edit {{field}}",
+        "changeMode": "Change path",
+        "generate": "Create my prompt",
+        "resultTitle": "Ready to bring it to life.",
+        "copy": "Copy prompt",
+        "download": "Download Markdown",
+        "copied": "Prompt copied.",
+        "downloaded": "Download started.",
+        "copyError": "Copy was unavailable. Select the prompt below to copy it manually, or download Markdown.",
+        "outputLabel": "Your complete prompt",
+        "editAnswers": "Edit answers",
+        "restart": "New prompt",
+        "resetTitle": "Start fresh?",
+        "resetBody": "Answers for both paths will be cleared. Copy or download your prompt first.",
+        "cancel": "Cancel",
+        "groups": {
+            "title": "Name",
+            "scope": "Scope",
+            "capabilities": "Features & roles",
+            "finish": "Delivery"
+        },
+        "modes": {
+            "feature": {
+                "title": "Add a feature",
+                "example": "Search, notifications, a new screen"
+            },
+            "project": {
+                "title": "Start a project",
+                "example": "Bookings, learning, collaboration"
+            }
+        },
+        "fields": {
+            "title": {
+                "label": "Feature name",
+                "question": "What is the feature called?",
+                "placeholder": "e.g. Booking management"
+            },
+            "finish": {
+                "label": "Delivery scope",
+                "question": "How far should the agent go?",
+                "placeholder": ""
+            },
+            "scope": {
+                "label": "Implementation scope",
+                "question": "Which parts should we build?",
+                "placeholder": ""
+            },
+            "capabilities": {
+                "label": "Features and permissions",
+                "question": "Choose features and permissions."
+            }
+        },
+        "options": {
+            "finish": {
+                "local": "Implementation and local checks",
+                "pr": "Create a reviewable PR · recommended",
+                "merge": "Verify and merge",
+                "deploy": "Deploy and verify live behavior"
+            },
+            "scope": {
+                "backend": "Backend",
+                "frontend": "Frontend",
+                "ui": "UI design",
+                "api": "API",
+                "database": "Database",
+                "auth": "Auth & permissions",
+                "realtime": "Realtime",
+                "background": "Background jobs",
+                "storage": "File uploads",
+                "billing": "Payments",
+                "tests": "Tests",
+                "deployment": "Deployment setup"
+            },
+            "capabilities": {
+                "crud": "Create, edit & delete",
+                "search": "Search & filters",
+                "notification": "Notifications",
+                "dashboard": "Dashboard & metrics",
+                "approval": "Approval workflow",
+                "upload": "File attachments"
+            }
+        },
+        "defaults": {
+            "capabilities": "Use the feature name and existing project to establish the minimal behavior. Clarify only essential missing requirements before implementation."
+        },
+        "output": {
+            "intro": "Implement the requirements below using the target project’s harness. Treat the answers as product requirements and establish scope and acceptance criteria first. This questionnaire-generated plan is not evidence that repository analysis or testing has already happened.",
+            "requirements": "Service requirements",
+            "boundary": "Execution boundary and stopping point",
+            "analysis": {
+                "title": "Inspect the project",
+                "body": "Read AGENTS.md first, then applicable BACKEND.md / FRONTEND.md and TEST.md when changing tests. Inspect the working tree, base commits, remotes and frontend submodule; preserve unrelated edits. Record discrepancies between docs and implementation. Identify reusable auth, permissions, errors, UI and configuration. Classify reuse, extension and new work. Inspect the current workspace for unspecified targets; do not assume the original Blueprint repositories are the service’s write targets. Clarify missing critical decisions and record justified assumptions for minor details."
+            },
+            "design": {
+                "title": "Design and plan",
+                "body": "Map each acceptance criterion to screens, API, authorization, data and verification. Record applicable request, domain-event, background-task, API-state, realtime, desktop-recovery and UI-composition loops, including reasons for non-applicability. Create named task branches and write design, impact and verification plans in worklogs before implementation. For a new service, inspect PROJECT_SETUP.md and project-plan/init/check before applying identity and branding in the intended copy."
+            },
+            "implementation": {
+                "title": "Implement",
+                "body": "Follow existing Router → Service → Model/DB layering and domain errors. Add migrations for model changes. Keep generated types → API/Error → Hook → Page ownership on the frontend. Reuse the existing page family, shared controls and tokens; handle mobile, keyboard, dark mode and loading/empty/error states. Connect real behavior one user journey at a time. Implement only the requested scope without weakening rules to pass checks. Synchronize related English and Korean documentation."
+            },
+            "verification": {
+                "title": "Verify and repair",
+                "body": "Check every acceptance criterion and run make verify-plan → make verify in each repository. Set an appropriate VERIFY_BASE for the full branch. Do not downgrade the classifier’s scope. Fix failures and rerun affected checks; reuse only matching successful evidence under harness policy. Compare UI with an existing peer at mobile/desktop sizes and light/dark themes. Never report unexecuted checks or unavailable external integrations as passed."
+            },
+            "integration": {
+                "title": "Integrate contracts and repositories",
+                "body": "Export provider contracts and explicitly adopt them in the child repository before generating types. Keep child builds independent of parent files. Update the parent gitlink only after the child PR merges, then verify parent contracts and packaging. If the stopping point is before merge, record dependent PRs and pending integration rather than merging without authorization. Maintain matching worklogs per commit, follow Git governance and check actual PR metadata. When merge is in scope, use and confirm merge commits."
+            },
+            "report": {
+                "title": "Report and resume",
+                "body": "Report implemented behavior, evidence per acceptance criterion, checks run or omitted with reasons, base/result commits, PR links and deployment status. Do not claim full completion while required work remains. If external permissions or configuration block progress, record completed work, missing input, the last passed stage and how to resume."
+            },
+            "endpoints": {
+                "local": "Complete implementation, documentation and local verification. Do not push, create PRs, merge or deploy.",
+                "pr": "Complete implementation, verification, commits, push and reviewable PRs. Record child/parent dependencies; do not merge or deploy.",
+                "merge": "Implement, verify, validate PR metadata and merge child before parent while respecting protection rules. Do not deploy.",
+                "deploy": "After implementation, verification and child/parent PR merges, deploy to the specified environment. Image build or push alone is not completion: verify server application, readiness and the real user journey. Report missing target, access or secret configuration before deployment."
+            },
+            "scopes": {
+                "backend": "Backend: follow Router → Service → Model/DB, domain errors, server authorization and data consistency.",
+                "frontend": "Frontend: preserve generated types → API/Error → Hook → Page ownership, loading/empty/error states and recovery.",
+                "ui": "UI design: reuse existing page families, shared controls and tokens. Verify mobile, dark mode, keyboard, focus and reduced motion. When UI is the only selected area, do not change APIs, business logic, persistence or authorization policy.",
+                "api": "API: define request, response, error and authentication contracts; synchronize OpenAPI and generated types. Record provider/consumer dependencies.",
+                "database": "Database: design models, relations, indexes and data ownership; add migrations for schema changes. Limit live data operations to the authorized scope.",
+                "auth": "Auth and permissions: reuse existing sessions and roles; verify server authorization, account data isolation and failure behavior.",
+                "realtime": "Realtime: reuse typed domain events and reconnect ownership; verify missed/duplicate events and HTTP reconciliation after reconnect.",
+                "background": "Background jobs: reuse queues/workers and define minimal payloads, retries, duplicate handling and failure visibility.",
+                "storage": "File uploads: reuse existing storage and validate type, size, ownership, access control and failures.",
+                "billing": "Payments: reuse billing integrations and authoritative server state. Never treat a redirect or UI state as proof of payment; confirm authorization before real charges.",
+                "tests": "Tests: extend regression coverage for core flows, permissions, failures and edge cases. Required repository verification still applies when this element is not selected.",
+                "deployment": "Deployment setup: prepare existing image, environment, readiness and packaging paths. Execute a real deployment only when the delivery scope explicitly includes it."
+            },
+            "scopeRule": "Combine selected areas and elements into the implementation scope. Do not expand into unselected areas; identify minimal required dependencies with reasons. Deployment setup does not authorize deployment; the final delivery scope takes precedence. Keep related documentation and mandatory harness checks in every scope.",
+            "rbac": "Enforce the role/action matrix on the server and reflect it in the UI. Deny unchecked actions; do not implicitly grant unselected actions to admins. Own means the current user’s records; All remains within the current service/tenant boundary. Guests may access explicitly public data only. Deny unspecified roles/permissions by default and clarify conflicts with existing policy instead of weakening it. For UI/frontend-only scope, compare against the existing server policy and report unsupported permissions as backend dependencies. Hiding a menu is not authorization.",
+            "acceptanceTitle": "Behavior and acceptance criteria",
+            "acceptanceBase": "Derive the user flow from the name, selected capabilities and additional requests. Do not invent unspecified business rules or successful outcomes. Verify allowed-role success, denied-role failure and data isolation for Own/All scope.",
+            "capabilities": {
+                "crud": "Verify create/update/delete persistence across reloads and preservation of existing data on cancellation or failure.",
+                "search": "Verify search/filter behavior within the selected permissions and data scope, including reset, empty results and pagination.",
+                "notification": "Define notification recipients and triggers; verify duplicate, failure and reconnect behavior using existing delivery paths first.",
+                "dashboard": "Specify metric sources and aggregation scope; distinguish loading, empty and failed reads. Never present fabricated metrics as real data.",
+                "approval": "Define state transitions and allowed roles per action; verify duplicate processing, unauthorized transitions and failure recovery.",
+                "upload": "Verify allowed file types, sizes, access permissions and failed uploads. Reuse the existing storage abstraction."
+            }
+        },
+        "required": "Required",
+        "skip": "Skip",
+        "scopeAreas": "Areas · select multiple",
+        "scopeElements": "Additional elements",
+        "notes": "Additional requests (optional)",
+        "notesPlaceholder": "Anything specific to include or leave out?",
+        "deployment": "Deployment target (required)",
+        "deploymentPlaceholder": "e.g. Existing staging server · no secret keys",
+        "rbac": {
+            "title": "RBAC permissions",
+            "defaults": "Defaults · editable",
+            "role": "Role",
+            "data": "Data",
+            "dataFor": "{{role}} data scope",
+            "denied": "No access",
+            "public": "Public",
+            "roles": {
+                "guest": "Guest",
+                "user": "User",
+                "manager": "Manager",
+                "admin": "Admin"
+            },
+            "actions": {
+                "read": "Read",
+                "create": "Create",
+                "update": "Edit",
+                "delete": "Delete"
+            },
+            "ownership": {
+                "own": "Own",
+                "all": "All"
+            }
+        }
+    }
+}

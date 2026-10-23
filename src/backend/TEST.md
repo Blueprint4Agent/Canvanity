@@ -1,36 +1,36 @@
-# Backend Test Engineering Guide
+# 백엔드 테스트 엔지니어링 가이드
 
-This document defines backend test architecture and working rules for `src/backend`.
-Follow this guide when adding or changing tests.
+이 문서는 `src/backend`의 테스트 아키텍처와 작업 규칙을 정의합니다.
+테스트를 추가/변경할 때 이 가이드를 따르세요.
 
-## 0) Scope and Priority
+## 0) 범위와 우선순위
 
-- Scope: everything under `src/backend/tests`.
-- Read order before backend test work:
-1. Root `AGENTS.md`
+- 범위: `src/backend/tests` 하위 전체
+- 백엔드 테스트 작업 전 읽기 순서:
+1. 루트 `AGENTS.md`
 2. `src/backend/BACKEND.md`
-3. This document (`src/backend/TEST.md`)
-- Priority on conflicts:
-1. Root `AGENTS.md`
+3. 이 문서 (`src/backend/TEST.md`)
+- 충돌 시 우선순위:
+1. 루트 `AGENTS.md`
 2. `src/backend/BACKEND.md`
-3. This document
+3. 이 문서
 
-## 1) Test Strategy (De Facto, Project-Adapted)
+## 1) 테스트 전략 (De Facto, 프로젝트 적응형)
 
-Recommended pyramid:
-1. Smoke: app boot and critical route availability
-2. API Contract: router-level request/response/auth contract with dependency overrides
-3. Unit: service/util logic with mocked dependencies
-4. Integration: DB/Redis/external integration with isolated test data
-5. E2E: full-system validation in running environment
+권장 피라미드:
+1. Smoke: 앱 부팅 및 핵심 라우트 가용성
+2. API Contract: dependency override 기반 router 요청/응답/인증 계약
+3. Unit: 모킹된 의존성 기반 service/util 로직
+4. Integration: 격리된 테스트 데이터 기반 DB/Redis/외부 연동
+5. E2E: 실행 환경에서 전체 시스템 검증
 
-Current baseline implemented:
-1. Smoke test (`tests/test_smoke.py`)
-2. API contract tests by domain (`tests/api/v1/<domain>/test_*_api.py`)
-3. Integration tests by domain (`tests/integration/api/v1/<domain>/test_*_integration.py`)
-4. Full-system seeded integration scenarios (`tests/integration/scenarios/test_full_system_scenario.py`)
+현재 구현된 기준선:
+1. 스모크 테스트 (`tests/test_smoke.py`)
+2. 도메인별 API 계약 테스트 (`tests/api/v1/<domain>/test_*_api.py`)
+3. 도메인별 통합 테스트 (`tests/integration/api/v1/<domain>/test_*_integration.py`)
+4. 시드 기반 full-system 통합 시나리오 (`tests/integration/scenarios/test_full_system_scenario.py`)
 
-## 2) Current Directory Layout
+## 2) 현재 디렉터리 레이아웃
 
 ```text
 src/backend/tests/
@@ -54,7 +54,7 @@ src/backend/tests/
       test_full_system_scenario.py
 ```
 
-Planned expansion layout:
+확장 예정 레이아웃:
 
 ```text
 src/backend/tests/
@@ -63,57 +63,57 @@ src/backend/tests/
     utils/
 ```
 
-## 3) Core Principles
+## 3) 핵심 원칙
 
-1. Keep `Router -> Service` boundary explicit in tests.
-2. Prefer fast, deterministic tests first (smoke + API contract).
-3. Use `dependency_overrides` for router tests to replace service/auth dependencies.
-4. Avoid real external I/O in smoke/API contract tests.
-5. Add integration tests when behavior depends on DB/Redis transaction semantics.
+1. 테스트에서 `Router -> Service` 경계를 명확히 유지
+2. 빠르고 결정적인 테스트를 우선 (smoke + API contract)
+3. router 테스트에서는 `dependency_overrides`로 서비스/인증 의존성을 대체
+4. smoke/API contract 테스트에서 실제 외부 I/O 사용 금지
+5. 동작이 DB/Redis 트랜잭션 의미론에 의존하면 integration 테스트 추가
 
-## 4) Smoke Test Rules
+## 4) 스모크 테스트 규칙
 
-- Goal: verify application boot and critical route availability.
-- Current endpoint contract: `GET /ping -> 200 {"status":"ok","message":"pong"}`.
-- File: `tests/test_smoke.py`.
-- Smoke tests must be minimal and always fast.
+- 목적: 애플리케이션 부팅 및 핵심 라우트 가용성 확인
+- 현재 엔드포인트 계약: `GET /ping -> 200 {"status":"ok","message":"pong"}`
+- 파일: `tests/test_smoke.py`
+- 스모크 테스트는 최소한으로 유지하고 항상 빨라야 함
 
-## 5) API Contract Test Rules (Current Main Harness)
+## 5) API 계약 테스트 규칙 (현재 메인 하네스)
 
-For each API domain:
-1. Create `tests/api/v1/<domain>/test_<domain>_api.py`.
-2. Build a small test app and include only the target router.
-3. Override dependencies (`AuthService`, `APIKeyService`, `get_current_user`, etc.).
-4. Assert status code + essential response contract.
+각 API 도메인에 대해:
+1. `tests/api/v1/<domain>/test_<domain>_api.py` 생성
+2. 작은 테스트 앱을 구성하고 대상 router만 include
+3. 의존성 override 적용 (`AuthService`, `APIKeyService`, `get_current_user` 등)
+4. status code + 핵심 응답 계약 검증
 
-Mandatory coverage per domain (minimum):
-1. Success case (200/201)
-2. Auth failure case (401 when protected)
-3. Request validation failure (422) when the endpoint accepts constrained input; do not invent inputs for an input-free GET.
+도메인별 필수 최소 커버리지:
+1. 성공 케이스 (200/201)
+2. 인증 실패 케이스 (보호 라우트일 때 401)
+3. 제약이 있는 입력을 받는 API의 요청 검증 실패(422); 입력 없는 GET에 인위적인 입력을 만들지 않음
 
-Notes for this codebase:
-1. Router tests use fake services, not real repositories.
-2. This keeps tests independent from DB and Redis runtime state.
-3. API contract tests should use minimal contract payload data, not production-like seed datasets.
+이 코드베이스 참고:
+1. router 테스트는 실제 repository가 아닌 fake service 사용
+2. DB/Redis 런타임 상태와 독립적으로 테스트 유지 가능
+3. API contract 테스트는 운영형 시드 데이터가 아닌 최소 계약 payload를 사용
 
-## 6) Fixtures and Reuse
+## 6) Fixture와 재사용
 
-- Shared fixtures belong in `tests/conftest.py`.
-- Shared API contract payload constants belong in `tests/fixtures/api_contract_data.py`; small domain-local payloads/fixtures may remain beside their tests.
-- Shared payload builders (`signup/login`) belong in `tests/fixtures/payload_data.py`.
-- Production-like seed dataset constants belong in `tests/fixtures/scenario_seed_data.py`.
-- Current shared fixture: `sample_user` (`UserResponse`).
-- Keep fixtures small and composable.
-- If domain-only fixture is needed, define it near that domain test file.
+- 공통 fixture는 `tests/conftest.py`에 배치
+- 공용 API contract payload 상수는 `tests/fixtures/api_contract_data.py`에 배치하고, 작은 도메인 전용 payload/fixture는 해당 테스트 옆에 둘 수 있음
+- 공통 payload builder (`signup/login`)는 `tests/fixtures/payload_data.py`에 배치
+- 운영 유사 시드 데이터 상수는 `tests/fixtures/scenario_seed_data.py`에 배치
+- 현재 공통 fixture: `sample_user` (`UserResponse`)
+- fixture는 작고 조합 가능하게 유지
+- 도메인 전용 fixture가 필요하면 해당 도메인 테스트 파일 인근에 정의
 
-Seed schema standard (required):
-1. Seed user schema: `SeedUserSchema`
+시드 스키마 표준 (필수):
+1. 사용자 시드 스키마: `SeedUserSchema`
    - `email: str`
    - `name: str`
    - `password: str`
    - `role: str`
    - `is_verified: bool`
-2. Seed profile schema: `SeedProfileSchema`
+2. 시드 프로필 스키마: `SeedProfileSchema`
    - `profile_name: str`
    - `primary_user: SeedUserSchema`
    - `existing_user_count: int`
@@ -121,245 +121,224 @@ Seed schema standard (required):
    - `existing_user_email_prefix: str`
    - `existing_user_name_prefix: str`
    - `existing_user_start_index: int`
-3. Default profile constant: `DEFAULT_SEED_PROFILE`
-4. Seed fixture (`seeded_integration_client`) must consume a `SeedProfileSchema` path, not raw ad-hoc constants.
+3. 기본 프로필 상수: `DEFAULT_SEED_PROFILE`
+4. 시드 fixture (`seeded_integration_client`)는 임의 상수가 아닌 `SeedProfileSchema` 경로를 사용해야 함
 
-Scenario flow schema standard (required):
-1. Cross-domain scenario input schema belongs in `tests/fixtures/scenario_flow_data.py`.
-2. Scenario schema should declare:
-   - principal credentials (login email/password)
-   - domain-specific action inputs (for example API key name)
-   - expected branch flags (for example disabled-key rejection)
-3. Scenario tests should consume schema constants (for example `DEFAULT_FULL_SYSTEM_SCENARIO`) instead of inline literals.
+시나리오 플로우 스키마 표준 (필수):
+1. 크로스도메인 시나리오 입력 스키마는 `tests/fixtures/scenario_flow_data.py`에 배치
+2. 시나리오 스키마는 다음을 선언해야 함:
+   - 주체 자격증명 (로그인 이메일/비밀번호)
+   - 도메인 액션 입력 (예: API 키 이름)
+   - 기대 분기 플래그 (예: 비활성 키 거부)
+3. 시나리오 테스트는 인라인 리터럴 대신 스키마 상수(예: `DEFAULT_FULL_SYSTEM_SCENARIO`)를 사용
 
-## 7) Unit / Integration / E2E Policy
+## 7) Unit / Integration / E2E 정책
 
-Unit tests:
-1. Target service or utility decision logic.
-2. Mock repository/external calls.
-3. No real DB/network.
+Unit 테스트:
+1. service 또는 utility의 의사결정 로직 대상
+2. repository/외부 호출은 모킹
+3. 실제 DB/네트워크 없음
 
-Integration tests:
-1. Use real test DB/Redis path.
-2. Isolate data per test (transaction rollback or dedicated reset fixture).
-3. Cover flows where repository/query behavior matters.
-4. Include production-like seeded dataset scenarios when business behavior depends on existing records.
-5. Use only the seed size required by assertions: a primary-only fixture for one existing principal, default bulk seeds for aggregate/full-system scenarios.
-6. Maintain full-system scenario flow under `tests/integration/scenarios/`.
-7. Marker boundaries are required:
-   - `api_test`: API contract tests only
-   - `primary_data`: integration tests on clean primary data state
-   - `mocked_data`: integration tests on production-like seeded data
-   - `email_enabled`: integration tests that require `EMAIL_ENABLED=true` flow
+Integration 테스트:
+1. 실제 테스트 DB/Redis 경로 사용
+2. 테스트별 데이터 격리 (트랜잭션 롤백 또는 전용 reset fixture)
+3. repository/query 동작이 중요한 플로우 커버
+4. 기존 레코드 의존 비즈니스에는 운영 유사 시드 시나리오 포함
+5. assertion에 필요한 seed 크기만 사용: 기존 사용자 1명은 primary-only, 집계/종합 시나리오는 기본 bulk profile
+6. full-system 시나리오 플로우는 `tests/integration/scenarios/`에 유지
+7. marker 경계 필수:
+   - `api_test`: API 계약 테스트 전용
+   - `primary_data`: 클린 프라이머리 데이터 상태의 integration 테스트
+   - `mocked_data`: 운영 유사 시드 데이터 상태의 integration 테스트
+   - `email_enabled`: `EMAIL_ENABLED=true` 플로우를 검증하는 integration 테스트
 
-E2E tests:
-1. Run against a real running app instance.
-2. Keep only critical user journeys.
-3. Do not duplicate broad API contract coverage already done by lower levels.
+E2E 테스트:
+1. 실제 실행 중인 앱 인스턴스 대상으로 수행
+2. 핵심 사용자 여정만 유지
+3. 하위 레벨에서 이미 검증한 광범위 API 계약을 중복하지 않음
 
-## 8) Commands
+## 8) 실행 명령
 
-Run all backend tests:
+백엔드 테스트 전체 실행:
 
 ```bash
 cd src/backend
 TRACING_ENABLED=false uv run pytest
 ```
 
-Run API contract tests only:
+API 계약 테스트만 실행:
 
 ```bash
 cd src/backend
 TRACING_ENABLED=false uv run pytest -m api_test
 ```
 
-Run integration tests with clean primary data:
+클린 프라이머리 데이터 통합 테스트만 실행:
 
 ```bash
 cd src/backend
 TRACING_ENABLED=false uv run pytest -m primary_data
 ```
 
-Run seeded production-like scenario/integration tests:
+운영 유사 시드 시나리오/통합 테스트 실행:
 
 ```bash
 cd src/backend
 TRACING_ENABLED=false uv run pytest -m mocked_data
 ```
 
-Run email-enabled integration tests:
+이메일 활성화 플로우 통합 테스트 실행:
 
 ```bash
 cd src/backend
 TRACING_ENABLED=false uv run pytest -m email_enabled
 ```
 
-Run only full-system seeded scenarios:
+full-system 시드 시나리오만 실행:
 
 ```bash
 cd src/backend
 TRACING_ENABLED=false uv run pytest -m "mocked_data and scenario_flow"
 ```
 
-Before commit use root `make verify-plan` / `make verify`; the commands above are explicit standalone scopes, not an unconditional checklist.
+커밋 전에는 루트 `make verify-plan` / `make verify`를 사용합니다. 위 명령은 요청한 범위를 독립 실행하기 위한 예시이며 매번 모두 실행하는 체크리스트가 아닙니다.
 
-## 8.1) Seeded Full-System Scenario Sequence
+## 8.1) 시드 기반 Full-System 시나리오 순서
 
-File:
+파일:
 1. `tests/integration/scenarios/test_full_system_scenario.py`
 
-Execution markers:
+실행 마커:
 1. `mocked_data`
 2. `scenario_flow`
 
-Auth domain sequence (`test_seeded_auth_domain_main_flow`):
-1. Seeded primary user login success
-2. OAuth providers contract check
-3. `/auth/me` success with bearer token
-4. `/auth/admin/user-role-stats` success for seeded admin principal
-5. `/auth/me` profile update success
-6. `/auth/refresh` success with refresh context
-7. `/auth/logout` success and session invalidation
-8. `/auth/refresh` rejected after logout (`INVALID_TOKEN`)
-9. `/auth/signup` duplicate email rejected (`EMAIL_ALREADY_EXISTS`)
-10. `/auth/login` wrong password rejected (`INVALID_CREDENTIALS`)
-11. `/auth/signup` malformed email rejected (422)
-12. `/auth/resend-verification` contract success
-13. `/auth/forgot-password` branch by `EMAIL_ENABLED` toggle
+Auth 도메인 시퀀스 (`test_seeded_auth_domain_main_flow`):
+1. 시드된 기준 사용자 로그인 성공
+2. OAuth providers 계약 확인
+3. bearer 토큰 기반 `/auth/me` 성공
+4. 시드된 admin 주체 기준 `/auth/admin/user-role-stats` 성공
+5. `/auth/me` 프로필 업데이트 성공
+6. refresh 컨텍스트 기준 `/auth/refresh` 성공
+7. `/auth/logout` 성공 및 세션 무효화
+8. 로그아웃 후 `/auth/refresh` 거부 (`INVALID_TOKEN`)
+9. 중복 이메일 `/auth/signup` 거부 (`EMAIL_ALREADY_EXISTS`)
+10. 잘못된 비밀번호 `/auth/login` 거부 (`INVALID_CREDENTIALS`)
+11. 잘못된 이메일 형식 `/auth/signup` 거부 (422)
+12. `/auth/resend-verification` 계약 성공
+13. `EMAIL_ENABLED` 토글 기준 `/auth/forgot-password` 분기 검증
 
-API key domain sequence (`test_seeded_api_key_domain_main_flow`):
-1. Seeded primary user login success
-2. `/api-keys` create success
-3. Duplicate key name rejected (`API_KEY_NAME_ALREADY_EXISTS`)
-4. `/api-keys` list includes created key
-5. API key auth success on `/auth/me`
-6. `/api-keys/{id}/status` disable success
-7. Disabled key rejected on `/auth/me` (`API_KEY_INVALID`)
-8. `/api-keys/{id}/status` enable success
-9. Re-enabled key auth success on `/auth/me`
-10. `/api-keys/{id}` delete success
-11. Deleted key repeat-delete rejected (`API_KEY_NOT_FOUND`)
+API key 도메인 시퀀스 (`test_seeded_api_key_domain_main_flow`):
+1. 시드된 기준 사용자 로그인 성공
+2. `/api-keys` 생성 성공
+3. 중복 키 이름 거부 (`API_KEY_NAME_ALREADY_EXISTS`)
+4. `/api-keys` 목록에 생성 키 포함
+5. `/auth/me`에서 API key 인증 성공
+6. `/api-keys/{id}/status` 비활성화 성공
+7. 비활성 키로 `/auth/me` 접근 거부 (`API_KEY_INVALID`)
+8. `/api-keys/{id}/status` 활성화 성공
+9. 재활성 키로 `/auth/me` 인증 성공
+10. `/api-keys/{id}` 삭제 성공
+11. 삭제된 키 재삭제 거부 (`API_KEY_NOT_FOUND`)
 
-## 8.2) Test Data Lifecycle
+## 8.2) 테스트 데이터 라이프사이클
 
-1. `api_test` does not use DB seed data.
-2. `primary_data` integration uses per-test isolated temporary DB with clean initial state.
-3. `mocked_data` integration uses per-test isolated temporary DB plus seeded profile data.
-4. Seed data is recreated for each test execution and discarded with temporary DB teardown.
-5. `email_enabled` integration uses `email_enabled_integration_client` fixture which forces `EMAIL_ENABLED=true` with null mail provider to avoid external SMTP dependency.
+1. `api_test`는 DB 시드 데이터를 사용하지 않음
+2. `primary_data` integration은 테스트별 격리된 임시 DB의 클린 초기 상태 사용
+3. `mocked_data` integration은 테스트별 격리된 임시 DB + 시드 프로필 데이터 사용
+4. 시드 데이터는 테스트 실행마다 재생성되며 임시 DB teardown 시 폐기됨
+5. `email_enabled` integration은 `email_enabled_integration_client` fixture를 사용하며, 외부 SMTP 의존 없이 `EMAIL_ENABLED=true` 분기를 검증하기 위해 null mail provider를 사용함
 
-## 8.3) Error Contract Consistency Rule (Static Serving Mode)
+## 8.3) 에러 계약 일관성 규칙 (Static Serving 모드)
 
-1. In static serving mode, SPA fallback must apply only to non-API HTML requests.
-2. API-path (`/api/...`) 404 responses must preserve domain error payload shape from raised exception detail.
-3. Do not replace API 404 detail with plain `"Not Found"` in fallback handler logic.
+1. static serving 모드에서 SPA fallback은 비 API HTML 요청에만 적용
+2. API 경로(`/api/...`) 404 응답은 예외 detail의 도메인 에러 payload shape를 유지
+3. fallback 핸들러에서 API 404 detail을 plain `"Not Found"`로 덮어쓰면 안 됨
 
-## 8.4) Current Scenario Inventory
+## 8.4) 현재 시나리오 인벤토리
 
 Smoke:
 1. `tests/test_smoke.py::test_ping_returns_ok`
 
-API contract (`api_test`):
+API 계약 (`api_test`):
 1. `tests/api/v1/auth/test_auth_api.py`
 2. `tests/api/v1/api_key/test_api_key_api.py`
 3. `tests/api/v1/events/test_events_api.py`
 
-Integration primary dataset (`primary_data`):
-1. `tests/integration/api/v1/auth/test_auth_integration.py` primary-state flows + RBAC forbidden/success branches
+Integration 기본 데이터셋 (`primary_data`):
+1. `tests/integration/api/v1/auth/test_auth_integration.py` primary 상태 플로우 + RBAC 금지/성공 분기
 2. `tests/integration/api/v1/api_key/test_api_key_integration.py`
 
-Integration email-enabled dataset (`email_enabled`):
-1. `tests/integration/api/v1/auth/test_auth_integration.py` email verification required login + forgot-password token issuance flows
-
-Integration seeded dataset (`mocked_data`):
-1. `tests/integration/api/v1/auth/test_auth_integration.py` seeded-state flows
+Integration 시드 데이터셋 (`mocked_data`):
+1. `tests/integration/api/v1/auth/test_auth_integration.py` seeded 상태 플로우
 2. `tests/integration/scenarios/test_full_system_scenario.py`
 
-## 9) Naming and intent
+Integration 이메일 활성 데이터셋 (`email_enabled`):
+1. `tests/integration/api/v1/auth/test_auth_integration.py`의 이메일 인증 필수 로그인 분기 + 비밀번호 재설정 토큰 소비 플로우
 
-Use `test_<target>.py` and descriptive `test_<behavior>_<expected_result>` names.
-Assert status, meaningful response fields and relevant domain error codes. Add a short
-scenario docstring or Given/When/Then comments when they explain a non-obvious or
-multi-step flow; trivial tests do not require boilerplate comments. Keep one behavior
-owner per layer rather than copying the same negative case through every layer.
+## 9) 이름과 검증 의도
 
-## 10) Change Checklist
+파일은 `test_<target>.py`, 함수는 동작과 결과를 드러내는 `test_<behavior>_<expected_result>`를
+사용합니다. 상태 코드·중요 응답 필드·해당 도메인 오류를 명시적으로 확인합니다.
+복잡한 다단계 흐름이나 이름만으로 설명되지 않는 의도에는 짧은 docstring 또는
+Given/When/Then 설명을 추가합니다. 단순 테스트에 형식적인 주석을 강제하지 않으며,
+같은 실패 조건을 모든 계층에 복사하지 않습니다.
 
-When backend API behavior changes:
-1. Update matching domain API tests under `tests/api/v1/<domain>/`.
-2. Add/adjust smoke test only if boot/critical route contract changed.
-3. If behavior depends on persistence semantics, add integration coverage.
-4. Keep docs synchronized (`BACKEND.md`, `README.md`, this file if needed).
+## 10) 변경 체크리스트
 
-## 11) New domain verification
+백엔드 API 동작이 변경될 때:
+1. `tests/api/v1/<domain>/` 아래 대응 도메인 API 테스트 업데이트
+2. 부팅/핵심 라우트 계약이 바뀌었을 때만 스모크 테스트 조정
+3. 영속성 의미론이 중요한 동작이면 integration 커버리지 추가
+4. 문서 동기화 유지 (`BACKEND.md`, `README.md`, 필요 시 이 문서)
 
-Use existing paths so the planner can find coverage without a new registry:
-`tests/api/v1/<domain>/test_<domain>_api.py`, optional
-`tests/integration/api/v1/<domain>/`, and unit tests named `test_<domain>*.py`.
+## 11) 신규 도메인 검증
 
-- Cover the actual HTTP success contract. Add authentication/role/ownership failures
-  for protected/private resources and validation failures when constrained input exists.
-- A stateless input-free GET can be covered at the API layer; no empty-state DB test,
-  seeded fixture, artificial 422 case or duplicate service test is required.
-- Use integration tests when real persistence/query/transaction behavior matters.
-  Keep representative stored-state/rollback/isolation invariants there; schema rejection
-  belongs at the API/model layer and must not initialize DB/signup/login per invalid value.
-- Existing-record-dependent behavior uses the smallest relevant SeedProfileSchema.
-  `seeded_primary_client` supplies one principal for billing identity adoption;
-  full-system scenarios retain primary+50 users and own seeded login/duplicate-email
-  regression coverage. Auth/runtime changes always retain those broad scenarios.
-- Update cross-domain scenarios only when the feature participates in that flow.
-  Keep payload builders and seed profiles under existing fixture owners; never add real
-  credentials/provider calls or production data to API contract tests.
-- Before commit run root `make verify-plan` then `make verify`; record selected checks
-  and any broad fallback. Static consumers/domain test paths select independent APIs;
-  shared auth/permissions/ORM/migrations/config, unresolved imports or missing coverage
-  keep the full backend suite. Test-only changes select the changed test files.
-- App entry-point narrowing recognizes only constant, appended include_router wiring
-  of newly added modules using the existing `from app.routers.v1 import ...` style.
-  Other startup/lifecycle/registration changes remain broad.
+기존 `tests/api/v1/<domain>/test_<domain>_api.py`, 필요한 경우의
+`tests/integration/api/v1/<domain>/`, `test_<domain>*.py` 단위 테스트 이름을 사용합니다.
+별도 도메인 하네스 등록 없이 이 경로와 실제 import 소비 관계로 검사를 선택합니다.
 
-## Shared Contract Regression Checks
+- 실제 HTTP 성공 계약을 확인합니다. 보호/비공개 자원은 인증·역할·소유권 실패를,
+  제약이 있는 입력은 해당 검증 실패를 확인합니다.
+- 상태 없는 입력 없는 GET은 API 계층 검증으로 충분할 수 있습니다. 형식적인 빈 DB·seeded·
+  422 또는 같은 내용을 반복하는 서비스 테스트를 만들지 않습니다.
+- 실제 저장·조회·트랜잭션이 중요한 경우 integration을 작성합니다. 대표 저장 상태·rollback·
+  계정 격리 불변식은 유지하되 schema rejection마다 DB·가입·로그인을 준비하지 않습니다.
+- 기존 레코드에 의존하는 동작만 필요한 최소 SeedProfileSchema를 사용합니다.
+  seeded_primary_client는 결제 식별자 연결에 필요한 주 사용자 1명만 준비합니다.
+  종합 시나리오는 기존 primary+50명을 유지하고 seeded 로그인·중복 이메일 검증을 소유합니다.
+  인증/런타임 소스 변경은 이 종합 시나리오를 포함한 넓은 검증을 유지합니다.
+- 기능이 참여하는 경우에만 cross-domain 시나리오를 수정합니다. payload/seed fixture 경계를
+  유지하고 API 계약 테스트에 실제 자격 증명·제공자 호출·운영 데이터를 넣지 않습니다.
+- 커밋 전 루트 make verify-plan / make verify를 실행하고 선택 범위와 확대 이유를 기록합니다.
+  공유 인증/권한·ORM·마이그레이션·설정·불명확한 import·누락 커버리지는 백엔드 전체를 유지합니다.
+  테스트만 변경하면 실제 변경 테스트 파일을 선택합니다.
+- 진입점의 좁은 검증은 기존 from app.routers.v1 import 형식으로 새 모듈을 가져오고,
+  상수 prefix/tags의 include_router를 기존 등록 뒤에 추가한 경우만 인정합니다.
+  다른 startup/lifecycle/라우터 등록 변경은 넓게 검사합니다.
 
-`tests/test_openapi_contract.py` checks reference integrity, protected-route auth
-responses, readiness 503, SSE/redirect transport declarations, both 500 envelopes,
-and event data models. It runs under `api_test` without external services.
-`make contract-check` separately checks freshness of the committed JSON baseline.
+## 공통 계약 회귀 검사
 
-Mail template unit tests parse both EN/KO verification and reset HTML to verify
-CTA/fallback URLs, plaintext preservation, locale and escaping of dynamic content.
-They do not send mail or require a provider.
+`tests/test_openapi_contract.py`는 참조 무결성, 보호된 API의 인증 오류 선언,
+readiness 503, SSE/리다이렉트 미디어 형식, 도메인·예상하지 못한 500 응답,
+이벤트 data 모델을 검사합니다. 외부 서비스 없이 `api_test`로 실행됩니다.
+`make contract-check`는 커밋된 JSON 기준 파일의 최신 여부를 별도로 검사합니다.
 
-## Celery mail verification
+메일 템플릿 단위 테스트는 한국어·영어 인증/재설정 HTML을 파싱해 CTA·대체 URL,
+일반 텍스트 유지, 로케일과 동적 콘텐츠 이스케이프를 확인합니다. 실제 메일 발송이나
+외부 제공자가 필요하지 않습니다.
 
-Auth email integration tests capture Celery publication and assert the kind,
-locale and issued token link without an external broker. Mail task tests cover
-bounded retries, recovery, expiry, disabled mail and failure archive recovery.
-Celery worker tests use an isolated memory transport; deployment fixtures execute
-the real startup script with fake Docker commands to verify worker-before-API
-ordering and fail-closed rollout. For release smoke, use isolated real Redis and a
-local SMTP capture server, never customer email addresses or the production broker.
+## Celery 메일 검증
 
-## Admin status checks
+인증 통합 테스트는 Celery 발행을 기록해 메일 종류·언어·발급 토큰 링크를 확인합니다.
+메일 task 테스트는 제한된 재시도·복구·만료·비활성·실패 보관 재시도를 검증합니다.
+worker 테스트는 격리한 메모리 transport를 사용합니다. 배포 테스트는 실제 시작
+스크립트에 가짜 Docker 명령을 연결해 worker 우선 시작과 실패 시 API 배포 중단을
+확인합니다. 실제 프로세스 smoke는 별도 Redis와 로컬 SMTP 수신 서버에서 실행하며
+실제 고객 주소나 운영 broker를 사용하지 않습니다.
 
-Admin status contract tests cover the role boundary, safe environment projection,
-probe failure and timeout. Integration exercises actual SQLite/Redis probes and
-immediate access loss after demotion with an existing token. The endpoint accepts
-no parameters/body, so request validation (422) is not applicable. There are no
-record-dependent aggregates or cross-domain mutations requiring seeded scenarios.
+## 터미널 표시 테스트
 
-## Terminal display fixtures
-
-Tests for an interactive Rich console explicitly set TERM with monkeypatch before
-constructing the console. `force_terminal=True` alone does not override a dumb
-terminal. Restore the caller environment automatically; do not require a global
-terminal setting or change runtime fallback behavior to satisfy a fixture.
-
-## Local tracing isolation
-
-Run backend tests through root `make backend-test` (or `make verify`). These commands
-set `TRACING_ENABLED=false` for the test process, independently of developer `.env`.
-Tests must not start a real OTLP exporter; tracing-specific tests can opt in with a
-mocked exporter. For direct pytest use `TRACING_ENABLED=false uv run python -m pytest`.
-This also avoids forking a native gRPC exporter thread in subprocess-based deployment
-fixtures on macOS. Production/runtime tracing settings are unchanged.
+대화형 Rich 콘솔 테스트는 콘솔 생성 전에 monkeypatch로 TERM을 명시합니다.
+`force_terminal=True`만으로는 dumb 터미널 판정을 덮어쓰지 않습니다. 호출자의
+환경은 자동 복구하며, 테스트 때문에 전역 터미널 설정을 요구하거나 런타임의
+일반 로그 대체 동작을 변경하지 않습니다.
