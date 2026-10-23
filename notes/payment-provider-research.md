@@ -1,117 +1,102 @@
-# Additional payment providers — issue #94
+# 다른 결제 제공자 확장 검토 — 이슈 #94
 
-[한국어](ko/payment-provider-research.md). Researched **2026-10-08** against official
-sources and parent `f608b46` / B4React `d4878ea`. Related: [#93 audit](billing-audit-93.md),
-[#95 mail policy](lifecycle-mail.md). This is a research decision, not provider activation.
+. 조사일 **2026-10-08**.
+공식 자료와 상위 `f608b46` / B4React `d4878ea` 코드를 기준으로 확인했습니다.
+관련 문서: [93번 점검](billing-audit-93.md), [95번 메일 정책](lifecycle-mail.md).
+제공자 도입이 아닌 조사·판단 기록입니다.
 
-## Decision and requirements
+## 결론과 요구사항
 
-**Keep the current Stripe implementation; defer adding a second provider.** The template
-has a tested billing lifecycle, but seller eligibility, target market and settlement
-requirements have not been supplied. A generic adapter now would hide real differences
-in subscription scheduling, checkout UI and tax responsibility. This is an engineering
-conclusion from the comparison below, not a claim that Stripe is suitable for every merchant.
+**현재 Stripe 구현을 유지하고 두 번째 제공자 도입은 보류합니다.**
+템플릿의 결제 흐름은 검증되어 있지만 판매자 가입 조건·대상 시장·정산 요구는 아직 제공되지 않았습니다.
+지금 범용 어댑터를 만들면 구독 주기 관리·결제창·세금 책임의 실제 차이를 숨길 수 있습니다.
+이는 아래 비교에 따른 기술적 판단이며 모든 사업자에게 Stripe가 적합하다는 뜻은 아닙니다.
 
-| Dimension | Confirmed template behavior | Decision still required |
+| 항목 | 현재 템플릿에서 확인한 내용 | 추가 결정 |
 | --- | --- | --- |
-| Product | Plus/Pro monthly/annual subscriptions | Actual product and allowed business category |
-| Countries | Korean/English UI | Seller legal country, buyer countries; **확인 필요** |
-| Currency | KRW/USD price catalog, integer minor units | Charge/settlement currency and FX policy |
-| Methods | Card/Link setup, provider-hosted checkout | Domestic wallets, bank transfer, domestic recurring coverage |
-| Billing | Immediate paid tier upgrade; period-end downgrade/cancel | Trials, usage billing, one-time purchases, grace period |
-| Receipts/tax | Stripe receipts, separate app lifecycle mail | Seller tax/receipt obligations, MoR preference; **확인 필요** |
-| Refund/dispute | Provider dashboard; no app refund endpoint | Partial refunds, dispute owner, refund accounting/access |
-| Settlement | Not modeled locally | Bank country/currency, payout timing, reserves and thresholds |
-| Economics | Sandbox Plus USD 3.99/month | Volume, ticket size, refund/dispute rate and commercial quote |
+| 상품 | Plus/Pro 월간·연간 구독 | 실제 상품·허용 업종 |
+| 국가 | 한국어/영어 UI | 판매자 법인 국가·구매자 국가: **확인 필요** |
+| 통화 | KRW/USD 가격·정수 최소 단위 | 청구/정산 통화·환전 정책 |
+| 수단 | 카드/Link 등록·제공자 결제창 | 국내 간편결제·계좌이체·정기결제 우선순위 |
+| 구독 | 결제 확인 후 상향, 기간 종료 하향/해지 | 체험·사용량·일회성 구매·유예 기간 |
+| 영수증/세금 | Stripe 영수증·별도 앱 상태 메일 | 사업자 의무·MoR 필요 여부: **확인 필요** |
+| 환불/분쟁 | 제공자 Dashboard, 앱 환불 API 없음 | 부분 환불·분쟁 담당·회계/권한 |
+| 정산 | 로컬 모델 없음 | 계좌 국가/통화·주기·유보·최소 금액 |
+| 비용 | 테스트 Plus USD 3.99/월 | 거래량·객단가·환불/분쟁률·실제 견적 |
 
-Select candidates by domestic-method coverage, complete subscription behavior, seller
-onboarding, operational responsibility, testability, and total cost—not payment API shape
-alone. Toss Payments represents a direct domestic PG, PortOne a multi-PG integration
-layer, and Paddle a software-focused Merchant of Record (MoR). These are different roles.
+후보 기준은 국내 수단, 구독 전체 흐름, 가입 조건, 운영 책임, 테스트 가능성, 총비용입니다.
+Toss Payments는 직접 국내 PG, PortOne은 여러 PG 통합 계층, Paddle은 소프트웨어 중심
+판매 주체 대행(Merchant of Record, MoR) 후보로 골랐습니다. 같은 역할의 서비스가 아닙니다.
 
-## Official comparison
+## 공식 자료 비교
 
-| Option | Capability / onboarding / test evidence | Cost evidence and limits |
+| 후보 | 지원·가입·테스트 근거 | 공개 비용과 제약 |
 | --- | --- | --- |
-| Current Stripe Payments + Billing | Existing card/Link, Checkout, schedules, portal and signed webhooks. Seller eligibility must be checked against [availability](https://stripe.com/global). This integration is not Stripe Managed Payments/MoR. | Public [pricing](https://stripe.com/pricing) showed 2.9% + USD 0.30 domestic-card example and Billing pay-as-you-go 0.7% of Billing volume. Country-specific rates, FX, tax products and disputes prevent treating this as our merchant quote. |
-| Toss Payments direct | [Billing guide](https://docs.tosspayments.com/guides/v2/billing) supports card and bank-transfer automatic billing, subject to risk review/additional contract; the merchant implements its subscription cycle. Use the [hosted billing UI](https://docs.tosspayments.com/guides/v2/billing/integration), not raw card collection. Test keys/sandbox precede live activation. | [Public fee table](https://www.tosspayments.com/about/fee): general card 3.4%, VAT extra; listed signup KRW 220,000 and annual management KRW 110,000 depend on contract. Automatic-billing quote, settlement, eligible methods and preferential rates need confirmation. General one-time wallet support is not recurring-wallet support. |
-| PortOne V2 + contracted PG | [KCP example](https://developers.portone.io/opi/ko/integration/pg/v2/kcp-v2) exposes billing-key issuance and scheduled payments. Each PG/channel determines actual methods and prerequisites; this is not automatically a full Stripe Subscription equivalent. [V2 API](https://developers.portone.io/api/rest-v2/overview?v=v2) documents idempotency and provider latency. Test a selected PG channel, not an abstract aggregate. | [Platform pricing](https://www.portone.io/pricing): Free below KRW 50m monthly net transactions; displayed monthly Growth tiers KRW 100k/300k/500k. [PG processing fees](https://help.portone.io/category/pricing) are a separate comparison dimension; confirm the combined contract/usage quote. Free platform usage does not mean free card processing. |
-| Paddle Billing | [MoR](https://www.paddle.com/paddle-101) option for software, handling customer payment/tax operations. [Verification](https://developer.paddle.com/api-reference/verifications/) includes domain/business/identity checks; acceptance is not assumed. [Separate sandbox](https://developer.paddle.com/sdks/sandbox/) supports isolated credentials/data. | [Pricing](https://www.paddle.com/pricing): 5% + USD 0.50 per Checkout transaction; bespoke low-ticket pricing can be requested. Do not compare only percentage rates or assume merchant acceptance. |
+| 현재 Stripe Payments + Billing | 카드/Link·Checkout·Schedule·Portal·서명 웹훅을 사용 중입니다. [지원 국가](https://stripe.com/global)에서 판매자 가입 가능 여부를 확인해야 합니다. 현재 연동은 Stripe Managed Payments/MoR가 아닙니다. | [가격](https://stripe.com/pricing)에 국내 카드 예시 2.9%+USD 0.30, Billing 사용량 요금 0.7%가 표시됩니다. 국가별 요금·환전·세금 상품·분쟁 비용이 있어 이를 실제 사업자 견적으로 간주하면 안 됩니다. |
+| Toss Payments 직접 | [자동결제](https://docs.tosspayments.com/guides/v2/billing)는 카드·계좌이체를 지원하며 리스크 검토와 추가 계약이 필요합니다. 구독 주기는 가맹점이 구현합니다. 카드 원문 수집 대신 [결제창 방식](https://docs.tosspayments.com/guides/v2/billing/integration)을 우선합니다. 테스트 키/샌드박스 후 실서비스를 활성화합니다. | [공개 요금](https://www.tosspayments.com/about/fee): 일반 카드 3.4%, VAT 별도. 가입비 22만원·연관리비 11만원은 계약에 따라 달라집니다. 자동결제·정산·우대율은 견적 확인이 필요합니다. 일반 간편결제 지원을 정기 간편결제 지원으로 해석하면 안 됩니다. |
+| PortOne V2 + 계약 PG | [KCP 연동 예](https://developers.portone.io/opi/ko/integration/pg/v2/kcp-v2)에 빌링키 발급·예약 결제가 있습니다. 실제 수단/조건은 PG·채널별이며 Stripe Subscription과 같지 않습니다. [V2 API](https://developers.portone.io/api/rest-v2/overview?v=v2)에 멱등성·PG 지연 정책이 있습니다. 선택한 테스트 채널로 검증해야 합니다. | [플랫폼 가격](https://www.portone.io/pricing): 월 순거래액 5천만원 미만 Free, 표시된 월 결제 Growth 구간은 10만/30만/50만원입니다. [PG 처리 비용](https://help.portone.io/category/pricing)을 별도로 비교하고 전체 계약·사용량 견적을 확인해야 합니다. 플랫폼 무료가 카드 결제 무료는 아닙니다. |
+| Paddle Billing | 소프트웨어용 [MoR](https://www.paddle.com/paddle-101)로 구매자 결제·세금 운영을 담당합니다. [검증](https://developer.paddle.com/api-reference/verifications/)에는 도메인·사업자·신원 확인이 있으며 승인을 가정하지 않습니다. [샌드박스](https://developer.paddle.com/sdks/sandbox/)는 키·데이터를 분리합니다. | [공개 가격](https://www.paddle.com/pricing)은 Checkout 거래당 5%+USD 0.50이며 소액 거래 맞춤 견적을 문의할 수 있습니다. 비율만 비교하거나 가입 승인을 가정하면 안 됩니다. |
 
-Paddle lists [KRW and USD payment currencies](https://developer.paddle.com/concepts/sell/supported-currencies/),
-but payout currencies differ; KRW pricing is not proof of KRW settlement or Korean seller
-approval. Its [payout guide](https://www.paddle.com/help/manage/get-paid/when-and-how-do-i-get-paid)
-describes monthly payouts and a minimum USD 100 threshold; country/bank charges need review.
-For Toss/PortOne, obtain the actual merchant/PG settlement contract rather than promising
-a generic payout day. Refund/dispute handling must be tested in each provider's sandbox
-and responsibility assigned before adoption; no live refund is part of this research.
+Paddle은 [KRW/USD 결제 통화](https://developer.paddle.com/concepts/sell/supported-currencies/)를 지원하지만
+지급 통화는 별도입니다. KRW 가격 지원이 KRW 정산이나 한국 사업자 가입 승인을 뜻하지 않습니다.
+[정산 안내](https://www.paddle.com/help/manage/get-paid/when-and-how-do-i-get-paid)는 월별 지급·최소 USD 100을
+설명하며 국가/은행 비용은 확인이 필요합니다. Toss/PortOne도 가맹점·PG 계약을 받아야 정확한 정산일을 정할 수 있습니다.
+환불·분쟁 담당을 지정하고 후보별 샌드박스로 검증해야 하며 이번 조사에서 실제 환불은 하지 않습니다.
 
-Illustrative arithmetic, not a quote: at USD 3.99, Paddle's listed fixed+percentage fee
-is USD 0.6995 (about 17.53%) before rounding/any case-specific adjustments. Low ticket size
-therefore matters. The current Stripe example would be about USD 0.44364 (11.12%) with
-both the displayed domestic-card fee and 0.7% Billing fee, before other costs. The two
-commercial offers have different included services and cannot establish a winner by
-these numbers alone. No comparable KRW quote is inferred by converting currencies.
+견적이 아닌 계산 예시로, USD 3.99에 Paddle 공개 요율을 적용하면 USD 0.6995(약 17.53%)입니다.
+반올림·개별 조건 전 값이며 소액 상품에서는 고정 수수료 영향이 큽니다.
+Stripe의 위 국내 카드 예시와 Billing 0.7%를 합치면 USD 0.44364(약 11.12%)로, 다른 비용은 제외한 값입니다.
+포함 서비스가 달라 이 숫자만으로 우열을 결정하지 않습니다. 환율로 KRW 견적을 추정하지도 않습니다.
 
-## Existing code coupling
+## 코드 결합 지점
 
-| Area | Observed dependency | Required boundary if adopted |
+| 영역 | 현재 의존성 | 도입 시 분리할 경계 |
 | --- | --- | --- |
-| `app/services/billing.py` | Direct Stripe SDK, recurring Price allowlist, SetupIntent, Checkout, Subscription/Schedule, portal, hosted invoice URLs | Provider adapter behind service orchestration; provider-specific capabilities and error normalization |
-| `app/models/billing.py` | Customer primary key `(user_id, livemode)`, stripe customer/subscription IDs; same owner/mode Checkout reservation | Provider/account/environment identity and namespace-aware unique keys; preserve existing Stripe rows |
-| `app/routers/v1/billing.py` | cs_/pm_/in_ path validation and current provider response shape | Versioned provider-neutral public references or provider-routed endpoints; regenerate backend/child contracts together |
-| `billing_notifications.py` / reconciliation | Stripe signatures, event names, current-state reads and Stripe-enabled scans | Isolated verification adapters → normalized confirmed events; provider/mode/event ID dedupe and per-provider reconciliation |
-| B4React BillingCardDialog | Stripe Elements and client secret | Capability-selected registration component, with no raw PAN/CVC on our server |
-| useBilling/useSubscription | Stripe ID validation, Stripe host allowlists, shared account snapshot | Typed provider capability/checkout result; explicit safe host policies for each adapter, never unrestricted redirects |
-| Invoice/profile UI | Stripe-shaped lines, default methods and receipt links | Common read model plus unsupported-action states; preserve native page family |
-| Settings/config | STRIPE_ENABLED and Stripe keys/price IDs | Provider-specific secrets and enablement; separate test/live identities and health |
+| `app/services/billing.py` | Stripe SDK·Price 목록·SetupIntent·Checkout·Subscription/Schedule·Portal·청구서 URL | 도메인 서비스 아래 제공자 어댑터, 기능 지원 여부와 오류 정규화 |
+| `app/models/billing.py` | `(user_id, livemode)` 고객 PK·stripe 고객/구독 ID·같은 고객/모드 Checkout 예약 | 제공자/가맹점/환경 식별과 고유키, 기존 Stripe 행 보존 |
+| `app/routers/v1/billing.py` | cs_/pm_/in_ 경로 검증·현재 응답 구조 | 버전된 중립 식별자 또는 제공자 라우팅, 상위/하위 계약 함께 갱신 |
+| 알림·재조정 | Stripe 서명·이벤트·현재 상태 조회·STRIPE_ENABLED 기반 스캔 | 제공자 검증 어댑터→확정 이벤트, 제공자/모드/이벤트 ID 중복 제거·개별 재조정 |
+| B4React BillingCardDialog | Stripe Elements·client secret | 지원 기능에 따른 등록 UI. 자체 서버에서 카드 번호/CVC 처리 금지 |
+| useBilling/useSubscription | Stripe ID·호스트 허용 목록·계정별 공유 상태 | 타입으로 정의한 결제 결과와 기능, 제공자별 안전한 호스트 정책 |
+| 청구서/프로필 UI | Stripe 항목·기본 수단·영수증 링크 | 공통 읽기 모델·지원하지 않는 동작 표시, 기존 페이지 구성 유지 |
+| 설정 | STRIPE_ENABLED·키·Price ID | 제공자별 비밀값·활성화·테스트/운영 식별·상태 점검 |
 
-Provider interfaces should express operations such as catalog, register method, create
-checkout, verify result, read snapshot, preview/apply change, invoices and webhook verify.
-Capabilities must separately describe registration UI, recurring scheduling, proration,
-period-end change, default method and portal support. Do not force Toss billing-key charges
-to pretend to be Stripe-managed schedules. The domain service should own account locks,
-request identity, tier policy, durable reservations and notification policy. No interface
-or state library is added by this research.
+공통 인터페이스 후보는 가격 조회, 수단 등록, Checkout 생성/확인, 상태 조회, 변경 미리보기/적용,
+청구서, 웹훅 검증입니다. 등록 UI·정기 스케줄·차액 청구·기간 종료 변경·기본 수단·포털은
+별도 지원 여부로 표현해야 합니다. Toss 빌링키 청구를 Stripe 관리 일정처럼 보이게 만들면 안 됩니다.
+도메인 서비스는 계정 잠금·요청 식별·등급 정책·영속 예약·메일 정책을 소유합니다.
+이번 조사에서 인터페이스나 상태 라이브러리를 추가하지 않았습니다.
 
-## Coexistence and migration
+## 공존·데이터 전환
 
-Prefer optional new-customer routing while existing Stripe subscriptions renew on Stripe.
-Persist the chosen provider with each attempt/subscription; a timeout must retry the same
-provider instead of falling through and double-charging elsewhere. Define a cross-provider
-one-active-subscription rule under an account lock before enabling routing.
+기존 Stripe 구독은 Stripe에서 갱신하고 신규 고객에 한해 선택적으로 라우팅하는 방식을 우선 검토합니다.
+시도/구독마다 선택한 제공자를 저장하며, 타임아웃 시 다른 제공자로 우회해 이중 결제하지 않습니다.
+라우팅 전 계정 잠금 안에서 제공자 전체를 통틀어 하나의 활성 구독만 허용하는 정책을 정의해야 합니다.
 
-A future migration needs provider/account/mode-scoped customer, method, subscription,
-price, invoice and event references. Keep legacy Stripe IDs mapped during backfill; do not
-rename a stripe ID into a supposedly interchangeable token. Preserve old invoice access,
-refund/dispute handling, signed webhook delivery and cancellation history until obligations
-are settled. Plan switching between providers requires a deliberate billing-boundary cutover,
-verified cancellation and payment confirmation; it is not a normal plan-change API call.
+향후 마이그레이션은 제공자·가맹점·환경 범위의 고객/수단/구독/가격/청구서/이벤트 참조가 필요합니다.
+기존 Stripe ID 매핑을 유지한 채 보완하고 이름만 바꿔 호환 토큰으로 취급하지 않습니다.
+과거 청구서 조회·환불/분쟁·웹훅·해지 이력을 필요한 기간 유지해야 합니다.
+제공자 간 이동은 청구 경계에서 해지와 새 결제를 검증하는 별도 전환이며 일반 요금제 변경 요청이 아닙니다.
 
-Stripe's [export policy](https://docs.stripe.com/get-started/data-migrations/pan-export)
-permits secure card-data transfer to eligible PCI DSS Level 1 processors through provider
-teams; **Link credentials are excluded**. Subscription and payment-history objects are not
-part of that credential export. Confirm destination import support and ID mappings; do
-not promise token portability or handle raw exported cards in this application. Default
-fallback is explicit re-registration with the new provider. Existing customers should
-not lose access while a migration is unconfirmed.
+Stripe [내보내기 정책](https://docs.stripe.com/get-started/data-migrations/pan-export)은 적격 PCI DSS Level 1
+결제 처리자에게 제공자 팀 간 안전한 카드 정보 전송을 설명합니다. **Link 자격 정보는 제외됩니다.**
+구독·거래 이력 객체도 이 자격 정보 내보내기에 포함되지 않습니다.
+목적지의 가져오기 지원과 ID 매핑을 확인해야 하며 토큰 이전을 보장하거나 앱에서 카드 원문을 다루면 안 됩니다.
+기본 대안은 새 제공자에서 사용자 재등록이며 전환 미확정 상태에서 기존 이용권을 먼저 끊지 않습니다.
 
-## Conditional next steps
+## 조건별 다음 작업
 
-| Condition | Next decision / implementation work |
+| 조건 | 다음 판단·구현 |
 | --- | --- |
-| Korean seller, domestic methods dominate | Compare direct Toss contract with a concrete PortOne PG/channel; prototype hosted registration and recurring charge recovery |
-| Global software with outsourced customer tax/payment operations | Check Paddle product/country acceptance, payout and low-ticket economics; prototype checkout/portal/webhooks |
-| No unmet payment need or unresolved seller requirements | Retain tested Stripe template; add no abstraction or provider |
+| 한국 판매자·국내 수단이 핵심 | Toss 직접 계약과 구체적인 PortOne PG/채널을 비교하고 등록창·반복 청구 복구 PoC |
+| 글로벌 소프트웨어·구매자 세금/결제 운영 위탁 | Paddle 상품/국가 승인·정산·소액 수수료를 확인하고 Checkout/Portal/웹훅 PoC |
+| 미충족 결제 요구 없음 또는 판매자 조건 미정 | 검증한 Stripe 템플릿 유지, 추상화/제공자 추가 보류 |
 
-If a provider is approved later, open a **separate implementation issue** with the selected
-contract and sandbox scope: identity migration, capability contract, provider adapter,
-verified webhooks/reconciliation/outbox, frontend registration/receipt differences,
-no-double-charge tests, rollout/rollback, refunds/disputes and #95 email responsibility.
-Required tests include same request twice, ambiguous timeout, out-of-order events, mode/owner
-isolation, cancellation/upgrade payment failure, expired credentials and cross-provider
-migration boundaries. No new account, commercial commitment, production charge/refund,
-or sandbox PoC is needed for the current **defer adoption** decision.
+나중에 도입을 승인하면 선택한 계약·테스트 범위를 넣어 **별도 구현 이슈**를 만듭니다.
+범위는 식별자 마이그레이션, 기능 계약, 어댑터, 웹훅/재조정/outbox, 프런트 등록·영수증 차이,
+이중 결제 방지, 배포/복구, 환불/분쟁과 #95 메일 책임입니다.
+동일 요청·불확실한 타임아웃·역순 이벤트·모드/소유권·해지/상향 결제 실패·키 만료·제공자 전환을 검증해야 합니다.
+현재 **도입 보류** 결론에는 신규 계정·계약·실제 결제/환불이나 샌드박스 PoC가 필요하지 않습니다.
 
-Research completion does not resolve the merchant requirements marked 확인 필요. Revisit
-this dated comparison after those decisions; public prices and acceptance rules can change.
+조사 완료가 `확인 필요`로 표시한 사업 요구를 대신 결정한 것은 아닙니다.
+요구사항 확정 후 이 비교를 갱신해야 하며 공개 가격·가입 규칙은 바뀔 수 있습니다.

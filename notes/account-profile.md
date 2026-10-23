@@ -1,90 +1,86 @@
-# Personal profile and account security
+# 프로필과 계정 보안
 
-[Korean](ko/account-profile.md)
+이슈 #92에서 설정을 프로필과 계정으로 분리했습니다. 프로필은 설정 밖의 `/profile` 페이지입니다. 사이드바 프로필 드롭다운과
+계정의 프로필로 이동에서 연결하며 공통 AppShell의 사이드바 너비·펼침 상태를 유지합니다. 로그인한 본인만 사용하는 화면이며 공개 프로필
+주소나 다른 사용자의 프로필 조회 기능은 제공하지 않습니다.
 
-Issue #92 separates the standalone `/profile` page from Account settings.
-The sidebar profile dropdown and Account Go to profile action open it inside the
-existing AppShell, preserving sidebar width and expansion. It is private to the signed-in account; there is no public
-profile URL or arbitrary-user profile lookup.
+프로필에서 이름, 사진, 선택 항목인 소개(100자)·국가·도시/지역, 읽기 전용 가입일을
+관리합니다. 위치는 국가와 도시·지역 드롭다운으로 선택하며 위치를 자동 수집하지 않습니다.
+계정에서는 이메일, 연결된 로그인, 가입일, 비밀번호 변경과 계정 삭제를 관리합니다.
+프로필로 이동 버튼은 별도 프로필 화면으로 연결됩니다.
 
-Profile owns name, managed photo, optional Bio (100 characters), optional country/region and read-only signup date. Country and city/region are chosen from linked dropdowns, never geolocation. Account owns current name (inline editing), email, connected sign-in providers, signup date, password
-change and deletion. Its profile action opens the standalone profile page.
+GET/PATCH `/api/v1/auth/me`를 재사용합니다. 소개는 앞뒤 공백을 제거하며,
+빈 문자열/null은 삭제, 필드 생략은 기존 값 유지를 뜻합니다. 가입일·권한·비밀번호
+보유 여부는 수정할 수 없습니다. `has_password`는 변경 가능한 이메일 비밀번호가
+있는지만 알려주며 해시나 저장소 키는 노출하지 않습니다. 배포 전에
+`make db-migrate`로 `0016_personal_profile`을 적용합니다. 사진 API·저장 정책은 같습니다.
 
-GET/PATCH `/api/v1/auth/me` remains the source of truth. Bio is trimmed; blank/null clears it and omission preserves it. Location is a
-validated country:region catalog ID; null clears it and omission preserves it. Signup date, role and credential
-availability cannot be edited. `has_password` only indicates whether an existing
-email credential can be changed. No credential hashes or storage keys are exposed.
-Apply migration `0016_personal_profile` with `make db-migrate` before rollout.
-The managed photo endpoints and storage policy are unchanged.
+## 비밀번호 변경
 
-## Password change
+Bearer 세션으로 POST `/api/v1/auth/me/password/code`를 요청하면 등록된 본인 이메일로만
+6자리 인증번호를 보냅니다. 기존 Celery 메일 작업의 `password_change` 유형을 사용합니다.
+POST `/api/v1/auth/me/password`에 `{code, password}`를 전달하면 인증 후 새 비밀번호를
+저장합니다. 강도 정책은 기존 가입·재설정과 같습니다. 소셜 로그인 전용 계정은 제공자에서
+비밀번호를 관리하며 이 API는 이메일 비밀번호를 새로 만들지 않습니다. API 키만으로는
+인증번호 요청이나 비밀번호 변경을 할 수 없습니다.
 
-A bearer session requests POST `/api/v1/auth/me/password/code`. The service sends a
-six-digit code only to that account's registered email through the existing Celery
-mail task (`password_change`). POST `/api/v1/auth/me/password` accepts `{code, password}`.
-The new password uses the existing signup/reset strength policy. OAuth-only accounts
-manage passwords with their provider; this endpoint never creates email credentials.
-API keys alone cannot authorize either operation.
+계정 삭제 인증 구현을 재사용하되 Redis 키와 HMAC 용도를 분리합니다. 인증번호는
+10분 유효하고 한 번만 사용할 수 있으며 재발송하면 이전 번호는 무효화됩니다.
+발송은 30초에 1회, 1시간에 5회로 제한합니다. 5회 오입력하면 남은 10분 시도 제한 시간
+동안 검증·발송이 차단되며 재발송으로 시도 횟수를 초기화하지 않습니다.
+동시 요청은 하나만 성공합니다. 캐시·큐 장애 시 인증을 건너뛰지 않습니다.
+인증번호 소비 후 DB 저장 실패 시 새 번호가 필요하며 비밀번호 교체는 기존 해시를
+조건으로 한 원자적 갱신을 사용합니다.
 
-The shared account-deletion challenge implementation retains separate Redis keys
-and HMAC domains for each purpose. Codes expire after ten minutes, are single-use,
-and only the latest issued code is valid. Issuance is limited to once per 30 seconds and
-five times per hour. Five incorrect attempts lock verification/issuance for the
-remaining ten-minute attempt window; resend does not reset it. Concurrent consumers
-cannot both succeed. Cache/queue failures fail closed. A consumed code must be
-reissued after a database failure. Credential replacement uses compare-and-swap.
+비밀번호 저장 전에 갱신 세션을 폐기합니다. 이미 발급된 액세스 토큰은 정상 만료 시점까지
+유효하고 API 키는 유지됩니다. 현재 브라우저도 다음 인증 갱신 시 다시 로그인합니다.
+Redis와 DB는 분산 트랜잭션이 아니므로 실패 시 비밀번호는 유지된 채 세션만 폐기될 수
+있습니다. 이때 성공으로 표시하지 않고 새 번호를 받아 재시도하도록 안내합니다.
 
-Refresh sessions are revoked before the credential commit. Existing access tokens
-remain valid until their normal expiry; API keys are unchanged. The current browser
-also signs in again on its next required refresh. Revocation and DB replacement are
-not a distributed transaction: a failure may revoke sessions without changing the
-password. The UI reports failure and requires another code rather than claiming success.
+`EMAIL_ENABLED=false`이면 인증번호 발송·비밀번호 변경·찾기·재설정·계정 삭제를 모두
+거절합니다. 기존에 받은 인증번호나 링크도 우회할 수 없습니다. 화면에서 이유를 안내하고
+관련 버튼을 비활성화합니다. 프로필 수정과 정상 로그인은 가능합니다. 큐 등록 성공은
+SMTP 전달 완료를 보장하지 않습니다. 새 메일 유형을 적용할 때 API와 워커를 같은 버전으로
+재시작합니다.
 
-`EMAIL_ENABLED=false` rejects code issuance, password changes, forgot/reset password,
-and deletion, including previously issued proofs. UI explains the restriction and
-disables the affected actions; it never bypasses email proof. Profile edits and normal
-login remain available. Mail queue acceptance is not proof of SMTP delivery. Restart
-API/workers with matching versions when adding the new mail kind.
+## 상태와 복구
 
-## State and recovery
-
-AuthProvider owns the confirmed profile and updates the sidebar from successful
-mutations. Form drafts stay local, errors retain the saved snapshot, and account
-switches reset drafts. Profile editing uses a modal with photo preview and the
-existing Add photo/Remove photo controls at the top. Photo edits save immediately;
-Save confirms name/Bio/location. Outside the modal the avatar reveals an edit icon
-on hover/focus; touch devices keep it visible. Password entry lives only in a modal. Reload/login and existing desktop recovery refresh the owner.
-No new polling, global store or realtime profile events are added; other open clients
-see changes on their next existing refresh/reload.
+저장된 프로필은 AuthProvider 한 곳에서 관리하며 성공 응답을 사이드바에도 반영합니다.
+입력 초안은 화면에만 두고 실패 시 저장된 상태를 유지하며 계정 전환 시 초기화합니다.
+재접속·로그인·기존 데스크톱 복구 흐름으로 새로 조회합니다. 폴링·상태 저장소·프로필 실시간
+이벤트를 추가하지 않습니다. 다른 열린 클라이언트는 다음 조회나 새로고침 때 변경을 확인합니다.
 
 
-Location options use a pinned MIT country-region-data snapshot (249 countries,
-4,387 subdivisions), not an exhaustive world-city database. Country names use
-Intl.DisplayNames; Korean regions have native Korean labels. Country changes clear
-the region draft, and Save requires a valid pair or no location. Where upstream
-shortcodes are absent, stable internal hashed IDs are used. Backend validates the
-same adopted pairs. Source and license:
+위치는 국가 선택 후 도시·지역을 선택하는 드롭다운입니다. 249개 국가와 4,387개 행정구역의
+MIT 데이터 스냅샷을 사용하며 전 세계 모든 도시 목록은 아닙니다. 국가 변경 시 지역 선택을
+초기화하고 유효한 조합 또는 미설정만 저장합니다. 국가명은 언어에 맞게 표시하며 한국
+지역은 한국어 표기를 지원합니다. 원본에 코드가 없는 일부 지역은 내부 해시 식별자를
+사용합니다. 서버도 같은 코드 조합을 검증합니다. 원본·라이선스:
 https://github.com/country-regions/country-region-data/tree/e65e124da5e846a833eba68e228b6d50aad42817
 
-Both Account and Profile show the current plan from the existing account-owned
-subscription snapshot, with unknown/error and retry states. Billing-disabled
-instances display Free and no management action. Navigation does not create a
-second subscription cache or trigger a fresh read for a confirmed snapshot.
+프로필 편집 모달 상단에는 현재 사진과 사진 추가·제거 버튼을 배치합니다. 사진은 즉시
+저장되며 저장 버튼은 이름·소개·위치를 확정합니다. 본문 사진은 호버·키보드 포커스 시
+편집 아이콘을 표시하고 터치에서는 항상 표시합니다. 비밀번호 변경 폼은 버튼을 눌렀을
+때 모달에서만 표시합니다. 계정의 행 구성은 General 설정과 동일합니다.
 
-Bio is limited to 100 Unicode code points on both client and API. The editor shows n/100; the profile body preserves line breaks and grows naturally without truncation. Photo add/remove use the shared rectangular Button.
+현재 구독 플랜은 계정과 프로필 모두 기존 계정별 구독 스냅샷으로 표시합니다. 조회 실패는
+알 수 없음과 재시도 동작으로 표시합니다. 결제 비활성화 환경은 Free로 표시하고 관리
+버튼은 제공하지 않습니다. 페이지 이동으로 구독 캐시나 중복 조회를 새로 만들지 않습니다.
 
-Name, Bio and location can also be edited in place on Profile. Name has a stable minimum width independent of spaces; Bio starts with a 96px
-three-line editing area and scrolls internally. Save/cancel use backgroundless icons. Location opens
-an anchored popover without expanding the metadata strip. Each inline save patches
-only that field, and failed writes retain the draft. Account name editing uses the
-same AuthProvider mutation path. Password and deletion share AccountEmailVerification
-for recipient, code/send row and lifetime hint, plus the same compact Modal frame.
+소개는 프론트와 API 모두 유니코드 코드 포인트 기준 100자로 제한하며 n/100을 표시합니다. 저장된 소개는 줄바꿈을 유지하며 내용에 따라 늘어납니다. 사진 추가·제거는 공용 네모난 Button을 사용합니다.
+
+프로필의 이름·소개·위치를 눌러 바로 수정할 수 있습니다. 이름은 공백 입력에도 너비가 늘어나지 않도록 최소 너비를 보장합니다.
+소개 입력은 기본 96px의 3줄 공간을 제공하고 내부 스크롤을 사용합니다. 저장·취소는 배경 없는 아이콘입니다. 위치는 메타정보 영역을 밀지 않는
+팝오버로 표시합니다. 인라인 저장은 해당 필드만 갱신하며 실패 시 입력을 유지합니다.
+계정에서도 이름 행의 배경 없는 연필 아이콘으로 같은 사용자 상태를 수정합니다.
+비밀번호 변경과 계정 삭제는 공용 AccountEmailVerification의 수신자·인증번호/발송 행·
+유효기간 안내와 같은 compact Modal 구성을 사용합니다.
 
 
-Code flow is request → verify → change/delete. Resend is available after 30 seconds; only the latest code is valid for 10 minutes. Checking never extends expiry; final actions revalidate and consume. Code feedback appears beneath its input. Password and confirmation share signup validation UI. Profile navigation preserves the source Settings/Admin/main sidebar family in route history state, including reload.
+인증번호 받기 → 인증번호 확인 → 변경/삭제 순서로 진행합니다. 재전송은 30초 후 가능하고 마지막 번호만 10분간 유효합니다. 번호 확인은 만료시간을 늘리지 않으며 최종 작업에서 다시 검증 후 소비합니다. 인증번호 오류는 입력란 바로 아래에 표시합니다. 비밀번호와 확인 입력은 회원가입의 조건 UI를 공유합니다. 프로필 이동은 라우트 상태로 설정/관리자/메인 사이드바 구성을 보존하며 새로고침에도 유지합니다.
 
-Profile shortcut defaults to Cmd+Shift+P on macOS and Ctrl+Shift+P elsewhere, is customizable in Keyboard settings, and ignores text editing and open dialogs. Existing two-action shortcut records remain accepted. The showcase includes shared backgroundless pencil/check/close icon buttons.
+프로필 기본 단축키는 macOS에서 Cmd+Shift+P, 그 외에는 Ctrl+Shift+P입니다. 키보드 설정에서 변경할 수 있으며 입력 중이나 모달이 열렸을 때는 동작하지 않습니다. 기존 2개 동작의 단축키 설정도 계속 허용합니다. 쇼케이스에는 공용 배경 없는 연필·확인·닫기 아이콘 버튼 예제를 제공합니다.
 
-Profile enters with the existing 260ms rise animation and honors the global reduced-motion preference.
+프로필은 기존 페이지와 같은 260ms rise 등장 애니메이션을 사용하며 모션 감소 설정을 따릅니다.
 
-Clicking outside an inline profile editor discards its unsaved draft. Save/cancel controls and the owned floating country/region menus remain inside the editing boundary. Outside clicks do not interrupt an in-flight save.
+프로필 인라인 편집 영역 밖을 클릭하면 저장하지 않은 초안을 취소합니다. 저장·취소 버튼과 해당 국가·지역 드롭다운은 편집 영역에 포함하며, 저장 중에는 바깥 클릭으로 취소하지 않습니다.

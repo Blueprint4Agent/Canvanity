@@ -132,7 +132,7 @@ def plan(root, base="HEAD", head=None, force_full=False):
         paths = changed(root, base, head)
         result["files"] = paths
         for path in paths:
-            if parent and path == "src/frontend":
+            if parent and path == "src/frontend" and (root / path / ".git").exists():
                 old = git(root, "rev-parse", f"{base}:src/frontend").decode().strip()
                 new = (
                     git(root, "rev-parse", f"{head}:src/frontend").decode().strip()
