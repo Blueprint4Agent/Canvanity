@@ -1,7 +1,7 @@
 ---
 name: 백엔드 작업
 about: FastAPI, DB, 인증, 관측성, Docker 런타임 관련 백엔드 작업을 정의합니다
-title: "[Backend] "
+title: "[feat] "
 labels: backend
 assignees: ""
 ---

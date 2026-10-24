@@ -1,42 +1,37 @@
-# Runtime modes and roles
+# 실행 모드와 역할
 
-[한국어](ko/runtime-modes-rbac.md)
+`APP_MODE=development|production`은 제품 동작을 제어하며, 관측성 라벨인
+`APP_ENV` 및 Vite 빌드 모드와 별개입니다. 기존 로컬 환경 호환을 위해 기본값은
+development이고 Docker 예시는 production을 명시합니다. 운영 배포에서는 값을
+명시하세요. production은 `LOGIN_ENABLED=true`가 필수이며 잘못된 모드나 로그인
+없는 운영 설정은 설정/시작 검증에서 거부됩니다. `/config` 계약이 변경되므로
+백엔드와 B4React를 함께 배포합니다.
 
-`APP_MODE=development|production` controls product behavior, independently of the
-`APP_ENV` telemetry label and Vite's build mode. The default remains development
-for local compatibility. The Docker example explicitly selects production.
-Production requires `LOGIN_ENABLED=true`; unknown modes or login-free production
-fail configuration/startup validation. Set the mode explicitly for deployments
-and deploy the coordinated backend `/config` contract and B4React together.
+두 모드 모두 비로그인 상태를 포함해 기본 홈(`/home`)으로 진입하며 계정 기능은 인증이 필요합니다.
+개발 모드는 GitHub·사용 가이드와 별도 쇼케이스 메뉴를 제공합니다. 운영 모드는 링크를 숨기고
+쇼케이스/미리보기 직접 URL을 기본 홈(`/home`)으로 이동시키며 인증 모달 뒤에
+쇼케이스를 렌더링하지 않습니다. 본인 API 키 관리는 서비스 기능으로 유지합니다.
+실행 시점 제어이므로 공통 빌드에서 쇼케이스 JavaScript 자체를 제거하지는 않습니다.
+별도 Style Studio는 명시적으로 활성화하는 루프백 전용 개발 도구이며 운영 API가 아닙니다.
 
-Both modes open the template home (`/home`) by default, including for guests. Account
-actions still require authentication. Development exposes GitHub, User guide and a
-separate component showcase menu. Production
-omits these links, redirects direct showcase/preview URLs to the template home (`/home`), and never renders a showcase behind authentication dialogs. Normal user
-API-key management remains a product feature. Runtime gating does not remove
-showcase JavaScript from the shared build. The separate Style Studio remains an
-explicitly enabled loopback-only development tool, not a production API.
+로그인을 생략하는 개발 모드는 비밀번호가 없는 활성 부트스트랩 전용 계정만 사용합니다.
+일반 계정 이메일이 충돌하거나 부트스트랩 역할이 변경되면 시작을 거부하며 기존 계정을
+자동 승격하지 않습니다. 운영에서는 부트스트랩 생성과 이전 세션/API 키 인증을 모두
+거부합니다. 기존 데이터를 삭제하거나 일반 계정으로 자동 전환하지 않습니다.
+기존 개발 계정의 연결 데이터를 검토한 뒤 정리하고, 운영에는 별도의 정상 계정을 사용합니다.
 
-Login-free development uses only a dedicated active bootstrap identity without a
-password. A matching normal-account email or a bootstrap identity whose role was
-changed fails startup; no existing account is promoted automatically. Production
-never provisions bootstrap identities and rejects their bearer sessions and API
-keys, including tokens issued before switching modes. It does not delete their
-data or silently convert them to ordinary accounts. Review linked data before
-retiring old development identities; use a separate real account in production.
+| 권한                                     | 사용자 | 매니저 | 관리자 |
+| ---------------------------------------- | ------ | ------ | ------ |
+| 본인 계정·API 키·결제                    | 허용   | 허용   | 허용   |
+| 사용자 목록·역할 통계 조회               | 금지   | 허용   | 허용   |
+| 관리자 전용 검사 통과                    | 금지   | 금지   | 허용   |
+| HTTP로 다른 사용자 역할·프로필·결제 변경 | 금지   | 금지   | 금지   |
 
-| Permission                                           | User | Manager | Admin |
-| ---------------------------------------------------- | ---- | ------- | ----- |
-| Own account, API keys and billing                    | Yes  | Yes     | Yes   |
-| Read user directory and role statistics              | No   | Yes     | Yes   |
-| Implicit access to admin-only guards                 | No   | No      | Yes   |
-| Change another user's role/profile/billing over HTTP | No   | No      | No    |
+역할은 자동 상속이 아닌 명시적인 허용 목록입니다. 매니저는 이름·이메일과 기존 사용자
+목록 정보를 조회할 수 있지만 타인 계정을 수정할 수 없습니다. 새 관리자 API는 권한을
+별도로 지정해야 합니다.
 
-Roles are explicit allowlists, not an automatic inheritance hierarchy. Managers
-can read names, email addresses and the existing directory metadata, but cannot
-edit other accounts. Future administrator endpoints must opt in explicitly.
-
-Provision the first administrator from a normally registered/OAuth account:
+일반 가입/OAuth 계정을 만든 뒤 다음 명령으로 역할을 지정합니다.
 
 ```sh
 make user-role EMAIL=operator@example.com ROLE=admin
@@ -44,123 +39,114 @@ make user-role EMAIL=manager@example.com ROLE=manager
 make user-role EMAIL=manager@example.com ROLE=user
 ```
 
-The CLI requires login enabled and access to the intended backend environment.
-The standalone command registers its related ORM models independently of server startup.
-No role-change HTTP API is introduced. Current DB roles authorize subsequent
-requests without reissuing tokens; reload account data to refresh navigation.
-The last active administrator cannot be deleted or demoted to either user or
-manager. Role changes and their audit rows commit atomically. No-op assignments
-create no audit entry. `role_change_audit` stores target numeric ID, old/new roles,
-UTC time and the CLI OS username (`cli:...`), not a verified application actor.
-This is a trusted-operator record, not tamper-proof auditing. It contains no email
-or credentials and is retained after account deletion; operators control access
-and retention through DB operations, not an exposed management endpoint.
+CLI는 서버 시작과 독립적으로 관련 ORM 모델을 등록합니다.
+CLI는 로그인 활성화 및 대상 백엔드 환경 접근이 필요합니다. 역할 변경 HTTP API는
+추가하지 않습니다. 다음 요청부터 DB의 현재 역할로 검사하며 메뉴는 계정 데이터를
+새로 불러오면 갱신됩니다. 마지막 활성 관리자는 삭제하거나 사용자/매니저로 강등할 수
+없습니다. 역할 변경과 감사 행은 같은 트랜잭션에 저장하며 같은 역할 재지정은 기록하지 않습니다.
+`role_change_audit`에는 대상 숫자 ID, 이전/새 역할, UTC 시각, CLI OS 사용자명(`cli:...`)을
+저장합니다. 인증된 앱 사용자 신원이나 위변조 방지 감사 시스템은 아닙니다. 이메일·인증정보는
+포함하지 않으며 계정 삭제 후에도 유지합니다. DB 접근/보존 정책은 운영자가 관리하고 별도
+관리 API는 노출하지 않습니다.
 
-Apply migration `0010_role_change_audit` before deploying. The existing role
-column is VARCHAR(20), so existing values need no conversion on upgrade. Before
-rolling back to a two-role release, export required audit records and downgrade:
-the migration demotes managers to users and drops the audit table. It preserves
-existing administrators and users. Back up and review the target database first.
+배포 전에 `0010_role_change_audit` 마이그레이션을 적용합니다. 기존 역할 컬럼은
+VARCHAR(20)이므로 업그레이드 시 기존 역할 값 변환은 없습니다. 2개 역할 버전으로 복구할 때는
+필요한 감사 기록을 내보낸 뒤 다운그레이드합니다. 매니저는 사용자로 낮아지고 감사 테이블은
+삭제되며 기존 관리자/사용자는 유지됩니다. 대상 DB를 확인하고 먼저 백업하세요.
 
-Environment examples use section dividers and a `Values` comment directly above each managed variable. `make env-sync docker-env-sync` synchronizes layout/comments with backups while preserving existing values and extra keys. Local `.env` files and backups are not committed.
+환경 예제는 기능별 구획과 각 변수 바로 위의 `Values` 주석으로 허용값·입력 형식을 안내합니다. `make env-sync docker-env-sync`는 기존 값과 추가 키를 유지하면서 주석·배치를 동기화하고 백업을 남깁니다. 실제 `.env`와 백업은 커밋하지 않습니다.
 
-## Administrator server status
+## 관리자 서버 상태
 
-`GET /api/v1/admin/status` requires the current database-backed admin role (managers
-cannot read it). The read-only screen at `/admin/server` follows the settings/home
-page shell. It probes the actual database dialect and Redis, with concurrent
-2-second dependency timeouts shared with `/health/ready`. In-memory Redis is
-identified explicitly. A successful API request establishes server reachability;
-worker health and historical observability are outside this snapshot.
+`GET /api/v1/admin/status`는 데이터베이스에서 확인한 현재 관리자 역할만
+허용합니다. 매니저는 접근할 수 없습니다. `/admin/server` 화면은 설정·홈과
+같은 레이아웃을 사용하며 실제 DB 종류와 Redis 연결을 확인합니다. 두 검사는
+동시에 수행되고 각각 2초 후 시간 초과로 처리합니다. `/health/ready`도 같은
+검사를 사용합니다. 메모리 Redis는 외부 Redis와 구분합니다. 작업자 상태와
+과거 관측성 데이터는 이 화면의 검사 범위에 포함하지 않습니다.
 
-The response allowlists effective email, login, OAuth, payment/subscription,
-development UI and runtime modes. Administrator access is a role policy, not an
-`ADMIN_ENABLED` environment flag. It never returns connection URLs, credentials,
-keys, or arbitrary environment values. Feature flags describe configuration,
-not delivery or third-party connectivity tests. Settings are captured from the
-running process; changing an environment file requires the normal server restart.
+이메일·로그인·소셜 로그인·결제·구독·개발자 UI·실행 모드는 허용된 상태값만
+반환합니다. 관리자 접근은 역할 정책이며 별도의 `ADMIN_ENABLED` 설정이
+아닙니다. URL·비밀번호·비밀 키·임의 환경변수 원문은 반환하지 않습니다.
+기능 활성화는 설정 상태이며 실제 이메일 전달이나 결제 서비스 연결 성공을
+보장하지 않습니다. 실행 중인 프로세스의 설정을 표시하므로 환경 파일 변경은
+기존 절차대로 서버를 다시 시작해야 적용됩니다.
 
-The page refreshes every 30 seconds while visible and on focus/reconnection.
-Requests are canceled on leaving or changing the account. Failed refreshes and
-snapshots older than 60 seconds show stale results; requests time out after 8
-seconds. A database outage can also prevent authentication, so the page retains
-only clearly marked stale information; it never bypasses the admin dependency.
+화면이 보일 때 30초마다, 포커스 및 연결 복구 시 갱신합니다. 계정 변경과
+화면 이탈 시 요청을 취소합니다. 갱신 실패나 60초가 지난 결과는 이전 결과로
+표시하며 요청은 8초 후 종료합니다. DB 장애로 관리자 인증 자체가 실패하면
+이전 결과만 명확하게 구분하여 표시하고 인증 의존성을 우회하지 않습니다.
 
-Completed startup verification is exposed separately with its original timestamp:
-Stripe API authentication/resources and optional SMTP handshake/authentication may
-show healthy at startup; OAuth validates configuration only and never claims a
-completed user login. Disabled or skipped checks never become healthy merely from
-an enabled flag. Refreshing this screen separately checks current email/Stripe connectivity without sending email. These startup results are historical evidence, not live health.
+시작 시 검증 결과는 검증 시각과 함께 별도로 반환합니다. Stripe API 인증·리소스
+검증과 선택적인 SMTP 연결·인증이 실제 완료된 경우에만 `시작 시 정상`으로
+표시합니다. OAuth는 `설정 확인`이며 실제 사용자 로그인 완료를 의미하지 않습니다.
+활성화 설정만으로 정상이라고 표시하지 않으며, 화면 갱신 시 이메일·Stripe의 현재 연결을 별도로 확인하며, 이메일은 발송하지 않습니다. 시작 시 결과는 과거 검증 근거입니다.
 
-While administrators view the page, SMTP connection/authentication and a Stripe
-Checkout list read run at most once per 60 seconds per process. Concurrent requests
-share a probe. The API waits at most five seconds for provider results and reports
-a timeout while an existing operation finishes; SMTP sockets use two-second waits
-and Stripe retains its provider timeout. No email or billing resource is created.
-No new checks are scheduled after leaving the page. Multi-process deployments have
-one cache per process. OAuth has no health badge because configuration or endpoint
-reachability cannot establish a successful user-authorized sign-in.
+관리자 화면을 보는 동안 SMTP 연결·인증과 Stripe Checkout 목록 읽기를 60초
+간격으로 확인합니다. 결과는 프로세스별로 공유하며 진행 중인 검사는 중복 실행하지
+않습니다. API는 외부 검사 결과를 최대 5초 기다리고, 아직 끝나지 않은 검사는
+시간 초과로 표시합니다. SMTP 소켓은 2초 제한을 사용하고 Stripe는 기존 제공자
+타임아웃을 따릅니다. OAuth는 실제 인증 성공을 대신 판정하지 않으므로 상태 배지를
+표시하지 않습니다. 이메일·결제 리소스를 생성하지 않으며 화면을 닫으면 새 검사를
+예약하지 않습니다. 다중 프로세스 배포에서는 각 프로세스가 자체 캐시를 유지합니다.
 
-Database and external Redis cards expose only their configured hostname and effective port to
-administrators. Credentials, database name, query options and local filesystem
-paths remain excluded. SQLite is labeled as a local file; socket connections have
-no fabricated network hostname.
+DB·외부 Redis 카드에는 관리자에게만 실제 연결 주소의 호스트와 포트를 표시합니다.
+계정·비밀번호·DB 이름·쿼리 옵션·로컬 파일 경로는 제외하며, SQLite는 로컬
+파일로 표시합니다. 소켓 연결에 임의의 네트워크 호스트를 만들지 않습니다.
 
-The environment screen pairs localized effective meaning with allowlisted actual
-boolean/runtime-mode values. `environment_values` is an explicit typed projection,
-not a settings/environment dump. CodeBadge is shared with the frontend showcase.
+환경 값은 번역된 의미와 실제 허용된 불리언·실행 모드 값을 함께 표시합니다.
+`environment_values`는 명시적으로 정의한 안전한 값만 포함하며 전체 환경 설정을
+덤프하지 않습니다. 코드 라벨은 공통 CodeBadge로 구성하며 쇼케이스에 등록합니다.
 
-## Disabled feature boundaries
+## 비활성화 기능 방어
 
-Public `/config` exposes one effective `billing_enabled` flag from `STRIPE_ENABLED`.
-`STRIPE_ENABLED=false` removes billing shortcuts, settings navigation/content, plan routes
-and profile tier/upgrade UI. Billing hooks remain idle until configuration explicitly
-allows the feature, including focus/online/desktop recovery. Direct disabled URLs fall
-back to Home (plans) or General settings (billing). There is no separate subscription switch: payment methods, billing profiles, invoices and
-plans are enabled or disabled together. Enabling Stripe requires valid subscription prices.
-The obsolete subscription environment variable is ignored and should be removed from deployments.
-Turning Stripe off does not cancel existing provider subscriptions.
+공개 `/config`는 `STRIPE_ENABLED`에서 결정한 `billing_enabled` 값 하나만 제공합니다.
+`STRIPE_ENABLED=false`이면 결제 바로가기·설정 메뉴·본문·요금제·프로필 구독 표시를 숨기고,
+결제 훅은 설정이 명시적으로 허용할 때까지 요청하지 않습니다. 포커스·온라인·데스크톱
+연결 복구에서도 동일합니다. 비활성화된 요금제 URL은 홈으로, 결제 설정은 일반 설정으로
+이동합니다. 결제수단·결제 정보·내역·요금제는 하나의 설정으로 함께 켜거나 끕니다.
+활성화 시 구독 가격 설정도 필요합니다. 이전 구독 전용 환경변수는 더 이상 사용하지
+않으므로 배포 설정에서 제거합니다. 비활성화가 기존 Stripe 구독을 취소하지는 않습니다.
 
-Enabled Stripe performs a read-only API authentication check during FastAPI lifespan.
-Authentication rejection, permission errors, invalid configuration and connection failures
-abort startup before migrations/serving. Disabled Stripe performs no provider request.
+Stripe 활성화 시 FastAPI 시작 단계에서 읽기 전용 인증 요청을 실행합니다. 인증 거부,
+권한 부족, 잘못된 설정과 연결 실패는 마이그레이션과 요청 제공 전에 서버 시작을 막습니다.
+비활성화 시에는 Stripe 요청이 없습니다.
 
-Login-disabled mode rejects signup, refresh and email/OAuth entry mutations before I/O.
-Email-disabled mode rejects direct email verification without consuming the token; password
-reset and account deletion retain their existing guards. Verification resend remains an
-account-neutral no-op when email is disabled. Email-only routes and OAuth entry UI are
-hidden according to public config. OAuth callbacks check the current feature/provider
-configuration before consuming state or exchanging a code. Password login/signup continue
-working with email and OAuth disabled; new email accounts are already verified in that mode.
-Feature settings are process configuration, so changing environment values requires restart.
+로그인 비활성화 시 회원가입·토큰 갱신·이메일/OAuth 진입 작업을 I/O 전에 차단합니다.
+이메일 비활성화 시 인증 토큰을 소비하지 않으며, 비밀번호 재설정과 계정 삭제의 기존
+방어도 유지합니다. 인증 메일 재전송은 계정 존재를 드러내지 않는 기존 무동작 응답을
+유지합니다. 이메일 전용 화면과 OAuth 진입 UI는 설정에 따라 숨깁니다. OAuth 콜백은
+상태 소비나 코드 교환 전에 현재 설정을 검사합니다. 이메일/OAuth만 끈 경우 비밀번호
+로그인·회원가입은 유지하며 새 계정은 인증 완료 상태로 생성됩니다. 환경변수 변경은
+서버 재시작 후 적용됩니다.
 
-## Mail recovery access
+## 메일 복구 접근
 
-No application role (user, manager or admin) grants cross-account lifecycle-mail HTTP access. The metadata-only inspection/retry CLI requires trusted deployment-operator shell/DB access, like the role CLI. See [mail operations](lifecycle-mail.md).
+일반 사용자·매니저·관리자 역할 모두 타인 생명주기 메일 HTTP 접근 권한이 없습니다. 메타데이터 조회·재시도 CLI는 역할 관리 CLI처럼 신뢰할 수 있는 배포 운영자 셸/DB 접근이 필요합니다. [메일 운영](lifecycle-mail.md)을 참고하세요.
 
-## Production signing key
+## 운영 서명 키
 
-Production rejects blank/example keys, surrounding whitespace and keys shorter than
-32/48/64 UTF-8 bytes for HS256/HS384/HS512. Generate a unique random value with
-`python3 -c "import secrets; print(secrets.token_urlsafe(48))"` and set `SECRET_KEY`
-in the deployment environment before startup. Length validation cannot prove entropy.
-Development retains its existing behavior. `make project-init` replaces the published
-example placeholders but preserves existing configured keys.
+운영 모드는 빈 값·예제 키·앞뒤 공백 및 HS256/HS384/HS512에서 각각
+32/48/64 UTF-8 바이트보다 짧은 키를 거부합니다.
+`python3 -c "import secrets; print(secrets.token_urlsafe(48))"`로 고유한 난수를
+생성하고 배포 환경의 `SECRET_KEY`에 설정한 뒤 시작하세요. 길이 검사만으로
+무작위성을 보장하지는 않습니다. 개발 모드의 기존 동작은 유지합니다.
+`make project-init`은 배포된 예제 키를 교체하며 기존에 설정한 키는 보존합니다.
 
-Do not automatically rotate an existing deployment: changing the key invalidates
-JWTs and key-derived API credentials/verification data, and can affect encrypted
-mail recovery data. Plan rotation separately.
+기존 배포의 키를 자동 교체하지 마세요. 변경 시 JWT와 키에서 파생된 API 인증·
+인증 데이터가 무효화되고 암호화된 메일 복구 데이터에도 영향을 줄 수 있습니다.
+키 교체는 별도 계획으로 진행하세요.
 
-Admins see the real admin menu without the redundant demo entry. Home includes profile, inbox, support and realtime capabilities and signed-in shortcuts. The public inquiry demo at /demo/admin/inquiries uses synthetic localized records only, with no inquiry HTTP requests or mutations; DEMO_ENABLED still controls access.
+관리자는 실제 관리자 메뉴만 표시하고 데모 메뉴는 숨깁니다. 홈에 프로필·알림함·문의·실시간 연결과 로그인 바로가기를 소개합니다. /demo/admin/inquiries 문의 데모는 번역된 예시 데이터만 사용하며 실제 문의 HTTP 조회·변경을 실행하지 않습니다. DEMO_ENABLED 설정으로 접근을 제어합니다.
 
-## Deployment layout
+## 배포 레이아웃
 
-`APP_LAYOUT=sidebar|topnav|focused` selects the shell at runtime with the same image. Default is `sidebar`; `topnav` is the navbar and `focused` is minimal. The existing `/config.app_layout` carries it without a database or new endpoint. Unknown values fail startup validation.
+`APP_LAYOUT=sidebar|topnav|focused`는 동일한 이미지의 화면 구성을 실행 시 선택합니다. 기본값은 `sidebar`, `topnav`는 네브바, `focused`는 미니멀형입니다. `/config.app_layout`으로 전달되며 DB나 새 API가 필요하지 않습니다. 잘못된 값은 시작 시 거부합니다.
 
-For Docker, edit `APP_LAYOUT` in `docker/.env`, recreate the container, then reload the browser. Images already containing this feature need no rebuild. A plain `docker restart` does not change the container's creation-time environment.
+Docker에서는 `docker/.env`의 `APP_LAYOUT`을 변경하고 다음과 같이 컨테이너를 재생성한 뒤 브라우저를 새로고침합니다. 이미 이 기능을 포함한 이미지라면 재빌드할 필요가 없습니다. 단순 `docker restart`는 컨테이너 생성 시의 환경변수를 변경하지 않습니다.
 
 ```sh
 docker compose --env-file docker/.env -f docker/docker-compose.yml up -d --no-build --force-recreate app
 ```
 
-For local development, edit `src/backend/.env` and restart the backend process. Saved development browser previews take precedence over the deployment default; use Settings → Appearance → Use service default to clear one. Production ignores browser previews. Runtime config changes are not pushed to already-open clients.
+로컬 백엔드는 `src/backend/.env`를 수정하고 프로세스를 다시 실행합니다. 개발 모드에서 저장한 브라우저 미리보기가 있으면 배포 기본값보다 우선합니다. 설정 → 모양 → 서비스 기본값 사용으로 미리보기를 해제할 수 있습니다. 운영 모드에서는 미리보기를 무시합니다. 기본값 변경은 실시간으로 전파하지 않습니다.

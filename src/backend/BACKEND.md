@@ -1,23 +1,25 @@
-# Backend Engineering Guide
+# 백엔드 엔지니어링 가이드
 
-This guide exists because the project is optimized for agentic coding patterns, and both agents and humans are expected to follow the same conventions to maintain highly consistent, high-quality outcomes.
+> Canvanity 적용: 개발 문서·커밋·PR은 한국어이며, src/frontend는 같은 저장소의 일반 디렉터리입니다. 아래 기반 템플릿의 별도 저장소·서브모듈 절차는 적용하지 않습니다. 루트 AGENTS.md와 PROJECT_BRIEF.md를 우선합니다.
 
-## 0) Scope and Priority
+이 프로젝트는 에이전트 중심 코딩 패턴에 맞춰 최적화되어 있으며, 사람과 에이전트 모두 일관되고 높은 품질의 결과를 유지하기 위해 동일한 규칙을 따라야 합니다.
 
-- Scope: everything under `src/backend`.
-- Read order before backend work:
+## 0) 범위와 우선순위
 
-1. Root `AGENTS.md`
-2. This document (`src/backend/BACKEND.md`)
-3. Test guide (`src/backend/TEST.md`) when adding/changing tests
+- 범위: `src/backend` 하위 전체
+- 백엔드 작업 전 읽기 순서:
 
-- Priority on conflicts:
+1. 루트 `AGENTS.md`
+2. 이 문서 (`src/backend/BACKEND.md`)
+3. 테스트 추가/변경 시 테스트 가이드 (`src/backend/TEST.md`)
 
-1. Root `AGENTS.md`
-2. This document
-3. Local file comments and existing code style
+- 충돌 시 우선순위:
 
-## 0.1) Backend Project Structure
+1. 루트 `AGENTS.md`
+2. 이 문서
+3. 로컬 파일 주석 및 기존 코드 스타일
+
+## 0.1) 백엔드 프로젝트 구조
 
 ```text
 src/backend/
@@ -84,76 +86,76 @@ src/backend/
   pyproject.toml
 ```
 
-## 0.1.1) Directory Responsibilities
+## 0.1.1) 디렉터리 책임
 
 - `app/core/`
-1. Application-wide infrastructure and cross-cutting concerns
-2. No endpoint-specific business rules
-3. `app/core/config/` owns environment-backed application settings via `SETTINGS`
-4. `app/core/db/` owns DB engine/session lifecycle and startup schema migration orchestration
-5. `app/core/cache/` owns shared cache/broker clients such as Redis
-6. `app/core/observability/` owns logging, request correlation, metrics, tracing, and health checks
-7. `app/core/mail/` owns mail provider/service and email templates
-8. `app/core/error/` owns the shared domain error foundation and error response builders
-9. `app/core/realtime/` owns SSE transport primitives, broker fan-out, and realtime event schemas
-10. `app/core/celery/` owns standalone task execution; `app/core/mail/queue.py` owns mail publication
-11. Do not scatter direct `os.getenv(...)` usage across routers/services/utils
+1. 애플리케이션 전역 인프라와 횡단 관심사
+2. 엔드포인트별 비즈니스 규칙 금지
+3. `app/core/config/`는 `SETTINGS` 기반 환경 설정을 담당
+4. `app/core/db/`는 DB 엔진/세션 생명주기와 시작 시 스키마 마이그레이션 오케스트레이션을 담당
+5. `app/core/cache/`는 Redis 같은 공용 cache/broker client를 담당
+6. `app/core/observability/`는 logging, request correlation, metrics, tracing, health check를 담당
+7. `app/core/mail/`은 mail provider/service와 email template을 담당
+8. `app/core/error/`는 공통 도메인 에러 기반과 에러 응답 빌더를 담당
+9. `app/core/realtime/`은 SSE 전송 프리미티브, broker fan-out, realtime event schema를 담당
+10. `app/core/celery/`는 별도 worker 실행, `app/core/mail/queue.py`는 메일 발행을 담당
+11. router/service/utils 전역에 `os.getenv(...)` 직접 사용 분산 금지
 
 - `app/models/`
-1. Data shape definitions: SQLAlchemy entities and API/Pydantic schemas
-2. Repository-style data access helpers tied to model domain
-3. No HTTP transport handling
+1. 데이터 형태 정의: SQLAlchemy 엔티티 및 API/Pydantic 스키마
+2. 모델 도메인에 결합된 저장소 스타일 데이터 접근 헬퍼
+3. HTTP 전송 처리 금지
 
 - `app/routers/`
-1. HTTP transport layer only (request parsing, response mapping, status/response declarations)
-2. Calls service methods and lets domain exceptions propagate to the global app handler
-3. Must not contain domain business orchestration logic
+1. HTTP 전송 계층만 담당 (요청 파싱, 응답 매핑, status/response 선언)
+2. 서비스 메서드 호출 및 도메인 예외를 전역 앱 핸들러로 전파
+3. 도메인 비즈니스 오케스트레이션 로직 포함 금지
 
 - `app/services/`
-1. Domain business logic and orchestration layer
-2. Composes repositories, utils, Redis, and external APIs into use-case outcomes; relational CRUD goes through repositories only
-3. Handles domain/repository failures; SQLAlchemy/driver error interpretation belongs to repositories
+1. 도메인 비즈니스 로직 및 오케스트레이션 계층
+2. 리포지토리, utils, Redis, 외부 API를 유스케이스 결과로 조합하며 관계형 CRUD는 리포지토리만 통해 수행
+3. 도메인/리포지토리 실패를 처리하며 SQLAlchemy/드라이버 오류 해석은 리포지토리가 담당
 
 - `app/utils/`
-1. Reusable technical helpers shared across services
-2. Security/token/cookie/session/crypto-style utility functions
-3. Should not own domain policy decisions
+1. 서비스 간 공유 가능한 재사용 기술 헬퍼
+2. 보안/토큰/쿠키/세션/암호화 유틸 함수
+3. 도메인 정책 결정 로직 보유 금지
 
 - `app/core/realtime/`
-1. Realtime transport primitives for SSE delivery
-2. System event schema (`connected`, `ping`) + broker fan-out (`broker.py`) + stream heartbeat loop (`sse.py`)
-3. Domain-scoped realtime event enums must be defined under `app/core/realtime/domain_events/` (example: `APIKeyRealtimeEventType` in `app/core/realtime/domain_events/api_key.py`)
-4. Service layer publishes domain events into broker channels and routers consume stream through `RealtimeService`
+1. SSE 전달을 위한 실시간 전송 프리미티브
+2. 시스템 이벤트 스키마(`connected`, `ping`) + 브로커 fan-out(`broker.py`) + 스트림 heartbeat 루프(`sse.py`) 구성
+3. 도메인 단위 실시간 이벤트 enum은 `app/core/realtime/domain_events/` 하위에 정의 (예시: `app/core/realtime/domain_events/api_key.py`의 `APIKeyRealtimeEventType`)
+4. 서비스 계층에서 도메인 이벤트를 브로커 채널에 발행하고, 라우터는 `RealtimeService`를 통해 스트림을 소비
 
 - `app/deps.py`
-1. Dependency injection entry points for auth/session/API-key context resolution
-2. Provides request-scoped dependency objects to routers
-3. Keeps dependency wiring focused and avoids embedding feature business workflows
-4. Centralizes RBAC guards (for example admin-only dependencies) so role checks are not duplicated in routers
+1. auth/session/API-key 컨텍스트 해석용 DI 진입점
+2. 라우터에 request-scope 의존 객체 제공
+3. 의존성 wiring에 집중하고 피처 비즈니스 워크플로 임베딩 방지
+4. RBAC 가드(예: admin 전용 의존성)를 중앙화하여 라우터 중복 역할 체크 방지
 
 - `app/static/`
-1. Static frontend artifact location for monolithic deployment mode
-2. `app/main.py` can mount `app/static/dist` and serve SPA assets directly
-3. Non-API HTML requests can be routed to `index.html` via SPA fallback behavior
+1. 모놀리식 배포 모드에서 프론트 정적 아티팩트 위치
+2. `app/main.py`에서 `app/static/dist`를 마운트하여 SPA 자산 직접 제공 가능
+3. 비 API HTML 요청은 SPA fallback으로 `index.html` 라우팅 가능
 
-## 0.2) Database Application Structure (Including Alembic)
+## 0.2) DB 애플리케이션 구조 (Alembic 포함)
 
-- Runtime application path:
+- 런타임 애플리케이션 경로:
 
-1. `app/core/db/session.py` initializes DB engine/session factory
-2. `app/models/*` defines SQLAlchemy models and schema metadata
-3. `app/services/*` executes domain operations using model/repository functions
+1. `app/core/db/session.py`에서 DB 엔진/세션 팩토리 초기화
+2. `app/models/*`에서 SQLAlchemy 모델/스키마 메타데이터 정의
+3. `app/services/*`에서 모델/리포지토리 함수를 사용해 도메인 연산 수행
 
-- Migration/versioning path:
+- 마이그레이션/버저닝 경로:
 
-1. `alembic/env.py` loads metadata and migration context
-2. `alembic/versions/*.py` stores versioned migration scripts
-3. `alembic.ini` configures Alembic runtime behavior
+1. `alembic/env.py`에서 메타데이터 및 마이그레이션 컨텍스트 로드
+2. `alembic/versions/*.py`에 버전 마이그레이션 스크립트 저장
+3. `alembic.ini`에서 Alembic 런타임 동작 설정
 
-- Role split:
+- 역할 분리:
 
-1. Alembic: schema history and controlled migration workflow
-2. App runtime DB layer: request-time read/write operations
+1. Alembic: 스키마 이력 및 통제된 마이그레이션 워크플로
+2. 앱 런타임 DB 계층: 요청 시점 읽기/쓰기 연산
 
 ```mermaid
 flowchart TD
@@ -165,19 +167,19 @@ flowchart TD
     G --> E
 ```
 
-## 0.2.1) Monolithic Static Serving Structure
+## 0.2.1) 모놀리식 정적 서빙 구조
 
-- This project supports a monolithic serving mode where backend and built frontend are served together.
-- Expected static artifact path:
+- 이 프로젝트는 백엔드와 빌드된 프론트엔드를 함께 제공하는 모놀리식 서빙 모드를 지원합니다.
+- 정적 아티팩트 기대 경로:
 1. `src/backend/app/static/dist/`
-- Runtime behavior in monolithic mode:
-1. Backend mounts `app/static/dist` as static root
-2. Asset files are served directly from the mounted directory
-3. For SPA routes (non-API paths with HTML accept header), backend can return `index.html` fallback
-- Operational note:
-1. If frontend build output is not present under `app/static/dist`, static mount/fallback is skipped
+- 모놀리식 모드 런타임 동작:
+1. 백엔드는 `app/static/dist`를 static root로 마운트
+2. 자산 파일은 마운트된 디렉터리에서 직접 제공
+3. SPA 라우트(HTML accept 헤더를 가진 비 API 경로)는 `index.html` fallback 반환 가능
+- 운영 참고:
+1. `app/static/dist`에 프론트 빌드 결과가 없으면 static 마운트/fallback을 건너뜀
 
-## 0.3) Router-Service-Util-DB Relationship
+## 0.3) Router-Service-Util-DB 관계
 
 ```mermaid
 flowchart LR
@@ -227,86 +229,77 @@ sequenceDiagram
     end
 ```
 
-## Relational persistence boundary (required)
+## 관계형 저장소 책임 경계 (필수)
 
-- Services, routers and authentication dependencies must not acquire/accept DB sessions or execute relational
-  CRUD/transaction methods (`add`, `get`, `execute`, `scalar`, `scalars`, `delete`,
-  `flush`, `refresh`, `commit`, `rollback`, `begin`). Importing session factories,
-  SQL/query builders, SQLAlchemy exceptions, or database drivers into services is
-  prohibited for those operations, including through helpers or aliases.
-- Put SQL predicates, joins, ordering, paging, locks and ORM persistence assignments
-  in repositories under `app/models/`. Services pass business inputs and consume
-  results; do not move query code into a service-private helper to evade the rule.
-- Keep transactions inside the repository. A repository-owned locking context may
-  span a provider call when required for consistency, but must never expose its DB
-  session; snapshot assignments also belong to repository methods. Preserve atomic
-  deletion/outbox writes, compare-and-swap and ambiguous-commit compensation.
-- Repository error translation must preserve existing domain codes and causal
-  chains. A service may use a storage-independent repository error when it must
-  decide compensation; a failed commit is not proof of rollback.
-- Business policy/orchestration stays in services. Repositories may enforce
-  transactional invariants, ownership predicates and atomic multi-table operations;
-  they must not call services, send mail, publish realtime events or call providers.
-- Redis operations are outside this relational boundary. Infrastructure health
-  probes remain in core; admin engine metadata inspection is not relational CRUD.
-- Review these rules manually before implementation and completion. Existing
-  `backend-architecture-check` only checks its documented import boundaries; passing
-  it does not establish this policy. No new automated checks/tests enforce it.
+- 서비스/라우터/인증 의존성은 DB 세션을 획득하거나 전달받아 관계형 CRUD·트랜잭션 메서드
+  (`add`, `get`, `execute`, `scalar`, `scalars`, `delete`, `flush`, `refresh`,
+  `commit`, `rollback`, `begin`)를 실행하면 안 됩니다. 이를 위한 세션 팩토리,
+  SQL/쿼리 빌더, SQLAlchemy 예외, DB 드라이버의 서비스 import도 금지합니다.
+  별칭이나 헬퍼를 통한 우회도 같은 규칙을 적용합니다.
+- SQL 조건·조인·정렬·페이징·잠금·ORM 저장 속성 대입은 `app/models/`의
+  리포지토리가 담당합니다. 서비스는 업무 입력을 전달하고 결과를 사용하며,
+  쿼리를 서비스 private 메서드로 옮기는 것은 책임 분리가 아닙니다.
+- 트랜잭션은 리포지토리가 소유합니다. 일관성에 필요한 리포지토리 잠금 컨텍스트가
+  외부 연동 호출을 감쌀 수 있지만 DB 세션을 노출하면 안 됩니다. 스냅샷 저장도
+  리포지토리가 담당하며 원자적 삭제/outbox·CAS·커밋 결과 불명확 시 보상을 유지합니다.
+- DB 오류는 기존 도메인 코드와 원인 체인을 보존해 변환합니다. 서비스가 보상을
+  결정해야 하면 DB 구현과 무관한 리포지토리 오류를 사용합니다. 커밋 실패가
+  롤백 완료를 뜻하지는 않습니다.
+- 업무 정책·오케스트레이션은 서비스에 둡니다. 리포지토리는 트랜잭션 불변조건,
+  소유권 조건, 원자적 다중 테이블 작업을 처리할 수 있지만 서비스를 호출하거나
+  메일·실시간 이벤트·외부 연동을 실행하면 안 됩니다.
+- Redis는 이 관계형 경계에서 제외합니다. 인프라 헬스 프로브는 core에 유지하며
+  관리자용 엔진 메타데이터 확인은 관계형 CRUD에 해당하지 않습니다.
+- 구현 전과 완료 시 수동으로 이 경계를 리뷰합니다. 기존
+  `backend-architecture-check`는 문서화된 import 경계만 검사하므로 통과가 이 규칙을
+  보장하지 않습니다. 이번 변경에서는 새 자동 검사·테스트를 추가하지 않습니다.
 
-## Router/service interface review (required)
+## Router/Service 인터페이스 리뷰 (필수)
 
-Review responsibility violations separately from consistency conventions. A utility
-call or framework type alone is not evidence that another service is needed.
+책임 경계 위반과 일관성 관례를 구분합니다. 유틸 호출이나 프레임워크 타입 사용만으로
+새 서비스가 필요하다고 판단하지 않습니다.
 
-### Required responsibility boundaries
+### 필수 책임 경계
 
-- Review all route entry points, including handlers in `app/main.py`. Business
-  workflows that combine user lookup, authentication/session issuance or provider
-  decisions belong in services; handlers own HTTP parsing and response rendering.
-- Routers may directly use pure technical/transport utilities: random session ID
-  generation, cookie helpers, language/header parsing, URL construction, logging
-  and error-response builders. Do not add forwarding services just to wrap these.
-  Core imports are reviewed by their responsibility, not prohibited by directory.
-- Authentication/role guards stay in `app/deps.py`. Feature-specific decisions such
-  as allowing an administrator to read/reply to another user's inquiry belong in
-  the feature service or a shared authorization dependency. Pass the authenticated
-  actor rather than deciding privileged access in the router. Fixed own/admin list
-  scopes identify separate route use cases and may remain explicit service inputs.
-- Cross-service reuse goes through public use-case methods or shared technical
-  utilities/adapters. Do not call another service's private methods/provider client.
-  Keep provider timeout/error mapping and current-state/ownership checks with the
-  operation, rather than exposing raw SDK clients as a substitute public interface.
-- HTTP-focused AuthService methods may accept Request to read IP, User-Agent and
-  cookies. This is an allowed adapter boundary, not a violation requiring DTOs or
-  another service. Split request values when reuse or concrete testing needs justify
-  it. The same reasoning permits Request for SSE disconnect handling.
-- Propagate domain exceptions to the global handler. Router catches are reserved for
-  explicit transport behavior such as OAuth redirects or cookie cleanup. Preserve
-  shared error models when statuses overlap. Startup/worker infrastructure failures
-  are not automatically HTTP domain failures. Relational persistence follows the
-  separate mandatory repository boundary above; Redis is outside that boundary.
+- `app/main.py`를 포함한 모든 요청 진입점을 확인합니다. 사용자 조회·인증/세션 발급·
+  외부 연동 판단을 조합하는 업무 흐름은 서비스가, HTTP 파싱과 응답 구성은 핸들러가 담당합니다.
+- 라우터는 난수 세션 ID 생성, 쿠키, 언어/헤더 파싱, URL 구성, 로깅, 에러 응답 빌더처럼
+  순수 기술/전송 유틸을 직접 사용할 수 있습니다. 이를 감싸기 위한 전달 서비스는 만들지
+  않습니다. core import 여부는 디렉터리 이름이 아니라 수행하는 책임으로 판단합니다.
+- 인증/역할 가드는 `app/deps.py`가 담당합니다. 관리자가 타인의 문의를 조회/답변할 수
+  있는지 같은 기능별 접근 판단은 기능 서비스 또는 공통 권한 의존성이 담당합니다.
+  라우터에서 특권 접근 여부를 결정하지 말고 인증된 사용자를 전달합니다. 본인/관리자
+  목록처럼 서로 다른 라우트의 고정 조회 범위는 명시적인 서비스 입력으로 유지할 수 있습니다.
+- 다른 서비스의 기능은 공개 유스케이스 메서드 또는 공통 기술 유틸/어댑터로 재사용합니다.
+  다른 서비스의 private 메서드/provider client를 직접 호출하지 않습니다. provider의
+  timeout·오류 변환·현재 상태/소유권 확인을 해당 연산에 유지하며 SDK client 노출로 대신하지 않습니다.
+- HTTP 인증을 담당하는 AuthService는 IP·User-Agent·쿠키를 읽기 위해 Request를 받을 수
+  있습니다. 허용된 어댑터 경계이며 DTO나 별도 서비스를 강제할 위반이 아닙니다. 재사용이나
+  구체적인 테스트 필요가 생길 때 입력값을 분리합니다. SSE 연결 종료 감지의 Request도 허용합니다.
+- 도메인 예외는 전역 핸들러에 전파하며 라우터 catch는 OAuth redirect·쿠키 정리 등
+  명시적인 전송 처리에 한정합니다. 같은 status의 여러 에러 모델을 보존합니다. 시작/worker
+  인프라 실패를 무조건 HTTP 도메인 실패로 바꾸지 않습니다. 관계형 저장은 위의 별도 필수
+  리포지토리 경계를 따르며 Redis는 해당 경계에서 제외합니다.
 
-### Consistency conventions
+### 일관성 관례
 
-- Application error definitions use domain Exception/ErrorCode enums. Compare
-  ServiceException.code with the enum member's `.code`, not a duplicated error
-  string. Raw provider event/status strings remain provider data.
-- Use FastAPI status constants in route response declarations and HTTP responses.
-- Share named lifetime/cooldown constants when challenge issuance and response
-  metadata describe the same policy. Do not introduce new services/result DTOs just
-  to remove duplicate literals, or conflate independent policy values.
-- In reviews/worklogs, distinguish confirmed responsibility violations, consistency
-  cleanup and allowed existing design. Record a concrete reason for structural
-  changes; preference alone is not a defect. These are manual harness rules, with
-  no new automatic checker or test requirement introduced by this policy.
+- 앱 오류 정의는 도메인 Exception/ErrorCode enum을 사용합니다. ServiceException.code는
+  중복 오류 문자열 대신 enum 멤버의 `.code`와 비교합니다. 외부 provider 이벤트/상태 문자열은 구분합니다.
+- 라우트 응답 선언과 HTTP 응답에는 FastAPI status 상수를 사용합니다.
+- 코드 발급과 응답 메타데이터가 같은 정책을 표현하면 만료/재요청 시간에 이름 있는
+  공유 상수를 사용합니다. 리터럴 중복을 없애기 위해 새 서비스/결과 DTO를 만들거나
+  의미가 다른 정책값을 하나로 합치지 않습니다.
+- 리뷰와 worklog는 확인된 책임 위반·일관성 정리·허용된 기존 설계를 구분합니다.
+  구조 변경에는 구체적인 이유를 기록하며 선호만으로 결함이라 판단하지 않습니다.
+  수동 하네스 규칙이며 이 정책을 위한 새 자동 검사나 테스트 요구는 추가하지 않습니다.
 
-## 0.4) Realtime Event Project Pattern
+## 0.4) 실시간 이벤트 프로젝트 패턴
 
-- Rule:
-1. Shared transport/system realtime concerns stay in `app/core/realtime/` (`events.py`, `broker.py`, `sse.py`)
-2. Domain-owned realtime event types must live under `app/core/realtime/domain_events/`
-3. Services import event enums from `app.core.realtime` (re-export) or `app.core.realtime.domain_events.<domain>`
-4. Routers must not define/own realtime event enums directly
+- 규칙:
+1. 공통 전송/시스템 실시간 로직은 `app/core/realtime/`에 유지 (`events.py`, `broker.py`, `sse.py`)
+2. 도메인 소유 실시간 이벤트 타입은 `app/core/realtime/domain_events/`에 배치
+3. 서비스는 `app.core.realtime`(re-export) 또는 `app.core.realtime.domain_events.<domain>`에서 이벤트 enum import
+4. 라우터에서 실시간 이벤트 enum을 직접 정의/소유하지 않음
 
 ```mermaid
 flowchart LR
@@ -336,545 +329,445 @@ flowchart LR
     SSE --> EV
 ```
 
-## 0.5) Backend Runtime Loops
+## 0.5) 백엔드 런타임 루프
 
-Use these loops as the default check when adding or changing backend behavior. A loop can be marked not applicable, but the reason should be clear before committing.
+백엔드 동작을 추가하거나 변경할 때 다음 루프를 기본 확인 항목으로 사용합니다. 해당하지 않는 루프는 “해당 없음”으로 볼 수 있지만, 커밋 전에 이유가 명확해야 합니다.
 
-### 0.5.1) Request Lifecycle Loop
+### 0.5.1) Request Lifecycle 루프
 
-New API behavior should follow this path:
+새 API 동작은 다음 경로를 따라야 합니다.
 
-1. Request enters `app/routers/v1/*`.
-2. Auth/session/request context is resolved through `app/deps.py`.
-3. Router delegates business work to `app/services/*`.
-4. Service requests relational reads/writes through repositories; repositories own DB sessions and transactions.
-5. Service returns a domain result or raises a domain exception.
-6. Router/global handlers map the result or error to the HTTP response.
+1. 요청은 `app/routers/v1/*`로 진입
+2. auth/session/request context는 `app/deps.py`를 통해 해석
+3. 라우터는 비즈니스 작업을 `app/services/*`에 위임
+4. 서비스는 관계형 읽기/쓰기를 리포지토리에 요청하고 DB 세션과 트랜잭션은 리포지토리가 소유
+5. 서비스는 도메인 결과를 반환하거나 도메인 예외를 발생
+6. 라우터/전역 핸들러는 결과 또는 에러를 HTTP 응답으로 매핑
 
-Routers should not shortcut this loop by embedding service orchestration, direct DB policy, or ad hoc error response construction.
+라우터가 서비스 오케스트레이션, 직접 DB 정책, 임의 에러 응답 생성을 포함해 이 루프를 우회하면 안 됩니다.
 
-### 0.5.2) Domain Event Loop
+### 0.5.2) Domain Event 루프
 
-When a backend change should be reflected outside the immediate HTTP response, use the domain event loop:
+백엔드 변경이 즉시 HTTP 응답 밖에서도 반영되어야 한다면 domain event 루프를 사용합니다.
 
-1. A service completes a state-changing domain action.
-2. The service publishes a typed domain event through the realtime broker path.
-3. Realtime transport serializes and streams the event.
-4. Frontend realtime hooks consume the event and refresh or update affected state.
+1. 서비스가 상태를 변경하는 도메인 액션 완료
+2. 서비스가 realtime broker 경로를 통해 타입이 있는 도메인 이벤트 발행
+3. realtime transport가 이벤트를 직렬화하고 스트리밍
+4. 프론트엔드 realtime hook이 이벤트를 소비하고 영향을 받는 상태를 refresh 또는 update
 
-Do not publish transport-specific events directly from routers. Keep event names and payloads domain-scoped and typed under `app/core/realtime/domain_events/`.
+라우터에서 transport-specific 이벤트를 직접 발행하지 않습니다. 이벤트 이름과 payload는 `app/core/realtime/domain_events/` 아래에서 도메인 단위와 타입을 유지합니다.
 
-### 0.5.3) Background Task Loop
+### 0.5.3) Background Task 루프
 
-Use the background task loop for work that is slow, retryable, or not required to complete before the HTTP response:
+느리거나, 재시도 가능하거나, HTTP 응답 전에 완료될 필요가 없는 작업은 background task 루프를 사용합니다.
 
-1. Request handling or domain service enqueues a task with the minimum required payload.
-2. Worker-owned services execute the side effect.
-3. Failures are logged and normalized at the worker/service boundary.
-4. Completion or failure emits a status update, domain event, or observable log when callers need follow-up visibility.
+1. 요청 처리 또는 도메인 서비스가 필요한 최소 payload로 task enqueue
+2. worker 소유 서비스가 side effect 실행
+3. 실패는 worker/service 경계에서 logging 및 정규화
+4. 호출자가 후속 상태를 알아야 하면 완료/실패를 status update, domain event, observable log로 노출
 
-Avoid hiding long-running external calls inside request handlers when a queued task would provide clearer retry and failure behavior.
+queued task가 retry와 실패 동작을 더 명확하게 만들 수 있다면 장시간 외부 호출을 request handler 안에 숨기지 않습니다.
 
-## 1) Formatting and Linting (Ruff-First)
+## 1) 포맷팅 및 린팅 (Ruff 우선)
 
-- `src/backend/pyproject.toml` is the source of truth for backend tooling/dependency configuration.
-- Use `uv` as the default backend package/runtime workflow.
-- Keep `pyproject.toml` and lockfile changes consistent in the same change set.
-- Ruff is the single source of truth for Python style.
-- Required before commit:
+- `src/backend/pyproject.toml`은 백엔드 툴링/의존성 설정의 단일 기준입니다.
+- 기본 백엔드 패키지/런타임 워크플로는 `uv`를 사용합니다.
+- `pyproject.toml`과 lockfile 변경은 같은 변경셋에서 동기화되어야 합니다.
+- 파이썬 스타일의 단일 기준은 Ruff입니다.
+- 커밋 전 필수:
 
 1. `ruff check . --fix`
 2. `ruff format .`
 
-- Required for CI/local verification:
+- CI/로컬 검증 필수:
 
 1. `ruff check .`
 2. `ruff format . --check`
 
-- Line length and formatting behavior must follow `src/backend/pyproject.toml` Ruff settings.
-- Even if `black`/`isort` sections exist, use Ruff commands as the primary workflow.
+- 라인 길이 및 포맷팅 동작은 `src/backend/pyproject.toml`의 Ruff 설정을 따릅니다.
+- `black`/`isort` 섹션이 있더라도 Ruff 명령을 기본 워크플로로 사용합니다.
 
-## 2) Type Annotation Rules
+## 2) 타입 애노테이션 규칙
 
-- Prefer built-in Python type syntax.
+- 내장 파이썬 타입 문법을 우선 사용합니다.
 
 1. `list[str]`, `dict[str, int]`, `set[str]`, `tuple[int, str]`
-2. Optional as `X | None`
-3. Union as `A | B`
+2. Optional은 `X | None`
+3. Union은 `A | B`
 
-- Do not use `typing.List`, `typing.Dict`, `typing.Optional`, `typing.Union`.
-- Use `Any`, `Literal`, `Annotated`, `TypeAlias` only when truly needed.
-- Public functions (router handlers, public service methods, public util functions) must declare return types.
-- Private service methods should also declare types whenever practical.
+- `typing.List`, `typing.Dict`, `typing.Optional`, `typing.Union` 사용 금지
+- `Any`, `Literal`, `Annotated`, `TypeAlias`는 꼭 필요한 경우에만 사용
+- 공개 함수(router 핸들러, 공개 service 메서드, 공개 util 함수)는 반환 타입 선언 필수
+- private service 메서드도 가능하면 타입 선언 권장
 
-## 3) Mandatory Layering Pattern (Router -> Service -> Repository -> DB)
+## 3) 필수 레이어링 패턴 (Router -> Service -> Repository -> DB)
 
-- Every request flow must follow this order:
+- 모든 요청 흐름은 다음 순서를 따라야 합니다.
 
-1. Router: HTTP transport layer only
-2. Service: business logic and orchestration
-3. Repository: relational queries, mutations, transactions and database failure translation
-4. Utilities/Redis/external APIs: separate execution dependencies composed by services
+1. Router: HTTP 전송 계층만
+2. Service: 비즈니스 로직과 오케스트레이션
+3. Repository: 관계형 쿼리·수정·트랜잭션·DB 오류 변환
+4. 유틸/Redis/외부 API: 서비스가 조합하는 별도 실행 의존성
 
-- Router rules:
+- Router 규칙:
 
-1. Handle request/response schema mapping, cookies/headers, and response declarations only
-2. No business logic, no complex domain branching, no direct DB access
-3. Call service methods and let domain exceptions propagate to `app/main.py`
+1. 요청/응답 스키마 매핑, 쿠키/헤더, 응답 선언만 처리
+2. 비즈니스 로직, 복잡한 도메인 분기, DB 직접 접근 금지
+3. 서비스 메서드 호출 후 도메인 예외는 `app/main.py`로 전파
 
-- Service rules:
+- Service 규칙:
 
-1. Single owner of domain business rules
-2. Compose repository/Redis/external API operations into final business outcomes
-3. Break complexity into private methods (`_...`)
+1. 도메인 비즈니스 규칙의 단일 소유자
+2. 리포지토리/Redis/외부 API 연산을 최종 비즈니스 결과로 조합
+3. 복잡도는 private 메서드(`_...`)로 분해
 
-- Util rules:
+- Util 규칙:
 
-1. Place reusable helpers used by multiple services
-2. Centralize sensitive technical topics (cookies, sessions, tokens, crypto)
-3. Service-specific domain decisions stay in service private methods, not util modules
+1. 여러 서비스에서 쓰는 재사용 헬퍼 배치
+2. 쿠키/세션/토큰/암호화 같은 민감 기술 주제 중앙화
+3. 서비스별 도메인 정책 결정은 util이 아닌 service private 메서드에 유지
 
-## 4) Exception Modeling Rules (Required)
+## 4) 예외 모델링 규칙 (필수)
 
-- All domain exceptions must use the shared foundation in `app/core/error/error.py`.
-- Required domain error module pattern:
+- 모든 도메인 예외는 `app/core/error/error.py`의 공통 기반을 사용해야 합니다.
+- 필수 도메인 에러 모듈 패턴:
 
-1. Create `app/core/error/<domain>_exception.py`
-2. Define `<Domain>ErrorCode(Enum)` values as `ServiceErrorCode(...)`
-3. Define `<Domain>Exception(ServiceException)`
-4. Build OpenAPI error models via `build_error_models(...)`
-5. Build response mappings via `build_error_responses_from_codes(...)`
+1. `app/core/error/<domain>_exception.py` 생성
+2. `<Domain>ErrorCode(Enum)` 값을 `ServiceErrorCode(...)`로 정의
+3. `<Domain>Exception(ServiceException)` 정의
+4. `build_error_models(...)`로 OpenAPI 에러 모델 구성
+5. `build_error_responses_from_codes(...)`로 응답 매핑 구성
 
-- 1:1:1 mapping rule:
+- 1:1:1 매핑 규칙:
 
-1. One router module
-2. One service module
-3. One domain error module
+1. router 모듈 1개
+2. service 모듈 1개
+3. domain error 모듈 1개
 
-- Router propagation rules:
+- Router 전파 규칙:
 
-1. Route decorator `responses=` must include all domain errors that can be propagated by that handler
-2. Do not hard-code raw status numbers such as `400/401/500` in route decorators
-3. Do not wrap normal service calls in `try/except` just to convert domain exceptions
-4. For redirect-driven endpoints (for example OAuth callback), do not document JSON domain error models in `responses=` when runtime behavior returns redirects for failure paths
-5. Keep route decorator response contracts aligned with actual transport behavior (JSON vs redirect) before OpenAPI generation
-6. Routers may catch domain exceptions only for transport-specific side effects, such as redirect failure contracts or clearing cookies before re-raising
+1. 라우트 데코레이터 `responses=`에는 해당 핸들러에서 전파 가능한 도메인 에러를 모두 포함
+2. 라우트 데코레이터에 `400/401/500` 같은 raw status 하드코딩 금지
+3. 일반 서비스 호출을 도메인 예외 변환만을 위해 `try/except`로 감싸지 않음
+4. 리다이렉트 기반 엔드포인트(예: OAuth callback)는 실패 경로가 리다이렉트라면 `responses=`에 JSON 도메인 에러 모델 문서화 금지
+5. OpenAPI 생성 전에 라우트 데코레이터 응답 계약(JSON vs redirect)을 실제 전송 동작과 일치시킬 것
+6. 라우터는 redirect 실패 계약이나 쿠키 정리 후 재-raise 같은 전송 계층 특수 부수효과가 있을 때만 도메인 예외를 catch 할 수 있음
 
-- Service raise rules:
+- Service raise 규칙:
 
-1. Repositories catch SQLAlchemy/driver failures and translate database details into existing domain exceptions or an explicit repository error contract
-2. Services may handle repository errors for workflow/compensation and translate other provider failures into domain exceptions; never catch SQLAlchemy errors or inspect constraint names/error.orig here
-3. `app/main.py` converts `ServiceException` instances to HTTP JSON responses through the global exception handler
+1. 리포지토리가 SQLAlchemy/드라이버 오류를 잡아 기존 도메인 예외 또는 명시적인 리포지토리 오류 계약으로 변환
+2. 서비스는 업무 흐름·보상 처리를 위해 리포지토리 오류를 처리하고 다른 외부 연동 실패를 도메인 예외로 변환할 수 있지만 SQLAlchemy 예외나 제약조건 이름/error.orig는 해석 금지
+3. `app/main.py`의 전역 예외 핸들러가 `ServiceException`을 HTTP JSON 응답으로 변환
 
-## 5) Exception Handling and Logging Pattern
+## 5) 예외 처리 및 로깅 패턴
 
-- Responsibility split:
+- 책임 분리:
 
-1. Repositories normalize database failure causes; services own business recovery and other provider failure mapping
-2. `app/main.py` performs shared domain-exception HTTP conversion and error logging
-3. Routers handle only endpoint-specific transport behavior
+1. 리포지토리는 DB 실패 원인을 정규화하고 서비스는 업무 복구와 다른 외부 연동 실패 변환을 담당
+2. `app/main.py`가 공통 도메인 예외의 HTTP 변환 및 에러 로깅 수행
+3. 라우터는 엔드포인트별 전송 계층 동작만 처리
 
-- Current project logging behavior:
+- 현재 프로젝트 로깅 동작:
 
-1. The global `ServiceException` handler uses `exception_log_level` and `logger.log(... code=...)`
-2. Unexpected errors use `logger.exception(...)` to keep stack traces
-3. Sensitive data (for example email) must use masking helpers
-4. HTTP request correlation uses `X-Request-ID` and `X-Trace-ID`; logs include both values through request context logging
-5. Runtime log formatting uses a key-value prefix: `level`, `logger`, `request_id`, `trace_id`, then `message`
+1. 전역 `ServiceException` 핸들러가 `exception_log_level`로 레벨을 결정하고 `logger.log(... code=...)`로 로깅
+2. 예기치 않은 에러는 `logger.exception(...)`으로 스택트레이스 유지
+3. 이메일 등 민감 데이터는 마스킹 헬퍼 사용 필수
+4. HTTP 요청 상관관계는 `X-Request-ID`와 `X-Trace-ID`를 사용하며, 로그는 request context logging을 통해 두 값을 포함
+5. 런타임 로그 포맷은 key-value prefix(`level`, `logger`, `request_id`, `trace_id`) 뒤에 `message`를 붙이는 형식 사용
 
-- Recommended operational conventions:
+- 권장 운영 규칙:
 
-1. Always include error code in failure logs
-2. Avoid duplicate error logs for the same failure path
-3. Preserve original cause on re-raise (`raise ... from error`)
-4. Preserve inbound `X-Request-ID` when present and prefer the active OpenTelemetry trace ID; without an active span, use the existing header fallback
-5. Keep application log messages in the existing event style: `Event description (key=%s, other_key=%s).`
+1. 실패 로그에 에러 코드를 항상 포함
+2. 동일 실패 경로에서 중복 에러 로그 방지
+3. 재-raise 시 원인 보존 (`raise ... from error`)
+4. 인바운드 `X-Request-ID`가 있으면 보존하고, 활성 OpenTelemetry trace ID를 우선 사용하고 활성 span이 없으면 기존 헤더 대체 순서를 사용
+5. 애플리케이션 로그 메시지는 기존 event style인 `Event description (key=%s, other_key=%s).` 형태 유지
 
-## 6) Mandatory Pre-Commit Checks
+## 6) 커밋 전 필수 체크
 
-- For backend-related commits, all checks below must pass:
+- 백엔드 관련 커밋은 아래 체크를 모두 통과해야 합니다.
 
 1. `ruff check . --fix`
 2. `ruff format .`
-3. Run minimum relevant tests for modified scope (if tests exist)
-4. If OpenAPI contract changes, verify downstream frontend type generation flow
-5. If dependencies/tooling changed, verify `pyproject.toml` and lockfile are synchronized under `uv` workflow
+3. 수정 범위에 대한 최소 관련 테스트 실행 (테스트가 존재하는 경우)
+4. OpenAPI 계약 변경 시 프론트 타입 생성 연동 흐름 검증
+5. 의존성/툴링 변경 시 `pyproject.toml`과 lockfile이 `uv` 워크플로 기준으로 동기화되었는지 검증
 
-- For test architecture, naming, and harness rules, follow `src/backend/TEST.md`.
-- When adding a new backend domain/router, follow the onboarding checklist in
-  `src/backend/TEST.md` (`## 11) New Domain Test Onboarding Rules (Required)`).
+- 테스트 아키텍처/네이밍/하네스 규칙은 `src/backend/TEST.md`를 따릅니다.
+- 새 백엔드 도메인/라우터 추가 시 `src/backend/TEST.md`의 온보딩 체크리스트(`## 11) New Domain Test Onboarding Rules (Required)`)를 따릅니다.
 
-- Do not commit when these checks are not satisfied.
+- 위 조건을 만족하지 않으면 커밋하지 않습니다.
 
-## 7) Database Migration Rules (Alembic)
+## 7) DB 마이그레이션 규칙 (Alembic)
 
-- Alembic is used for database schema and migration management only.
-- Alembic rules do not change or constrain the Router -> Service -> Repository -> DB application layering pattern.
-- The current runtime bootstrap pattern (`create_all`) can be kept for local/dev initialization when needed.
-- When schema history/versioned migration management is required, use Alembic revisions as the authoritative DB change log.
-- If SQLAlchemy models/schema definitions are added/changed/removed, Alembic migration updates are mandatory.
-- Standard workflow:
+- Alembic은 DB 스키마/마이그레이션 관리에만 사용합니다.
+- Alembic 규칙은 Router -> Service -> Repository -> DB 레이어링 패턴을 변경하거나 제약하지 않습니다.
+- 현재 런타임 부트스트랩 패턴(`create_all`)은 필요 시 로컬/개발 초기화 용도로 유지할 수 있습니다.
+- 스키마 이력/버전 마이그레이션 관리가 필요할 때는 Alembic revision을 DB 변경 로그의 기준으로 사용합니다.
+- SQLAlchemy 모델/스키마 추가/변경/삭제 시 Alembic 마이그레이션 업데이트는 필수입니다.
+- 표준 워크플로:
 
-1. Update models
-2. Create Alembic revision
-3. Review and adjust migration script
-4. Apply `upgrade`
-5. Verify `downgrade` path
+1. 모델 업데이트
+2. Alembic revision 생성
+3. 마이그레이션 스크립트 검토 및 조정
+4. `upgrade` 적용
+5. `downgrade` 경로 검증
 
-- Basic command examples (run in `src/backend`):
+- 기본 명령 예시 (`src/backend`에서 실행):
 1. `alembic revision --autogenerate -m "describe-schema-change"`
 2. `alembic upgrade head`
 3. `alembic downgrade -1`
 
-- Key locations:
+- 주요 위치:
 
 1. Config: `src/backend/alembic.ini`
-2. Env script: `src/backend/alembic/env.py`
-3. Revision files: `src/backend/alembic/versions/*.py`
+2. Env 스크립트: `src/backend/alembic/env.py`
+3. Revision 파일: `src/backend/alembic/versions/*.py`
 
-- Rules:
+- 규칙:
 
-1. Revision message/file should clearly describe intent
-2. Data migration logic must be idempotent when applicable
-3. Validate downgrade feasibility for FK/index/unique changes
-4. Revision id must follow `NNNN_snake_case`
-5. Revision id length must be 32 characters or less
-6. In shared/prod environments, treat migration failure as rollforward-first (default no downgrade)
-7. Follow `src/backend/MIGRATION_ROLLFORWARD.md` for migration incident handling
-8. Follow `src/backend/DB_BACKUP_RESTORE.md` for backup/restore operations
+1. Revision 메시지/파일은 의도를 명확히 설명
+2. 데이터 마이그레이션 로직은 가능하면 idempotent 하게 구현
+3. FK/index/unique 변경의 downgrade 가능성 검증
+4. Revision id는 `NNNN_snake_case` 형식
+5. Revision id 길이는 32자 이하
+6. 공유/운영 환경에서는 마이그레이션 실패 시 rollforward-first 원칙 적용 (기본: no downgrade)
+7. 마이그레이션 사고 대응은 `src/backend/MIGRATION_ROLLFORWARD.md`를 따름
+8. 백업/복구 작업은 `src/backend/DB_BACKUP_RESTORE.md`를 따름
 
-## 8) Completion Checklist
+## 8) 완료 체크리스트
 
-1. No business logic in routers
-2. Service raises domain exceptions consistently
-3. `responses=` declarations match actual propagated errors
-4. Type hints follow built-in syntax conventions
-5. Ruff checks and formatting pass
-6. If DB changed, Alembic revision and upgrade verification are completed
+1. 라우터에 비즈니스 로직이 없다
+2. 서비스가 도메인 예외를 일관되게 raise 한다
+3. `responses=` 선언이 실제 전파 에러와 일치한다
+4. 타입 힌트가 내장 문법 규칙을 따른다
+5. Ruff 체크/포맷팅이 통과한다
+6. DB 변경이 있었다면 Alembic revision 및 upgrade 검증이 완료되었다
 
-## API Contract Baseline Maintenance
+## API 계약 기준 관리
 
-- After route/model changes, run root `make contract-export` to update the provider baseline. A frontend adopts new endpoints by updating its own snapshot/provenance and generated types in a child PR. Unused additive provider endpoints do not require a child type rewrite.
-- `make contract-check` verifies export freshness and strict additive compatibility with the pinned consumer. Behavioral requirements are recorded in `contracts/README.md`.
-- Routes using `get_current_user` must merge dependency errors with domain errors through `current_user_error_responses(...)`; do not overwrite models sharing a status code.
-- `app/core/openapi.py` publishes SSE data models and the existing INTERNAL_ERROR envelope. SSE bodies remain string streams; `x-sse-event-schema` references their JSON data model.
-- Changing error envelopes, cookies, or refresh semantics requires an explicit behavior compatibility review and documentation update.
+- 라우터·모델 변경 시 루트 `make contract-export`로 제공자 기준 파일을 갱신합니다. 프론트가 새 API를 도입할 때 자식 PR에서 자체 기준 파일·출처·타입을 갱신하며, 사용하지 않는 추가 API 때문에 자식을 강제로 다시 생성하지 않습니다.
+- `make contract-check`는 내보내기 최신 여부와 고정 소비자 계약의 엄격한 추가 호환성을 검사합니다. 동작 계약은 `contracts/README.md`, 한국어는 `notes/ko/contracts/README.md`를 따릅니다.
+- `get_current_user` 사용 라우터는 `current_user_error_responses(...)`로 인증·API Key 오류와 도메인 오류를 병합합니다. 동일 상태 코드의 응답 모델을 덮어쓰지 않습니다.
+- `app/core/openapi.py`는 SSE 데이터 스키마와 기존 INTERNAL_ERROR 응답을 문서화합니다. SSE 본문은 문자열 스트림이며 JSON data 모델은 `x-sse-event-schema`로 연결합니다.
+- 오류 형식·쿠키·refresh 동작을 바꾸려면 문서 변경과 별도의 동작 호환성 검토가 필요합니다.
 
-## Service Observation Decorator
+## 서비스 관측 데코레이터
 
-Use `@observe_service("api_key.create")` from `app.core.observability.service` on
-async service methods. API Key create/list/delete/status operations use it.
-It emits one DEBUG completion log with a static operation name, outcome
-(`success`, `error`, `cancelled`, or `aborted`), duration in milliseconds, and a
-domain error code or `INTERNAL_ERROR`. Existing request context logging applies.
-Detailed error logging remains owned by the global handler.
+`app.core.observability.service`의 `@observe_service("api_key.create")`를
+비동기 서비스 메서드에 적용합니다. API Key 생성·조회·삭제·상태 변경에 적용되어 있습니다.
+고정 작업명, 결과(`success`, `error`, `cancelled`, `aborted`), 소요 시간(ms),
+도메인 에러 코드 또는 `INTERNAL_ERROR`를 완료 시 DEBUG 로그 한 건으로 기록합니다.
+기존 요청 컨텍스트 로깅을 사용하며 상세 오류 로그는 전역 핸들러가 담당합니다.
 
-With `TRACING_ENABLED=true`, it creates a span under the active context, including
-SQL/Redis child spans when their existing instrumentation is enabled. Startup must
-configure the existing tracing provider/exporter. With tracing disabled, completion
-logs require DEBUG logging. Span name and native timestamps provide the operation
-and duration; only outcome and error code are custom span attributes. Successful
-spans keep the default UNSET status. No new Prometheus metrics are introduced.
+`TRACING_ENABLED=true`이면 활성 컨텍스트 아래에 서비스 span을 생성합니다.
+기존 SQL·Redis 계측이 켜져 있으면 서비스 span 아래에 연결됩니다. 시작 시 기존
+tracing provider/exporter 설정이 필요합니다. 완료 로그는 DEBUG 수준에서 출력합니다.
+작업명과 소요 시간은 span 이름과 기본 타임스탬프를 사용하며 사용자 정의 속성은 결과와 에러 코드만 기록합니다.
+성공 span은 기본 UNSET 상태를 유지합니다.
+새 Prometheus 메트릭은 추가하지 않습니다.
 
-Never use request-derived operation names. The decorator does not capture arguments,
-return values, exception messages, or stack traces; this restriction applies to this
-decorator, not other instrumentation. It preserves results, exceptions, cancellation,
-and function metadata. Span lifecycle uses `start_as_current_span`; telemetry errors
-are not silently suppressed by this decorator.
-Sync functions and async generators are rejected. Apply it at the service boundary,
-not on FastAPI routes or SSE iterators. Success means the entire method returned,
-including awaited event publication; it does not add transaction or delivery guarantees.
+작업명에 요청 데이터를 넣지 않습니다. 데코레이터는 인자·반환값·예외 메시지·스택을
+기록하지 않습니다. 이 제한은 해당 데코레이터에 적용되며 다른 계측의 수집 정책은 별개입니다.
+반환값·예외·취소·함수 메타데이터를 보존합니다. span 생명주기는 `start_as_current_span`이 관리하며,
+데코레이터에서 관측 처리 오류를 조용히 무시하지 않습니다.
+동기 함수와 async generator는 지원하지 않습니다. 라우터·SSE iterator 대신 서비스 경계에 적용합니다.
+성공은 이벤트 발행을 포함한 메서드 전체의 정상 반환을 뜻하며 트랜잭션·전달 보장을 추가하지 않습니다.
 
-## Trace ID Correlation
+## Trace ID 연결
 
-Logs and `X-Trace-ID` use the valid active OpenTelemetry span's trace ID first.
-The FastAPI instrumentor wraps user middleware, so the request context middleware
-sees the server span. Inbound `traceparent` is handled by OTel's propagator; a
-conflicting `X-Trace-ID` does not override an active span. Unsampled valid spans
-still provide correlation IDs, although their traces may not be stored in Tempo.
-When no valid span exists (including tracing-disabled/excluded requests), retain
-the existing fallback: traceparent trace ID, X-Trace-ID, then a generated ID.
-Fallback IDs are correlation values, not a promise that a trace exists in Tempo.
-`X-Request-ID` behavior is unchanged. Log records also resolve the active span
-when emitted, falling back to the request ContextVar. Queue log correlation is described below; OTel queue span propagation remains separate.
+로그와 `X-Trace-ID`는 유효한 활성 OpenTelemetry span의 trace ID를 우선 사용합니다.
+FastAPI 계측이 사용자 미들웨어 바깥을 감싸므로 요청 컨텍스트 미들웨어에서 서버 span을 읽습니다.
+인바운드 `traceparent`는 OTel propagator가 처리하며, 다른 `X-Trace-ID`가 활성 span을 덮어쓰지 않습니다.
+샘플링되지 않은 span도 유효한 ID를 사용하지만 Tempo에 저장되지 않을 수 있습니다.
+활성 span이 없으면(트레이싱 비활성화·제외 경로 등) 기존 순서인 traceparent의 ID,
+X-Trace-ID, 새로 생성한 ID를 사용합니다. 이 대체 ID는 Tempo에 trace가 존재한다는 보장이 아닙니다.
+`X-Request-ID` 동작은 유지합니다. 로그 생성 시에도 활성 span을 먼저 조회하고 없으면
+요청 ContextVar를 사용합니다. 큐 로그 연결은 아래 규칙을 따르며 OTel span 전파는 별도 작업입니다.
 
-## Worker Log Correlation
+## Worker 로그 연결
 
-Celery ContextTask binds task ID and trace ID through task_log_context and restores
-context after execution. Tasks never borrow HTTP request IDs or a preceding task's
-context. Mail retries retain the Celery task ID and propagated trace header. This
-is log correlation, not OTel span propagation. See [Celery](CELERY.md) for execution
-and failure semantics. The legacy RedisTaskQueueWorker has been removed.
+Celery ContextTask는 task_log_context로 task ID와 trace ID를 설정하고 작업 종료 시
+복원합니다. 이전 작업의 컨텍스트나 HTTP request ID를 가져오지 않습니다.
+메일 재시도에도 동일한 Celery ID와 전달된 trace header가 유지됩니다. 이는 로그
+상관관계이며 OTel span 전파는 아닙니다. 자세한 실행·실패 정책은 [Celery](CELERY.md)를
+따릅니다. 기존 RedisTaskQueueWorker는 제거했습니다.
 
-## Global Exception Log Levels
+## 전역 예외 로그 레벨
 
-`app/core/observability/error_logging.py` owns severity for the global exception handlers:
+`app/core/observability/error_logging.py`에서 전역 핸들러의 레벨을 결정합니다.
 
-- HTTP 5xx domain failures: ERROR, regardless of domain code.
+- 도메인 HTTP 5xx: 에러 코드와 관계없이 ERROR.
 - INVALID_CREDENTIALS, INVALID_TOKEN, ACCOUNT_LOCKED, INSUFFICIENT_ROLE,
   OAUTH_IDENTITY_CONFLICT, API_KEY_INVALID, API_KEY_USER_MISMATCH: WARNING.
 - HTTP 429: WARNING.
-- Other domain 4xx responses: INFO, including duplicate names/emails, missing resources,
-  LOGIN_DISABLED, EMAIL_DISABLED, and EMAIL_NOT_VERIFIED.
-- The existing generic HTTPException fallback uses WARNING for 401/403/429,
-  INFO for other 4xx, and ERROR for 5xx or unexpected status categories.
-- Unexpected non-domain exceptions retain ERROR with a stack trace.
+- 그 외 도메인 4xx: INFO. 이름·이메일 중복, 리소스 없음,
+  LOGIN_DISABLED, EMAIL_DISABLED, EMAIL_NOT_VERIFIED 등을 포함합니다.
+- 기존 일반 HTTPException fallback은 401/403/429에 WARNING,
+  그 외 4xx에 INFO, 5xx 또는 예상 밖 상태 범주에 ERROR를 사용합니다.
+- 예상하지 못한 일반 예외는 스택을 포함한 ERROR를 유지합니다.
 
-This policy changes only severity. Response status/body, error codes, and handler
-registration are unchanged. Framework validation/HTTP handlers and OAuth redirect
-logs retain their existing behavior. Mail/worker retry logging is outside this policy.
-HTTP INFO/WARNING context visibility still follows the existing formatter policy.
+로그 레벨만 변경하며 응답 상태·본문·에러 코드·핸들러 등록은 유지합니다.
+프레임워크의 검증·HTTP 핸들러와 OAuth 리다이렉트 로그는 기존 동작을 유지합니다.
+메일·Worker 재시도 로그는 이번 정책 범위에 포함하지 않습니다.
+HTTP INFO·WARNING의 컨텍스트 표시는 기존 formatter 정책을 따릅니다.
 
-## Mail and Worker Log Ownership
+## 메일·Worker 로그 책임
 
-MailService records delivery attempts at DEBUG and SMTP completion at INFO with a
-masked recipient. With raise_on_failure=True the worker owns failure handling.
-Celery mail tasks log retry scheduling at WARNING and archival at ERROR, without
-raw exception text or payloads. Task/trace IDs remain available. Task completion
-must be distinguished from SMTP delivery success.
+MailService는 마스킹된 수신자로 발송 시도 DEBUG와 SMTP 완료 INFO를 기록합니다.
+raise_on_failure=True이면 worker가 실패 처리를 담당합니다. Celery 메일 task는
+재시도를 WARNING, 실패 보관을 ERROR로 기록하며 예외 원문·payload를 출력하지
+않습니다. task/trace ID를 유지하고 task 완료와 SMTP 성공은 구분합니다.
 
-## OTLP Log Export
+## 인증 이메일 표시
 
-`LOGS_ENABLED=true` enables `log_export.setup_log_export()` during app creation.
-It uses the standard OTel LoggingHandler from instrumentation-logging and a
-BatchLogRecordProcessor with the existing OTLP endpoint/resource settings.
-TRACING_ENABLED is independent. One handler is attached to uvicorn and, when it
-does not propagate, uvicorn.access. Application loggers already propagate to
-uvicorn. Do not attach it to the root logger (exporter diagnostics must not loop).
-Console formatting remains separate; OTLP exports the message and structured
-request_id, trace_id and task_id attributes from RequestContextFilter, even when
-the console suppresses IDs at INFO. Native span context remains SDK-owned.
-The provider registers its normal process-exit shutdown/flush hook; setup is
-idempotent across repeated app creation. Batch queues are in memory and are not
-a durable audit log. This does not collect other containers or arbitrary root
-loggers. Existing error ownership, masking and LOG_LEVEL policies still apply.
+인증·비밀번호 재설정 이메일은 프론트엔드 라이트 색상과 시스템 글꼴을 사용하는
+480px 공용 인라인 테이블 레이아웃입니다. 컴팩트한 제목·둥근 CTA·중립 안내 박스를
+사용하며 두 언어 모두 일반 텍스트 본문과 대체 링크를 유지합니다. 동적 텍스트와
+URL은 HTML에서 이스케이프하고 일반 텍스트 URL은 원문을 유지합니다. HTML 언어는
+로케일을 따릅니다. 웹 폰트·스크립트·원격 이미지가 필요하지 않으며 SMTP·큐 전달과
+토큰 의미는 변경하지 않습니다. 이메일 클라이언트는 색상·모서리를 다르게 표시할 수
+있으나 링크 기능은 유지됩니다.
 
-## Automated Layer Boundaries
+## 운영자 역할 관리
 
-`make backend-architecture-check` parses application Python imports without loading
-runtime settings or connecting to services. It runs in root `make check` and the
-required Backend checks CI job.
-
-- Routers cannot import app.core.db, SQLAlchemy, SQLite/PostgreSQL drivers or databases.
-- From app.models, routers may import only statically identified Pydantic schemas
-  and Enum classes (including subclasses). ORM entities/repositories and model
-  module/star imports are rejected; import a schema from its defining module.
-- core/models/services/utils cannot import app.routers or app.main.
-- Absolute and relative imports, aliases and nested imports are inspected.
-  __import__/importlib.import_module calls are rejected in these layers.
-
-This enforces explicit import boundaries, not arbitrary call-graph correctness.
-Re-exported/aliased schema definitions and custom schema mixins are not inferred;
-prefer explicit schema imports or extend the checker with a documented rule.
-Dependencies hidden behind wrappers/reflection still require review. Existing DI
-through app.deps and DTO/Enum imports remain valid. No business logic is moved.
-
-## API Key Notification Failure Policy
-
-After a successful repository commit, API Key create/delete/status operations use
-RealtimeService.publish_user_notification. Redis/OS/timeout delivery failures are
-logged once at WARNING with user/event/error type only and do not change the
-successful HTTP result. Publication is bounded to two seconds. Cancellation and
-programming/serialization errors still propagate. Raw keys and payloads are not
-logged. The strict publish_user_event path remains available for callers requiring
-failure propagation. UI notifications are best-effort and have no replay/outbox
-or durable delivery guarantee; clients must refetch on connection recovery.
-
-## Authentication Email Presentation
-
-Verification and password-reset mail share one inline, table-based 480px layout
-with the frontend light palette, system fonts, compact headings, a rounded CTA and
-neutral notice panel. Both languages retain plaintext alternatives and a visible
-fallback link. Escape dynamic text/URLs in HTML attributes and content; preserve
-raw URLs in plaintext. Locale sets the HTML language. No web fonts, scripts or
-remote assets are required. SMTP/queued delivery and token semantics are unchanged.
-Email clients may override colors or ignore rounded corners; the link remains usable.
-
-## Operator role management
-
-Assign roles to existing active accounts without adding a settings UI:
+역할 설정 UI 없이 기존 활성 계정의 권한을 변경합니다.
 
 ```sh
 make user-role EMAIL=person@example.com ROLE=admin
 make user-role EMAIL=person@example.com ROLE=user
 ```
 
-This uses the backend environment (`src/backend/.env` and exported variables), not
-`docker/.env`. For deployment, run inside the app container built with this command:
+위 명령은 `src/backend/.env`와 프로세스 환경변수를 사용하며 `docker/.env`를
+사용하지 않습니다. 배포 환경에서는 이 명령이 포함된 이미지의 앱 컨테이너에서 실행하세요.
 
 ```sh
 cd docker
 docker compose exec app .venv/bin/python -m app.manage_user_role --email person@example.com --role admin
 ```
 
-Run only against the intended database after migrations. The command creates no accounts
-or tables, accepts `user`/`manager`/`admin`, prints user ID and old/new roles, and rejects missing
-or inactive users and demotion of the last active admin. Changes are serialized in
-SQLite/PostgreSQL transactions. Each role change stores a transactional `role_change_audit` record alongside the operator receipt.
-Authorization uses the new DB role on subsequent requests; reload account data for UI badges.
-`LOGIN_ENABLED=false` rejects this command because startup provisions a bootstrap admin.
-Profile account switching/add-account actions are hidden when login is disabled or unknown.
-Same-email Google/GitHub/email recent accounts display once using the latest login method; existing local duplicates normalize on read.
+마이그레이션이 적용된 대상 DB를 확인한 뒤 실행합니다. 계정이나 테이블을 생성하지
+않으며 `user`/`manager`/`admin`만 허용합니다. 사용자 ID와 변경 전후 역할을 출력합니다.
+없는 계정·비활성 계정과 마지막 활성 관리자의 강등을 거부하고 SQLite/PostgreSQL
+트랜잭션으로 동시 변경을 직렬화합니다. 실제 역할 변경은 `role_change_audit`에 같은 트랜잭션으로 기록합니다.
+다음 요청부터 서버 권한 검사에 반영되고 배지는 사용자 정보 재조회 시 갱신됩니다.
+`LOGIN_ENABLED=false`는 시작 시 bootstrap 관리자를 구성하므로 명령 실행을 거부합니다.
+로그인 비활성화 또는 설정 미확인 시 프로필의 계정 전환·추가 메뉴는 숨깁니다.
+같은 이메일의 Google/GitHub/이메일 최근 계정은 마지막 로그인 방식 하나로 표시하며, 기존 로컬 중복 기록도 조회 시 정리합니다.
 
-## Admin user directory
+## 관리자 사용자 목록
 
-`GET /api/v1/auth/admin/users` requires the current database role `admin` or `manager`.
-Development bootstrap identities follow the same role check; production rejects them. Supports `page` (1+), `page_size` (1–100, default 20),
-`search` (literal name/email substring, max 200), `role` and `is_active` filters.
-Returns newest user IDs first with filtered total and global account counts.
-Each user has identity, role, active/verified flags, signup time, login providers
-and the latest successful login across linked identities (nullable if never recorded).
-Active means account enabled, not currently online. IPs, user agents, passwords,
-tokens and provider identifiers are excluded. This read-only snapshot is not a full
-login audit/history or live-presence feed. No role changes are exposed through this API.
+`GET /api/v1/auth/admin/users`는 DB 역할이 `admin` 또는 `manager`인 사용자만 접근합니다.
+개발용 bootstrap 관리자도 같은 역할 검사를 적용하며 운영 모드에서는 인증을 차단합니다. `page`(1 이상), `page_size`(1~100,
+기본 20), `search`(이름/이메일의 문자 그대로 검색, 최대 200자), `role`, `is_active`
+필터를 지원합니다. 사용자 ID 내림차순 목록, 필터 결과 수와 전체 계정 통계를 반환합니다.
+사용자 정보·역할·계정 활성/이메일 인증 여부·가입일·로그인 방식과 연결된 인증 수단 중
+가장 최근 성공 로그인 시각을 제공합니다. 기록이 없으면 null입니다.
+활성은 계정 사용 가능 상태이며 현재 접속 여부가 아닙니다. IP, 사용자 에이전트,
+비밀번호, 토큰, 제공자 식별자는 제외합니다. 전체 로그인 이력이나 실시간 접속 추적이
+아닌 조회용 스냅샷이며 역할 변경 API는 추가하지 않습니다.
 
-## Shared list rules
+## 공용 목록 규칙
 
-Use the shared query annotations and `PageResponse` for new offset list endpoints. Follow [search and pagination](../../notes/collections.md) for validation, literal search, ordering, totals and frontend usage. Existing API-key full-list pagination remains an explicit compatibility exception pending a separate contract migration.
+새 offset 목록 API는 공용 쿼리 타입과 `PageResponse`를 사용합니다. 검증·문자 검색·정렬·건수·프론트엔드 연결은 [검색과 페이지네이션](../../notes/collections.md)을 따릅니다. 기존 API 키 전체 목록은 별도 계약 전환 전까지 명시적인 호환성 예외입니다.
 
-## Standalone Celery
+## 별도 프로세스 Celery
 
-Follow [Celery setup and mail queue migration](CELERY.md). Mail execution now runs
-outside the API and a worker is required when email is enabled. Beat is required for lifecycle notification recovery. Migration 0011 adds the encrypted mail outbox.
+[Celery 구성과 메일 큐 전환](CELERY.md)을 따릅니다. 메일 worker는 API 밖에서
+실행하며 메일 사용 배포에 필수입니다. 생명주기 메일 복구에는 Beat가 필요하며 migration 0011로 암호화 outbox를 추가합니다.
 
-## Account activation and deletion
+## 계정 활성화 및 삭제
 
-Verified email activation and first OAuth account creation publish a localized welcome
-message through the existing Celery mail task (24-hour delivery lifetime). Repeat login,
-OAuth linking and verification-token replay do not enqueue greetings. Email-disabled
-instances send no mail. A greeting publication failure is logged without undoing account
-activation; there is no transactional outbox/automatic publication recovery. SMTP retry
-and ambiguous-delivery duplicate limitations remain those documented in CELERY.md.
+이메일 인증 완료와 OAuth 최초 계정 생성 후 기존 Celery 메일 작업으로 환영 메일을
+발행합니다(유효기간 24시간). 반복 로그인·OAuth 연결·인증 토큰 재사용은 환영 메일을
+추가 발송하지 않습니다. 메일 비활성화 시 발송하지 않습니다. 큐 발행 실패는 계정
+활성화를 되돌리지 않고 로그에 남깁니다. 트랜잭셔널 아웃박스나 발행 자동 복구는
+없으며 SMTP 재시도와 불확실한 전송의 중복 가능성은 CELERY.md 규칙을 따릅니다.
 
-`DELETE /auth/me` requires a bearer session and matching email confirmation, then deletes
-the user, credentials, OAuth identities and API keys in one DB transaction. It serializes
-with operator role changes and refuses deletion of the last active administrator. Refresh
-and one-time token indexes are removed and cookies cleared; a Redis cleanup failure is
-logged, while the missing DB principal still rejects all authentication and token use.
-Migration 0007 enables SQLite AUTOINCREMENT to prevent deleted JWT subjects being reused;
-PostgreSQL already uses a sequence. Apply migrations before serving account deletion.
-No schema downgrade is needed for normal rollback; old app versions tolerate this option.
+`DELETE /auth/me`는 Bearer 세션과 현재 이메일 확인을 요구합니다. 사용자·비밀번호·
+OAuth 연결·API 키를 단일 DB 트랜잭션으로 삭제하고 마지막 활성 관리자 삭제를
+차단합니다. 운영자 역할 변경과 잠금 규칙을 공유합니다. Refresh 및 일회성 토큰
+인덱스와 쿠키를 제거하며, Redis 정리 실패 시에도 DB 사용자가 없어 인증은 거부됩니다.
+SQLite의 삭제된 JWT 주체 ID 재사용 방지를 위해 마이그레이션 0007에서 AUTOINCREMENT를
+적용합니다. PostgreSQL은 기존 시퀀스를 유지합니다. 기능 제공 전에 마이그레이션을
+적용해야 하며 일반적인 앱 롤백에는 스키마 다운그레이드가 필요하지 않습니다.
 
-Deletion proof: `POST /auth/me/deletion-code` queues a six-digit code only to the current
-account's registered address through the existing Celery mail task. `DELETE /auth/me`
-requires `{email, code}`. A code is user-bound, stored as an HMAC, valid for ten minutes
-and consumed once using Redis WATCH/MULTI. Resending replaces the previous code; requests
-are limited to one per minute and five per hour. Five incorrect attempts block proof
-and issuance for the remainder of the ten-minute attempt window; resending does not
-reset that budget. Redis/mail outages fail closed. EMAIL_ENABLED=false offers no bypass.
-The confirmation is a deletion-specific proof, separate from signup/reset tokens;
-receiving/opening the email itself cannot delete the account.
+삭제 인증: `POST /auth/me/deletion-code`는 현재 계정의 등록 이메일로만 기존 Celery를
+통해 6자리 코드를 보냅니다. `DELETE /auth/me`는 `{email, code}`를 요구합니다.
+코드는 사용자별 HMAC으로 보관하고 10분 유효·일회용으로 Redis WATCH/MULTI에서
+원자적으로 소모합니다. 재발송은 이전 코드를 교체하며 분당 1회·시간당 5회로
+제한합니다. 5회 오입력하면 10분 시도 창의 남은 시간 동안 인증·발급을 차단하고
+재발송으로 횟수를 초기화하지 않습니다. Redis/메일 장애 시 삭제를 허용하지 않으며
+EMAIL_ENABLED=false인 경우에도 우회하지 않습니다. 가입·비밀번호 재설정과 별개의
+삭제 전용 인증으로, 이메일을 받거나 열기만 해서는 계정이 삭제되지 않습니다.
 
-Deletion code emails reuse the shared branded HTML shell and warning panel. The code replaces the CTA; code mail never includes an action or fallback link. Plaintext remains available.
+삭제 인증 코드 메일은 기존 브랜드 HTML 템플릿과 안내 패널을 재사용합니다. CTA 대신 코드를 표시하며 실행 링크나 대체 링크를 포함하지 않습니다. 일반 텍스트 본문도 유지합니다.
 
-Email brand defaults to B4A; EMAIL_BRAND_NAME overrides it for generated services. Recreate workers after changing mail branding or templates.
+기본 이메일 서비스명은 B4A이며 EMAIL_BRAND_NAME으로 변경할 수 있습니다. 메일 브랜드나 템플릿 변경 후 워커를 재생성해야 반영됩니다.
 
-Signup verification token lookup and deletion are one Redis WATCH/MULTI transaction, so concurrent consumers cannot both activate the account. Resend still invalidates older tokens; Celery only delivers messages and does not verify tokens.
+가입 인증 토큰 확인과 삭제는 Redis WATCH/MULTI로 원자적으로 수행해 동시 요청 중 하나만 계정 인증으로 진행합니다. 재발송은 이전 토큰을 무효화하며 Celery는 메일만 전달하고 토큰을 검증하지 않습니다.
 
-## Billing foundation
+## 결제 기반
 
-Bearer or application API-key authenticated Stripe-hosted card/Link setup follows the router/service/repository loop.
-Stripe owns registration state; signed webhooks and Beat reconcile stored subscription snapshots.
-See [configuration, ownership, retries and limitations](../../notes/billing.md).
+Bearer 세션 또는 앱 API 키 인증을 사용하는 Stripe·Link 등록은 라우터/서비스/저장소 구조를 따릅니다.
+상태 원본은 Stripe이며 웹훅 기반 로컬 상태나 결제 워커는 아직 없습니다.
+[설정·소유권·재시도·제한](../../notes/billing.md)을 확인하세요.
 
-When Stripe is enabled, lifespan must await BillingService.initialize before migrations
-and serving requests. Invalid configuration or a failed bounded read-only Checkout
-probe aborts startup; disabled Stripe performs no external I/O. See the billing guide
-for permission coverage and sanitized failure behavior.
+Stripe 활성화 시 lifespan은 마이그레이션과 요청 수신 전에 BillingService.initialize를
+완료해야 합니다. 잘못된 설정이나 제한 시간 내 Checkout 읽기 검증 실패는 시작을
+중단합니다. 비활성 시 외부 호출은 없습니다. 권한 검증 범위와 오류 처리의 상세 내용은
+결제 설정 안내를 참고하세요.
 
-Subscription Checkout uses configured recurring Price IDs and durable per-customer reservations (migration 0009). Subscription reads use DB snapshots; mutations verify current Stripe state. No tier-specific application entitlement enforcement exists. Follow the billing guide for request ownership, duplicate prevention, bounded retries and account-deletion reconciliation.
+구독 Checkout은 설정된 정기 Price ID와 고객별 영속 예약(0009)을 사용합니다. 현재 구독은 Stripe에서 직접 조회하며 로컬 이용권이나 웹훅 투영은 없습니다. 요청 소유권·중복 방지·제한된 재시도·계정 삭제 정리는 결제 가이드를 따릅니다.
 
-Runtime modes and the manager directory permission follow [runtime modes and roles](../../notes/runtime-modes-rbac.md). This supersedes the two-role/bootstrap promotion descriptions above: dedicated bootstrap identities only, no normal-account promotion, production authentication required, and CLI changes include transactional audit records.
+실행 모드와 매니저 조회 권한은 [실행 모드와 역할](../../notes/runtime-modes-rbac.md)을 따릅니다. 기존 2개 역할/부트스트랩 승격 설명보다 이 정책이 우선합니다. 전용 부트스트랩만 허용하며 일반 계정 자동 승격 금지, 운영 인증 필수, CLI 변경 시 트랜잭션 감사 기록을 적용합니다.
 
 
-Subscription-start, plan-change and account-deleted mail use migration 0011 encrypted outbox. Deletion notice commits with deletion. One Celery Beat scans every minute; existing auth/welcome mail policy remains unchanged. See [billing setup](../../notes/billing.md) for webhook activation, retention, key rotation and duplicate-delivery limitations.
+구독 시작·플랜 변경·계정 삭제 완료 메일은 migration 0011의 암호화 outbox를 사용합니다. 삭제 완료 메일은 사용자 삭제와 같은 트랜잭션에 기록하며 단일 Celery Beat가 1분마다 복구 작업을 발행합니다. 기존 인증·환영 메일의 큐 정책은 그대로 유지합니다. 운영 설정·보존 기간·중복 전달 한계는 [결제 문서](../../notes/billing.md)를 참조하세요.
 
-Uvicorn access logging excludes the exact `/metrics` path (including query strings). Metric collection and application/error diagnostics remain enabled.
+Uvicorn 액세스 로그는 `/metrics` 경로(쿼리 문자열 포함)를 제외합니다. 메트릭 수집과 애플리케이션·오류 진단 로그는 유지합니다.
 
-Development login-free `/config` responses mint fresh short-lived bootstrap tokens and use `Cache-Control: no-store`; startup tokens are never reused after expiry.
+개발 모드에서 로그인을 끈 경우 `/config`는 만료 시간이 갱신된 부트스트랩 토큰을 발급하고 `Cache-Control: no-store`를 사용합니다. 서버 시작 때 생성한 토큰을 만료 후 재사용하지 않습니다.
 
-Subscription persistence and webhook/Beat reconciliation: see the billing guide, migrations 0012–0013.
+구독 상태 저장과 웹훅·Beat 정합성 복구는 결제 가이드 및 0012–0013 마이그레이션을 참고합니다.
 
-Run `make db-current` from the repository root to inspect the configured database revision, and `make db-migrate` to upgrade it to head. Both run in src/backend and use its current environment; they do not start the API or initialize external integrations.
+저장소 루트에서 `make db-current`로 현재 DB 버전을 확인하고 `make db-migrate`로 최신 마이그레이션을 적용합니다. 두 명령은 src/backend의 현재 환경 설정을 사용하며 API나 외부 연동 초기화를 실행하지 않습니다.
 
+## 계정별 키보드 단축키
 
-Keyboard shortcuts are stored in the account profile via GET/PATCH /auth/me, using the existing auth snapshot and mutation path. Guests use defaults with editing disabled. Only successful writes replace active keys; failures keep the last confirmed bindings. Null resets both actions, omission preserves them. Legacy browser preferences are ignored and never automatically imported into an account. Reload/login and desktop auth recovery refresh settings; changes are not pushed to already-open clients. No new store, poller or background task is introduced.
+기존 인증 프로필 API `GET /api/v1/auth/me`와 `PATCH /api/v1/auth/me`에서
+`keyboard_shortcuts`를 조회·저장합니다. B4React의 키보드 설정 화면은
+`useKeyboardShortcuts → AuthProvider.updateProfile → useAuthApi → authApi.updateMe`
+경로로 호출하며, 서버 저장에 성공한 응답을 전체 앱의 단축키와 표시 값에 반영합니다.
 
-Migration 0014 adds nullable users.keyboard_shortcuts JSON. Validation bounds key lengths/action names and rejects conflicts across Mac/Windows modifier mappings. /config reads the current bootstrap profile so login-free reloads do not restore stale startup preferences. Run make db-migrate before rollout.
+마이그레이션 `0014_keyboard_shortcuts`는 `users.keyboard_shortcuts` JSON 컬럼을
+추가합니다. 배포 전에 `make db-migrate`를 실행합니다. 기존 사용자의 값은 null이며
+기본 단축키를 사용합니다. 수정 요청에서 필드를 생략하면 기존 값이 유지되고,
+null을 보내면 두 기능 모두 기본값으로 복원됩니다. 사용자 식별은 기존 인증에서
+가져오므로 다른 사용자의 설정을 지정해 수정할 수 없습니다.
 
-## Object storage
+키 조합은 `toggleSidebar`, `openSettings` 두 기능만 허용합니다. 서버에서 키 개수와
+길이, 중복 조합키 및 macOS·Windows 양쪽에서 충돌하는 조합을 검증합니다.
+저장 실패 시 프론트는 기존 값을 유지하고 오류를 표시합니다. 로그인 전에는 기본값을
+사용하고 편집을 비활성화합니다. 공유 브라우저의 설정을 잘못된 계정에 옮기지 않도록
+기존 localStorage 값은 자동으로 가져오지 않습니다.
 
-Use the provider-neutral `core/object_storage/` interface through `get_object_storage`
-DI for domain file operations. `OBJECT_STORAGE_PROVIDER=local|s3|r2|supabase` selects
-local I/O or shared S3 transport; the app lifespan owns its client. Follow the
-[storage guide](../../notes/object-storage.md) for settings, private access, bounded
-I/O, persistence and provider limitations. This foundation does not change profile
-photo storage or introduce a file API. Keep image policy and DB/cleanup orchestration
-in domain services, not storage providers.
+로그인·새로고침·데스크톱 인증 복구 시 DB 값을 다시 읽습니다. 로그인 없는 개발 모드의
+`/config` 역시 시작 시점의 사용자 스냅샷 대신 현재 DB 프로필을 읽습니다.
+기존 요청 → 서비스 → 저장소 경로를 사용하며, 별도 백그라운드 작업이나 실시간 이벤트는
+추가하지 않습니다. 이미 열린 다른 탭에는 변경을 즉시 전송하지 않습니다.
 
-Profile photo integration uses migration 0015 and authenticated binary PUT/GET/DELETE
-`/auth/me/photo`. The domain validates/normalizes pixels, stores unique keys, uses DB
-compare-and-swap and compensating cleanup; no automatic local fallback exists. Legacy
-PATCH photo writes are rejected while existing photo display stays compatible. Follow
-[photo lifecycle and failure policy](../../notes/object-storage.md#profile-photo-integration).
+## 오브젝트 스토리지
 
-## Startup and shutdown console
+도메인의 파일 작업은 `core/object_storage/` 공통 인터페이스와 `get_object_storage`
+DI를 사용합니다. `OBJECT_STORAGE_PROVIDER=local|s3|r2|supabase`로 선택하며 클라이언트는
+앱 lifespan에서 생성/종료합니다. [설정·저장·접근 정책](../../notes/object-storage.md)을 따릅니다.
+프로필 사진 API/저장 방식은 아직 변경하지 않습니다. 이미지 정책과 DB/정리 처리는
+도메인 서비스에 두고 제공자에 결합하지 않습니다.
 
-`STARTUP_DISPLAY=auto` renders an English B4A banner and live service table in
-interactive terminals. The header shows APP_MODE and LOGIN_ENABLED (Bootstrap
-session when login is disabled). Stack names come from the active settings; enablement and
-check evidence remain separate. OAuth is Configured, SMTP without a connection
-probe is Configured (Connection check skipped), disabled integrations are Not
-checked, and unreached services after a failure are Not run. Database Ready means
-migration and initialization completed, not an ongoing health guarantee.
+프로필 사진은 migration 0015와 인증된 PUT/GET/DELETE /auth/me/photo를 사용합니다.
+도메인에서 이미지 검증·변환, 고유 키 저장, DB 버전 비교, 보상 삭제를 처리합니다.
+기존 PATCH 사진 쓰기는 거부하며 기존 저장 사진의 표시는 유지합니다.
+로컬 자동 fallback은 없으며 [수명주기·실패 정책](../../notes/object-storage.md)을 따릅니다.
 
-Shutdown uses a matching cleanup table for Database, Cache and Storage. Closed is
-reported only after the corresponding await succeeds; a lazy Redis client that
-was never opened is Not opened. Cleanup attempts Redis and storage even if database
-disposal fails. `B4A · Bye!!` appears only after successful normal lifespan exit.
-No farewell is printed after startup/cleanup failure or forced process termination.
-
-Redirected/container output retains a static banner and final lifecycle panels.
-Narrow/dumb terminals and recognized multi-worker CLI/env configurations use
-plain lifecycle records. Use `STARTUP_DISPLAY=plain` explicitly
-for programmatically configured multiple workers sharing a terminal. `off` restores
-original lifecycle logging; WARNING and higher log levels do not print the display.
-`NO_COLOR` disables color while retaining terminal updates. Uvicorn reload supervisor
-messages stay visible, and each new application process runs its own checks.
-
-The presentation filters only console handlers: original application and Uvicorn
-records remain available to OTLP/file handlers. Warnings/errors remain visible;
-HTTP access logging is unchanged. Do not put connection URLs, credentials or raw
-provider exceptions in the table. See [lifecycle display](../../notes/startup-display.md).
-
-Cache now performs a bounded five-second Redis PING during startup, including fresh
-evidence for an existing client. Redis · In-memory denotes FakeRedis. Failure aborts
-startup and releases acquired clients; no DB engine is created merely for cleanup.
-Celery worker availability is not probed by this display.
-
-Uvicorn console access lines use local HH:MM:SS, method, full path/query and status,
-without the INFO prefix, client ephemeral port or HTTP version. Only successful 2xx
-OPTIONS are suppressed on console handlers; failed preflights and actual requests
-remain. File/OTLP handlers receive original records. Exact /metrics filtering is
-unchanged. Do not change CORS behavior or drop original records to reduce console noise.
-
-Console application/server messages use matching HH:MM:SS and aligned level columns,
-with source tags for DEBUG/errors (all levels in DEBUG mode). Keep the existing
-request/trace/task correlation policy and exception tracebacks. Color follows the
-handler stream and NO_COLOR; preserve caller-owned file formatters and raw records.
-
-Console HTTP methods have distinct terminal colors, timestamps are gray and API
-paths bright blue. Pad visible fields before applying ANSI styles so terminal and
-plain outputs align identically. NO_COLOR and redirected streams remain uncolored.
-
-Severity labels and message bodies use separate 256-color palettes from HTTP
-methods and status/structural fields. INFO is violet with a lavender message;
-WARNING orange, ERROR rose, DEBUG sand and CRITICAL white on burgundy. Each label
-is bold; other bodies use softer related tints. Keep named foreground RGB values
-unique and preserve original records, plain output and tracebacks when styling copies.
-
-Billing ownership, replay/recovery and mail boundaries are recorded in the [issue #93 audit](../../notes/billing-audit-93.md).
-
-Lifecycle mail uses the existing MailQueueService wake-up and encrypted outbox. See [delivery and operator recovery](../../notes/lifecycle-mail.md); no cross-account mail HTTP role is granted.
-
-Personal profile fields and email-code password changes follow [account/profile](../../notes/account-profile.md). Apply migration 0016 before rollout; code verification reuses deletion challenge mechanics with separate purpose keys.
+생명주기 메일은 기존 MailQueueService와 암호화 outbox를 사용합니다. [발송·운영 복구](../../notes/lifecycle-mail.md)를 참고하세요. 앱 역할에 타인 메일 HTTP 접근을 부여하지 않습니다. Stripe가 원본이며 구독 조회는 서명 웹훅·Beat로 갱신한 DB 상태를 사용합니다. [93번 점검](../../notes/billing-audit-93.md)에 검증 근거를 기록했습니다.

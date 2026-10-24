@@ -284,7 +284,7 @@ print("Image application settings passed.")"""
         if source == "build":
             require(
                 (ROOT / "src/frontend/package.json").is_file(),
-                "Initialize the pinned frontend: git submodule update --init --recursive",
+                "Check the integrated frontend: make frontend-init",
             )
             self.compose("build", "app", *extra)
         elif source == "pull":

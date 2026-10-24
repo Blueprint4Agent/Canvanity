@@ -1,0 +1,49 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it } from "vitest";
+import { Route, Routes, useLocation } from "react-router-dom";
+
+import { LandingPage } from "../../../../pages/main/LandingPage";
+import { renderWithRouter } from "../../../utils/renderWithRouter";
+
+function LocationProbe() {
+    const location = useLocation();
+    return <p data-testid="location">{location.pathname}</p>;
+}
+
+function renderLanding(loginEnabled: boolean) {
+    return renderWithRouter(
+        <Routes>
+            <Route path="/" element={<LandingPage loginEnabled={loginEnabled} />} />
+            <Route path="/login" element={<LocationProbe />} />
+            <Route path="/home" element={<LocationProbe />} />
+        </Routes>,
+    );
+}
+
+describe("LandingPage", () => {
+    it("uses the shared public navbar structure", () => {
+        renderLanding(true);
+
+        const nav = screen.getByRole("banner", { name: "Landing navigation" });
+        expect(nav.querySelector(".public-nav__title")).toHaveTextContent(
+            __PROJECT_BRAND__?.name ?? "Blueprint4FastAPI",
+        );
+        expect(within(nav).queryByRole("group", { name: "Theme mode" })).not.toBeInTheDocument();
+    });
+
+    it.each([true, false])(
+        "starts at home independently of legacy loginEnabled=%s",
+        async (loginEnabled) => {
+            renderLanding(loginEnabled);
+
+            const user = userEvent.setup();
+            await user.click(screen.getByRole("button", { name: "Get started" }));
+
+            await waitFor(() => {
+                expect(screen.getByTestId("location")).toHaveTextContent("/home");
+            });
+            expect(window.localStorage.getItem("b4fastapi:landing:v1:started")).toBe("true");
+        },
+    );
+});

@@ -1,7 +1,7 @@
 ---
 name: 버그 리포트
 about: 재현 가능한 결함을 제보합니다
-title: "[Bug] "
+title: "[fix] "
 labels: bug
 assignees: ""
 ---

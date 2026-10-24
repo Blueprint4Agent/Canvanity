@@ -1,19 +1,19 @@
-# DB Backup and Restore Runbook
+# DB 백업 및 복구 런북
 
-This runbook covers backup and restore for PostgreSQL (primary) and SQLite (local fallback).
+이 런북은 PostgreSQL(주 운영)과 SQLite(로컬 대체)의 백업/복구 절차를 다룹니다.
 
-## 1) PostgreSQL Backup
+## 1) PostgreSQL 백업
 
-### 1.1 Local docker postgres
+### 1.1 로컬 docker postgres
 
-Run from repository root:
+저장소 루트에서 실행:
 
 ```bash
 mkdir -p docker/artifacts/db-backups
 docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > docker/artifacts/db-backups/template-$(date +%Y%m%d-%H%M%S).dump
 ```
 
-### 1.2 External postgres
+### 1.2 외부 postgres
 
 ```bash
 PGPASSWORD='<db_password>' pg_dump \
@@ -25,15 +25,15 @@ PGPASSWORD='<db_password>' pg_dump \
   > <db_name>-$(date +%Y%m%d-%H%M%S).dump
 ```
 
-## 2) PostgreSQL Restore
+## 2) PostgreSQL 복구
 
-### 2.1 Restore into local docker postgres
+### 2.1 로컬 docker postgres로 복구
 
 ```bash
 docker compose --env-file docker/.env -f docker/docker-compose.yml exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner --no-privileges' < docker/artifacts/db-backups/<backup_file>.dump
 ```
 
-### 2.2 Restore into external postgres
+### 2.2 외부 postgres로 복구
 
 ```bash
 PGPASSWORD='<db_password>' pg_restore \
@@ -48,39 +48,39 @@ PGPASSWORD='<db_password>' pg_restore \
   <backup_file>.dump
 ```
 
-## 3) SQLite Backup/Restore (Local Only)
+## 3) SQLite 백업/복구 (로컬 전용)
 
-Backup:
+백업:
 
 ```bash
 cp src/backend/template.db src/backend/template-$(date +%Y%m%d-%H%M%S).db.bak
 ```
 
-Restore:
+복구:
 
 ```bash
 cp src/backend/<backup_file>.db.bak src/backend/template.db
 ```
 
-## 4) Post-Restore Steps
+## 4) 복구 후 절차
 
-1. Point app to restored DB target.
-2. Run migration to head:
+1. 앱이 복구된 DB를 바라보도록 설정
+2. head까지 마이그레이션 실행:
 
 ```bash
 cd src/backend
 uv run alembic upgrade head
 ```
 
-3. Run smoke tests:
+3. 스모크 테스트 실행:
 
 ```bash
 cd src/backend
 uv run pytest tests/test_smoke.py
 ```
 
-## 5) Operational Notes
+## 5) 운영 참고사항
 
-1. Keep production backups in encrypted storage.
-2. Validate restore path regularly; backup without restore test is incomplete.
-3. Keep backup retention policy explicit per environment.
+1. 운영 백업은 암호화된 스토리지에 보관
+2. 복구 검증 없는 백업은 불완전하므로 정기적 복구 검증 필수
+3. 환경별 백업 보관 정책(retention)을 명시적으로 유지

@@ -1,31 +1,31 @@
-# Backend Quick Guide
+# 백엔드 빠른 가이드
 
-This is a minimal quick-reference guide for backend contributors.
-For full engineering rules, follow `src/backend/BACKEND.md`.
-For backend test engineering rules, follow `src/backend/TEST.md`.
-Localized docs rule: place translations under `docs/<locale>/backend/`.
-Current locale example (`ko`): `docs/ko/backend/README.md`, `docs/ko/backend/BACKEND.md`, `docs/ko/backend/TEST.md`.
+> Canvanity 적용: 개발 문서·커밋·PR은 한국어이며, src/frontend는 같은 저장소의 일반 디렉터리입니다. 아래 기반 템플릿의 별도 저장소·서브모듈 절차는 적용하지 않습니다. 루트 AGENTS.md와 PROJECT_BRIEF.md를 우선합니다.
 
-## 1) Core Rules
+이 문서는 `src/backend` 작업자를 위한 최소 참조 가이드입니다.
+전체 엔지니어링 규칙은 `src/backend/BACKEND.md`를 따르세요.
+백엔드 테스트 엔지니어링 규칙은 `src/backend/TEST.md`를 따르세요.
 
-- Layering pattern: `Router -> Service -> Repository -> DB`
-- Relational sessions, CRUD, commits/rollbacks and SQLAlchemy error interpretation belong to repositories; services orchestrate repository results. Redis is outside this boundary.
-- Interface review distinguishes business boundary violations from enum/status/policy consistency. Pure router utilities and AuthService Request adapters are allowed; other services must not use private implementation.
-- Access environment variables through `SETTINGS` in `app/core/config/settings.py`
-- If schema/models change, Alembic migration updates are required
-- RBAC is enforced via dependencies in `app/deps.py` (for example admin-only guards)
-- In `LOGIN_ENABLED=false` bootstrap mode, bootstrap user is provisioned/promoted as `admin`
-- On startup, backend runs Alembic `upgrade head` against the active `DATABASE_URL` only (no downgrade path)
-- API keys track cumulative usage (`request_count`) and optional expiration (`expires_at`)
-- Realtime SSE stream is available at `/api/v1/events/stream` with heartbeat and Redis Pub/Sub fan-out
-- Authentication mail runs in a standalone Celery worker; see [setup and migration](CELERY.md).
-- Auth email templates are localized by request `Accept-Language` (`en`/`ko`) and propagated through the mail queue payload
-- For auth mail language, `X-App-Language` header has priority over `Accept-Language`
-- Every HTTP response includes request correlation headers (`X-Request-ID`, `X-Trace-ID`) and backend logs include the same context values
-- Prometheus metrics are exposed at `/metrics` when `METRICS_ENABLED=true`
-- OpenTelemetry tracing can be enabled with `TRACING_ENABLED=true` and exported through OTLP
+## 1) 핵심 규칙
 
-## 1.1) Backend Flow
+- 레이어링 패턴: `Router -> Service -> Repository -> DB`
+- 관계형 DB 세션·CRUD·커밋/롤백·SQLAlchemy 오류 해석은 리포지토리가 담당하며 서비스는 결과를 조합합니다. Redis는 이 경계에서 제외합니다.
+- 인터페이스 리뷰는 업무 책임 위반과 enum/status/정책값 일관성을 구분합니다. 라우터의 순수 유틸과 AuthService의 Request는 허용하며 타 서비스 private 구현 의존은 금지합니다.
+- 환경 변수는 `app/core/config/settings.py`의 `SETTINGS`를 통해 접근
+- 스키마/모델이 바뀌면 Alembic 마이그레이션 업데이트 필수
+- RBAC는 `app/deps.py` 의존성(예: admin 전용 가드)으로 강제
+- `LOGIN_ENABLED=false` 부트스트랩 모드에서는 bootstrap 사용자를 `admin`으로 프로비저닝/승격
+- 시작 시 백엔드는 현재 `DATABASE_URL`에 대해 Alembic `upgrade head`만 수행(다운그레이드 경로 없음)
+- API 키는 누적 사용량(`request_count`)과 선택적 만료(`expires_at`)를 추적
+- 실시간 SSE 스트림은 `/api/v1/events/stream`에서 제공되며 heartbeat 및 Redis Pub/Sub fan-out을 사용
+- 인증·비밀번호 재설정 메일은 별도 Celery worker가 처리합니다. [실행·이전 가이드](CELERY.md)를 참고하세요.
+- 인증 메일 템플릿은 요청 `Accept-Language`(`en`/`ko`)를 기준으로 로컬라이즈되며 메일 큐 payload까지 전달됨
+- 인증 메일 언어 결정 시 `X-App-Language` 헤더를 `Accept-Language`보다 우선 적용
+- 모든 HTTP 응답은 요청 상관관계 헤더(`X-Request-ID`, `X-Trace-ID`)를 포함하고 백엔드 로그도 같은 컨텍스트 값을 포함
+- `METRICS_ENABLED=true`일 때 Prometheus metrics를 `/metrics`에서 제공
+- `TRACING_ENABLED=true`일 때 OpenTelemetry tracing을 OTLP로 내보낼 수 있음
+
+## 1.1) 백엔드 흐름
 
 ```mermaid
 flowchart LR
@@ -43,21 +43,21 @@ flowchart LR
     S --> X
 ```
 
-## 2) Setup
+## 2) 설정
 
 ```bash
 cd src/backend
 uv sync
 ```
 
-## 3) Run Server
+## 3) 서버 실행
 
 ```bash
 cd src/backend
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-API docs:
+API 문서:
 - `http://localhost:8000/docs`
 
 Prometheus metrics:
@@ -68,26 +68,26 @@ Health checks:
 - `http://localhost:8000/health/ready`
 
 OpenTelemetry tracing:
-- Set `TRACING_ENABLED=true`
-- Set `OTEL_EXPORTER_OTLP_ENDPOINT` to your collector endpoint, for example `http://localhost:4317`
+- `TRACING_ENABLED=true` 설정
+- `OTEL_EXPORTER_OTLP_ENDPOINT`를 collector endpoint로 설정(예: `http://localhost:4317`)
 
-Local Docker observability stack:
+로컬 Docker observability stack:
 
 ```bash
 cd docker
 docker compose --profile observability up -d tempo otel-collector prometheus grafana
 ```
 
-Default Docker startup excludes observability services. Use `--profile observability` when Tempo, OpenTelemetry Collector, Prometheus, and Grafana are needed.
+기본 Docker 실행에서는 observability 서비스를 제외합니다. Tempo, OpenTelemetry Collector, Prometheus, Grafana가 필요할 때 `--profile observability`를 사용합니다.
 
-To run the full compose stack including the backend and observability services:
+백엔드까지 포함한 전체 compose stack을 실행할 때:
 
 ```bash
 cd docker
 docker compose --profile observability up -d
 ```
 
-When the backend also runs through this compose file, use:
+백엔드도 같은 compose 파일로 실행할 때는 다음 값을 사용:
 
 ```env
 TRACING_ENABLED=true
@@ -96,30 +96,30 @@ OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
 
 Grafana:
 - `http://localhost:3000` (`admin` / `admin`)
-- Provisioned dashboard: `B4FastAPI / FastAPI Overview`
+- 자동 등록 dashboard: `B4FastAPI / FastAPI Overview`
 
 Prometheus:
 - `http://localhost:9090`
 
-The local Prometheus config scrapes a backend started on the host machine:
+로컬 Prometheus 설정은 호스트 머신에서 실행 중인 백엔드를 수집합니다:
 - target: `host.docker.internal:8000`
 
-If the backend is also started as the compose `app` service, change the Prometheus target to `app:8000`.
+백엔드도 compose `app` 서비스로 실행할 때는 Prometheus target을 `app:8000`으로 변경합니다.
 
-Trace flow:
+Trace 흐름:
 - FastAPI app -> OpenTelemetry Collector -> Tempo -> Grafana
 
-Metrics flow:
+Metrics 흐름:
 - FastAPI `/metrics` -> Prometheus -> Grafana
 
-The provisioned FastAPI dashboard includes:
-- backend target status
+자동 등록되는 FastAPI dashboard 항목:
+- backend target 상태
 - request rate
 - 5xx error ratio
 - latency p95
-- endpoint request rate and endpoint p95 latency
+- endpoint request rate와 endpoint p95 latency
 
-## 4) Lint / Format (Ruff)
+## 4) 린트 / 포맷 (Ruff)
 
 ```bash
 cd src/backend
@@ -127,7 +127,7 @@ uv run ruff check . --fix
 uv run ruff format .
 ```
 
-Check-only mode:
+체크 전용 모드:
 
 ```bash
 cd src/backend
@@ -135,9 +135,9 @@ uv run ruff check .
 uv run ruff format . --check
 ```
 
-## 5) DB Migration (Alembic)
+## 5) DB 마이그레이션 (Alembic)
 
-After model/schema changes:
+모델/스키마 변경 후:
 
 ```bash
 cd src/backend
@@ -145,14 +145,14 @@ uv run alembic revision --autogenerate -m "describe-schema-change"
 uv run alembic upgrade head
 ```
 
-Rollback example:
+롤백 예시:
 
 ```bash
 cd src/backend
 uv run alembic downgrade -1
 ```
 
-## 6) Pre-Commit Checklist
+## 6) 커밋 전 체크리스트
 
 ```bash
 cd src/backend
@@ -160,30 +160,31 @@ uv run ruff check . --fix
 uv run ruff format .
 ```
 
-Also verify:
-- If DB changed, confirm Alembic revision/upgrade
-- If behavior/rules changed, sync `AGENTS.md`, root `README.md`, and `src/backend/BACKEND.md`
+추가 확인:
+- DB 변경 시 Alembic revision/upgrade 확인
+- 동작/규칙 변경 시 `AGENTS.md`, 루트 `README.md`, `src/backend/BACKEND.md` 동기화
 
-## 7) Migration and Data Operations
+## 7) 마이그레이션 및 데이터 운영
 
-- Migration failure handling: `src/backend/MIGRATION_ROLLFORWARD.md`
-- DB backup/restore runbook: `src/backend/DB_BACKUP_RESTORE.md`
-- Alembic revision rule:
-1. `revision` format: `NNNN_snake_case`
-2. max length: `32`
+- 마이그레이션 실패 대응: `src/backend/MIGRATION_ROLLFORWARD.md`
+- DB 백업/복구 런북: `src/backend/DB_BACKUP_RESTORE.md`
+- Alembic revision 규칙:
+1. `revision` 형식: `NNNN_snake_case`
+2. 최대 길이: `32`
 
-## 8) Tests (Domain/API Structure)
+## 8) 테스트 (도메인/API 구조)
 
-- Tests are organized by API domain under `tests/api/v1/<domain>/`.
-- Current starter layout:
+- 테스트는 API 도메인 단위로 `tests/api/v1/<domain>/` 아래 구성
+- 현재 시작 레이아웃:
 1. `tests/api/v1/auth/test_auth_api.py`
 2. `tests/api/v1/api_key/test_api_key_api.py`
+3. `tests/api/v1/events/test_events_api.py`
 
-Run tests:
+테스트 실행:
 
 ```bash
 cd src/backend
 uv run pytest
 ```
 
-Stripe-hosted card and Link registration: [setup guide](../../notes/billing.md).
+Stripe·Link 카드 등록: [설정 안내](../../notes/billing.md).

@@ -1,0 +1,14 @@
+{
+    "version": 1,
+    "slug": "canvanity",
+    "name": "Canvanity",
+    "short_name": "Canvanity",
+    "identifier": "io.github.blueprint4agent.canvanity",
+    "default_language": "ko",
+    "features": {
+        "login": true,
+        "email": false,
+        "oauth": false
+    },
+    "logo": "branding/canvanity-mark.png"
+}
