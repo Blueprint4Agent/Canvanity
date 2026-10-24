@@ -38,6 +38,7 @@ make init은 환경 파일과 루트 Git 훅을 준비하며 make install은 잠
 - 커밋 제목 예: chore: 프로젝트 기본 설정을 적용한다
 - 단순하지 않은 커밋 본문 필수 섹션: Changes:, Affected Files:, Verification:. 각 내용은 한국어로 쓴다.
 - PR 제목 예: [chore] Canvanity 기본 설정 적용
+- 이슈 제목도 [feat], [fix], [chore], [docs], [test], [perf] 등 영어 타입 접두사를 사용한다. [기능], [환경], [브랜드] 같은 한국어 분류 접두사는 사용하지 않는다. 제목 설명·본문·체크리스트는 한국어로 작성한다.
 - PR 본문 필수 섹션: Summary, Scope, Reason, Verification, Documentation, Risk / Impact. 각 내용은 한국어로 쓴다.
 - 각 작성 커밋은 제목이 정확히 일치하는 worklog를 포함한다. 필수 섹션: Commit Title, Changed File Scope, Reason, Design, Verification Plan, Impact, Loop Alignment, Verification. 통합 merge commit은 제외한다.
 - 프런트엔드 런타임 변경은 State Ownership, Memoization, Performance Evidence를 기록한다. UI 변경은 Page Family 비교와 실제 화면 검증도 기록한다.
