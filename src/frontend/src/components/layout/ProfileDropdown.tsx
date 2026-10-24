@@ -20,7 +20,7 @@ import { useEffect, useLayoutEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router-dom";
 
-import { KeyboardShortcut, Tooltip, UserAvatar } from "../ui";
+import { ButtonLink, KeyboardShortcut, Tooltip, UserAvatar } from "../ui";
 import { shortcutAriaKeys } from "../../utils/keyboardShortcuts";
 
 type ProfileDropdownProps = {
@@ -432,9 +432,13 @@ export function ProfileDropdown({
                         <div className="profile-menu__guest-cta">
                             <p>{t("authDialog.guestTitle")}</p>
                             <p>{t("authDialog.guestDescription")}</p>
-                            <Link className="profile-menu__login" to="/login">
+                            <ButtonLink
+                                appearance="pill"
+                                className="profile-menu__login"
+                                to="/login"
+                            >
                                 {t("authDialog.login")}
-                            </Link>
+                            </ButtonLink>
                         </div>
                     ) : null}
                     {showLogout ? (

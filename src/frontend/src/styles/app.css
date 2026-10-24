@@ -2241,6 +2241,7 @@ input:focus,
 }
 
 .ui-button {
+    text-decoration: none;
     border: 1px solid var(--button-border);
     border-radius: var(--radius-control);
     width: auto;
@@ -10161,4 +10162,90 @@ body.public-discovery {
 .ui-button--pill,
 .ui-button--pill-secondary {
     --button-shape-radius: 999px;
+}
+/* Soft blue filled controls: both the existing capsule and rectangular shapes. */
+.ui-button:not(.ui-button--text):not(.ui-button--canvas):not(.ui-button--canvas-card):not(
+        .modal-button--danger
+    ):not(.ui-action--pencil),
+.ui-dropdown__trigger {
+    background: linear-gradient(160deg, #83a3d7, #7598cf) #7da0d6;
+    color: #fff;
+    border-color: color-mix(in srgb, #79a4dd 70%, transparent);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+.ui-button:not(.ui-button--text):not(.ui-button--canvas):not(.ui-button--canvas-card):not(
+        .modal-button--danger
+    ):not(.ui-action--pencil):where(:not(:disabled)):hover,
+.ui-dropdown__trigger:not(:disabled):hover {
+    background: linear-gradient(160deg, #7c9fd6, #6d91ca) #7598cf;
+    color: #fff;
+    border-color: #79a4dd;
+}
+.ui-button:not(.ui-button--text):not(.ui-button--canvas):not(.ui-button--canvas-card):not(
+        .modal-button--danger
+    ):not(.ui-action--pencil)[aria-pressed="true"],
+.ui-button[aria-current="page"] {
+    background: linear-gradient(160deg, #7398d0, #6288bf) #6d91ca;
+    color: #fff;
+}
+.ui-toast-card {
+    --toast-paper: #fbf5e8;
+    --toast-fold: #e4d7b6;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 56px;
+    padding: 14px 28px 14px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--toast-paper);
+    color: var(--text);
+    box-shadow: 0 3px 10px rgba(50, 45, 32, 0.1);
+    clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%);
+}
+.ui-toast-card::before {
+    display: none;
+}
+.ui-toast-card::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 13px;
+    height: 13px;
+    background: var(--toast-fold);
+    border-radius: 3px 0 0 0;
+}
+.ui-toast-card__status {
+    display: grid;
+    place-items: center;
+    flex: 0 0 28px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #bed3f2;
+    color: #2f61a7;
+}
+.ui-toast-card__status svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 2.5px;
+}
+.ui-toast-card[data-tone="error"] .ui-toast-card__status {
+    background: var(--error-bg);
+    color: var(--error-text);
+}
+html[data-theme="dark"] .ui-toast-card {
+    --toast-paper: #2b2a25;
+    --toast-fold: #625942;
+}
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) .ui-toast-card {
+        --toast-paper: #2b2a25;
+        --toast-fold: #625942;
+    }
+}
+
+.ui-dropdown__trigger-icon {
+    color: inherit;
 }

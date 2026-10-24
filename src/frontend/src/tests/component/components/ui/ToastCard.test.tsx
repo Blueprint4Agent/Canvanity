@@ -104,3 +104,24 @@ describe("ToastCard lifecycle", () => {
         expect(renders).toBe(1);
     });
 });
+
+it("keeps error and neutral notices distinct from success without parsing their text", () => {
+    const { rerender } = render(<ToastCard message="Saved." tone="error" />);
+    const toast = screen.getByText("Saved.");
+    expect(toast).toHaveAttribute("data-tone", "error");
+    expect(toast.querySelector(".lucide-check")).toBeNull();
+    rerender(<ToastCard message="Saved." tone="success" />);
+    expect(screen.getByText("Saved.").querySelector(".lucide-check")).not.toBeNull();
+    rerender(<ToastCard message="Saved." />);
+    expect(screen.getByText("Saved.")).toHaveAttribute("data-tone", "neutral");
+});
+
+it("replaces the Showcase success notice with an error instead of stacking feedback", () => {
+    render(<ToastPreview showTones />);
+    const buttons = screen.getAllByRole("button");
+    fireEvent.click(buttons[0]);
+    fireEvent.click(buttons[1]);
+    expect(document.querySelectorAll(".ui-toast-card")).toHaveLength(1);
+    expect(document.querySelector(".ui-toast-card")).toHaveAttribute("data-tone", "error");
+    expect(document.querySelector(".ui-toast-card .lucide-check")).toBeNull();
+});

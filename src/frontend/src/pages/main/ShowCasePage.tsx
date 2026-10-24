@@ -45,6 +45,7 @@ import {
     BrandBanner,
     StatusCard,
     Button,
+    ButtonLink,
     DropdownMenu,
     FormCheckbox,
     InlineMessage,
@@ -304,6 +305,14 @@ export function ShowCasePage() {
                                 <Button appearance="pill-secondary" disabled>
                                     {t("authDialog.buttonDisabled")}
                                 </Button>
+                            </div>
+                        </ShowcaseItem>
+                        <ShowcaseItem component="ButtonLink">
+                            <div className="showcase-catalog__stack">
+                                <ButtonLink appearance="pill" to="/login">
+                                    {t("authDialog.login")}
+                                </ButtonLink>
+                                <ButtonLink to="/home">{t("nav.home")}</ButtonLink>
                             </div>
                         </ShowcaseItem>
                         <ShowcaseItem component="Button (canvas actions)">
@@ -647,7 +656,7 @@ export function ShowCasePage() {
                             </div>
                         </ShowcaseItem>
                         <ShowcaseItem component="ToastCard">
-                            <ToastPreview />
+                            <ToastPreview showTones />
                         </ShowcaseItem>
                         <ShowcaseItem component="InlineMessage">
                             <div className="showcase-catalog__stack">
