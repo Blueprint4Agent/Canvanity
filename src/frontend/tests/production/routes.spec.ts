@@ -147,7 +147,7 @@ test("production home remains available when a secondary route chunk fails", asy
     await page.getByRole("button", { name: "Home", exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
     await expect(page.locator("#home-project-title")).toBeVisible();
-    await expect(page.locator(".explore-cluster")).toHaveCount(6);
+    await expect(page.locator(".explore-cluster")).toHaveCount(4);
 });
 
 for (const layout of ["sidebar", "topnav", "focused"]) {
@@ -169,7 +169,7 @@ for (const layout of ["sidebar", "topnav", "focused"]) {
         // Then: server configuration owns the shell, without rebuilding or exposing development controls.
         await expect(page.locator(".app-shell--focused")).toBeVisible();
         await expect(page.locator("#home-project-title")).toBeVisible();
-        await expect(page.locator(".explore-cluster")).toHaveCount(6);
+        await expect(page.locator(".explore-cluster")).toHaveCount(4);
         await page.goto("/settings?section=appearance");
         await expect(page.locator(".app-shell--focused")).toBeVisible();
         await expect(page.locator(".layout-option")).toHaveCount(0);

@@ -1,15 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-    Hand,
-    MousePointer2,
-    Plus,
-    Minus,
-    Scan,
-    Search,
-    X,
-    ArrowLeft,
-    ArrowUpRight,
-} from "lucide-react";
+import { Hand, MousePointer2, Plus, Minus, Scan, X, ArrowLeft, ArrowUpRight } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button, InputField, Tooltip, KeyboardShortcut, BrandMark } from "../../ui";
@@ -36,7 +26,7 @@ export function ExploreCanvas() {
     const snapshot = useCanvasSnapshot(
         camera.worldRef,
         EXPLORE_SURFACE,
-        i18n.resolvedLanguage ?? "ko",
+        `${i18n.resolvedLanguage ?? "ko"}:discovery-feed-v1`,
     );
     const [searchParams, setSearchParams] = useSearchParams();
     const [selected, setSelected] = useState<ExploreTopicId | null>(null);
@@ -219,24 +209,6 @@ export function ExploreCanvas() {
                         <Hand size={20} />
                     </span>
                 </Tooltip>
-                <Tooltip
-                    content={
-                        <span className="ui-shortcut-hint">
-                            {t("explore.search")}
-                            <KeyboardShortcut keys={[CANVAS_SHORTCUTS.search]} />
-                        </span>
-                    }
-                    side="right"
-                >
-                    <Button
-                        appearance="text"
-                        iconOnly
-                        aria-label={t("explore.search")}
-                        onClick={() => setSearchOpen(true)}
-                    >
-                        <Search size={20} />
-                    </Button>
-                </Tooltip>
             </nav>
             {selected ? (
                 <aside className="explore-selection" aria-live="polite">
@@ -255,12 +227,10 @@ export function ExploreCanvas() {
                         <strong>{t(`explore.topics.${selected}.label`)}</strong>
                         <span>{t(`explore.topics.${selected}.description`)}</span>
                     </span>
-                    <span className="explore-example-label">{t("explore.exampleLabel")}</span>
                 </aside>
             ) : null}
             <div className="explore-map">
                 <div className="explore-zoom-tools">
-                    {" "}
                     <span className="explore-zoom" aria-label={t("explore.zoomLevel")}>
                         {Math.round(camera.zoom * 100)}%
                     </span>

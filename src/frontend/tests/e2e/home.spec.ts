@@ -9,7 +9,7 @@ for (const width of [320, 390, 1440])
             await setup(page, "manager", "development");
             await page.goto("/home");
             await expect(page.locator("#home-project-title")).toBeVisible();
-            await expect(page.locator(".explore-cluster")).toHaveCount(6);
+            await expect(page.locator(".explore-cluster")).toHaveCount(4);
             await expect(page.locator(".app-sidebar")).toHaveCount(0);
             await expect(page.locator(".app-header--minimal")).toBeVisible();
             await expect(page.getByRole("link", { name: "GitHub", exact: true })).toBeVisible();
@@ -37,9 +37,9 @@ for (const width of [320, 390, 1440])
             await expect(page.locator(".explore-zoom")).not.toHaveText("25%");
             await page.keyboard.press("/");
             await expect(page.getByRole("searchbox")).toBeFocused();
-            await page.getByRole("searchbox").fill("AI");
+            await page.getByRole("searchbox").fill("people");
             await page.keyboard.press("Enter");
-            await expect(page.locator(".explore-selection")).toContainText("AI");
+            await expect(page.locator(".explore-selection")).toContainText("people");
             await page.keyboard.press("0");
             await expect(page.locator(".explore-selection")).toHaveCount(0);
             await captureVisual(page, { path: info.outputPath("canvas.png"), fullPage: true });
@@ -68,8 +68,8 @@ test("camera limits, browser chord isolation, wheel and minimap use one bounded 
         const m = new DOMMatrix(getComputedStyle(el).transform);
         return { x: m.e, y: m.f };
     });
-    expect(bounded.x).toBeGreaterThanOrEqual(-3360);
-    expect(bounded.y).toBeGreaterThanOrEqual(-2200);
+    expect(bounded.x).toBeGreaterThanOrEqual(-4960);
+    expect(bounded.y).toBeGreaterThanOrEqual(-3200);
     const image = page.locator(".explore-minimap img");
     await expect(image).toBeVisible();
     const src = await image.getAttribute("src");
@@ -163,7 +163,7 @@ test("plain vertical zoom tools and photo hover follow the minimal reference", a
     );
     await expect(page.locator(".explore-minimap")).toHaveCSS("border-top-width", "0px");
     await expect(page.locator(".explore-minimap")).toHaveCSS("box-shadow", "none");
-    const topic = page.locator(".explore-cluster--ideas .explore-topic");
+    const topic = page.locator(".explore-cluster--daily .explore-topic");
     await topic.hover();
     await expect
         .poll(() => topic.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a))
@@ -232,11 +232,68 @@ test("Space temporarily pans, release and blur restore clicks without native tex
     await page.evaluate(() => window.dispatchEvent(new Event("blur")));
     await expect(page.locator(".explore-page")).toHaveAttribute("data-tool", "select");
     await page.keyboard.up("Space");
-    await page.locator(".explore-cluster--ideas button").click();
-    await expect(page.locator(".explore-selection")).toContainText("Ideas");
+    await page.locator(".explore-cluster--daily button").click();
+    await expect(page.locator(".explore-selection")).toContainText("spotlight");
     await page.keyboard.press("/");
-    await page.getByRole("searchbox").fill("AI");
+    await page.getByRole("searchbox").fill("people");
     await page.keyboard.press("Space");
-    await expect(page.getByRole("searchbox")).toHaveValue("AI ");
+    await expect(page.getByRole("searchbox")).toHaveValue("people ");
     await expect(page.locator(".explore-page")).toHaveAttribute("data-tool", "select");
+});
+
+test("community feed stays composed with author comment and like metadata", async ({ page }) => {
+    await setup(page, null);
+    await page.goto("/home");
+    await expect(page.locator("#home-project-title")).toHaveText("Canvanity");
+    await expect(page.locator(".explore-cluster")).toHaveCount(4);
+    await expect(page.locator(".explore-post-meta")).toHaveCount(7);
+    await expect(
+        page.getByRole("heading", { name: "Canvases from people you follow" }),
+    ).toBeVisible();
+    await expect(page.getByText("Where conversations grow", { exact: true })).toHaveCount(0);
+    await expect(page.locator(".explore-tools button")).toHaveCount(1);
+    const geometry = () =>
+        page.locator(".explore-cluster").evaluateAll((els) =>
+            els.map((el) => ({
+                x: (el as HTMLElement).offsetLeft,
+                y: (el as HTMLElement).offsetTop,
+            })),
+        );
+    const before = await geometry();
+    expect(new Set(before.map((p) => p.x)).size).toBe(4);
+    expect(new Set(before.map((p) => p.y)).size).toBe(4);
+    await expect(page.locator('.explore-post-meta [aria-label*="comments"]')).toHaveCount(7);
+    const author = page.locator(".explore-post-author").first();
+    await expect(author).not.toContainText("sample");
+    await page.reload();
+    await expect(page.locator(".explore-cluster")).toHaveCount(4);
+    expect(await geometry()).toEqual(before);
+});
+
+test("canvas edge gives a tiny smooth resistance then settles inside its bounds", async ({
+    page,
+}) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await setup(page, null);
+    await page.goto("/home");
+    const world = page.locator(".explore-world");
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    for (let i = 0; i < 12; i++) await page.keyboard.press("-");
+    await expect(page.locator(".explore-zoom")).toHaveText("25%");
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    await page.mouse.move(750, 500);
+    await page.mouse.wheel(0, 500);
+    await expect
+        .poll(() => world.evaluate((el) => Math.abs(Number((el as HTMLElement).dataset.edgeY))))
+        .toBeGreaterThan(0);
+    expect(
+        await world.evaluate((el) => Math.abs(Number((el as HTMLElement).dataset.edgeY))),
+    ).toBeLessThanOrEqual(10);
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    await expect(world).toHaveAttribute("data-edge-y", "0");
+    const logical = await world.evaluate((el) => Number((el as HTMLElement).dataset.logicalY));
+    expect(logical).toBe(237.5);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.mouse.wheel(0, 500);
+    await expect(world).toHaveAttribute("data-edge-y", "0");
 });

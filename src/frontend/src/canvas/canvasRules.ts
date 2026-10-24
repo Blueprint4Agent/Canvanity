@@ -10,6 +10,9 @@ export const CANVAS_RULES = {
     zoomStep: 1.2,
     gridSize: 28,
     panStep: 56,
+    edgeMaxOffset: 10,
+    edgeReturnMs: 60,
+    edgeReleaseDelay: 45,
 } as const;
 export const CANVAS_SHORTCUTS = {
     select: "v",
@@ -20,6 +23,10 @@ export const CANVAS_SHORTCUTS = {
 } as const;
 export const CANVAS_PAN_KEY = "space";
 export type CanvasAction = keyof typeof CANVAS_SHORTCUTS;
+export function resistCanvasEdge(distance: number): number {
+    const limit = CANVAS_RULES.edgeMaxOffset;
+    return Number.isFinite(distance) ? (limit * distance) / (limit + Math.abs(distance)) : 0;
+}
 export function canvasAction(
     event: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "isComposing">,
 ): CanvasAction | null {

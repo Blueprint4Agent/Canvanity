@@ -1533,42 +1533,51 @@
         "retrySnapshot": "Refresh minimap",
         "topics": {
             "agent": {
-                "label": "AI / Agent",
+                "label": "Canvases from people you follow",
                 "sample": "Small automations, new possibilities",
-                "description": "Explore ideas that connect tools and agents.",
-                "handwriting": "Make room for ideas"
+                "description": "Zoom in to take a closer look.",
+                "handwriting": "People, stories, connections"
             },
             "build": {
-                "label": "Building & productivity",
+                "label": "Canvases on the rise",
                 "sample": "A workflow that feels like yours",
-                "description": "Discover small tools and work in progress.",
-                "handwriting": "Build, iterate, grow"
+                "description": "Zoom in to take a closer look.",
+                "handwriting": "Something new is taking shape"
             },
             "daily": {
-                "label": "Life & journals",
+                "label": "Canvases in the spotlight",
                 "sample": "A moment and a small note",
-                "description": "Find stories in ordinary days.",
+                "description": "Zoom in to take a closer look.",
                 "handwriting": "The art of noticing"
             },
             "learn": {
-                "label": "Learning & growth",
+                "label": "Picked for you",
                 "sample": "A page for what you learned",
-                "description": "Explore notes that grow with you.",
-                "handwriting": "Keep learning"
-            },
-            "play": {
-                "label": "Games & hobbies",
-                "sample": "Worlds worth getting lost in",
-                "description": "Discover the things people love.",
-                "handwriting": "Create your own space"
-            },
-            "ideas": {
-                "label": "Ideas",
-                "sample": "Thoughts still taking shape",
-                "description": "A small thought can be a new beginning.",
-                "handwriting": "Ideas in motion"
+                "description": "Zoom in to take a closer look.",
+                "handwriting": "A little inspiration for you"
             }
         },
-        "tagline": "Space for every idea."
+        "tagline": "Space for every idea.",
+        "authors": {
+            "seoyeon": "Seoyeon",
+            "minjae": "Minjae",
+            "doyun": "Doyun",
+            "haneul": "Haneul",
+            "jiwon": "Jiwon",
+            "yuna": "Yuna",
+            "jun": "Jun"
+        },
+        "posts": {
+            "light": "Where the light stays",
+            "quiet": "A quiet moment to focus",
+            "escape": "A place to pause",
+            "routine": "Small everyday rituals",
+            "workspace": "A workspace for today",
+            "days": "Small discoveries",
+            "collected": "A collection of favorite moments"
+        },
+        "openSample": "Canvas by {{name}}: {{title}}",
+        "likeCount": "{{count}} likes",
+        "commentCount": "{{count}} comments"
     }
 }

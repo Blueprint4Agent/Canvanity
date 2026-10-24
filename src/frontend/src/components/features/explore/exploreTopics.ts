@@ -1,30 +1,59 @@
 import { validateSurface } from "../../../canvas/canvasRules";
 export const EXPLORE_SURFACE = validateSurface({
     kind: "ui",
-    bounds: { width: 2400, height: 1600 },
+    bounds: { width: 3200, height: 2100 },
 });
 export const WORLD = EXPLORE_SURFACE.bounds;
-export type ExploreTopicId = "agent" | "build" | "daily" | "learn" | "play" | "ideas";
+export type ExploreTopicId = "agent" | "build" | "daily" | "learn";
+export type ExploreImageId = ExploreTopicId | "play" | "ideas";
+export type ExplorePost = {
+    id: string;
+    image: ExploreImageId;
+    author: "seoyeon" | "minjae" | "doyun" | "haneul" | "jiwon" | "jimin" | "yuna" | "jun";
+    likes: number;
+    comments?: number;
+};
 export type ExploreTopic = {
     id: ExploreTopicId;
     x: number;
     y: number;
-    preview: "flow" | "code" | "photo" | "notes" | "game" | "ideas";
+    posts: readonly ExplorePost[];
 };
-const TOPICS: readonly ExploreTopic[] = [
-    { id: "agent", x: 100, y: 380, preview: "flow" },
-    { id: "build", x: 160, y: 650, preview: "code" },
-    { id: "daily", x: 480, y: 205, preview: "photo" },
-    { id: "learn", x: 670, y: 650, preview: "notes" },
-    { id: "play", x: 1100, y: 600, preview: "game" },
-    { id: "ideas", x: 900, y: 140, preview: "ideas" },
+// Stable, intentionally scattered coordinates preserve spatial memory across visits.
+export const EXPLORE_TOPICS: readonly ExploreTopic[] = [
+    {
+        id: "daily",
+        x: 440,
+        y: 500,
+        posts: [{ id: "light", image: "daily", author: "seoyeon", likes: 428, comments: 32 }],
+    },
+    {
+        id: "learn",
+        x: 1530,
+        y: 390,
+        posts: [
+            { id: "quiet", image: "build", author: "minjae", likes: 312, comments: 18 },
+            { id: "escape", image: "ideas", author: "doyun", likes: 367, comments: 24 },
+        ],
+    },
+    {
+        id: "build",
+        x: 1420,
+        y: 1030,
+        posts: [
+            { id: "routine", image: "play", author: "haneul", likes: 198, comments: 16 },
+            { id: "workspace", image: "agent", author: "jiwon", likes: 519, comments: 41 },
+        ],
+    },
+    {
+        id: "agent",
+        x: 530,
+        y: 1080,
+        posts: [
+            { id: "days", image: "agent", author: "yuna", likes: 124, comments: 12 },
+            { id: "collected", image: "daily", author: "jun", likes: 93, comments: 8 },
+        ],
+    },
 ];
-export const EXPLORE_ORIGIN = { x: 480, y: 300 };
-export const EXPLORE_OVERVIEW = { x: 480, y: 300, width: 1440, height: 1000 };
-export const INTRO_RECT = { x: 580, y: 435, width: 350, height: 170 };
-
-export const EXPLORE_TOPICS: readonly ExploreTopic[] = TOPICS.map((topic) => ({
-    ...topic,
-    x: topic.x + EXPLORE_ORIGIN.x,
-    y: topic.y + EXPLORE_ORIGIN.y,
-}));
+export const EXPLORE_OVERVIEW = { x: 340, y: 160, width: 2180, height: 1370 };
+export const INTRO_RECT = { x: 460, y: 220, width: 700, height: 180 };
