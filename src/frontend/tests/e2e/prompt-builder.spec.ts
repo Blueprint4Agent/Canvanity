@@ -244,25 +244,11 @@ for (const width of [390, 1440])
         });
     }
 for (const layout of ["sidebar", "topnav", "focused"])
-    test(`production ${layout} navigation includes prompt builder after Home`, async ({ page }) => {
+    test(`legacy ${layout} retains direct public prompt builder route`, async ({ page }) => {
         await setup(page, layout);
-        await page.goto("/home");
-        if (layout === "focused") await page.locator(".app-header__toggle").click();
-        const links = page.locator(
-            layout === "sidebar"
-                ? "nav#app-sidebar-navigation a"
-                : layout === "focused"
-                  ? ".app-header__menu-links a"
-                  : "nav#app-sidebar-navigation a",
-        );
-        await expect(links).toHaveCount(2);
-        // Inspect actual global destinations, independent of profile shortcuts.
-        const destinations = await links.evaluateAll((elements) =>
-            elements.map((el) => el.getAttribute("href")),
-        );
-        expect(destinations.slice(0, 2)).toEqual(["/home", "/prompt-builder"]);
-        await links.nth(1).click();
+        await page.goto("/prompt-builder");
         await expect(page.getByRole("button", { name: "Start with Blueprint?" })).toBeVisible();
+        await expect(page.locator(".app-shell--focused")).toBeVisible();
     });
 
 test("optional defaults and deployment target stay explicit through review edits", async ({

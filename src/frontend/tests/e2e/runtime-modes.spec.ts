@@ -41,7 +41,8 @@ test("production guest home and authentication have no showcase backdrop", async
     await setup(page, null);
     await page.goto("/show-case");
     await expect(page).toHaveURL(/\/home$/);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
+    await page.locator(".profile-menu__trigger").click();
+    await page.getByRole("link", { name: "Log in", exact: true }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.locator(".showcase-catalog")).toHaveCount(0);
 });
@@ -91,199 +92,22 @@ for (const width of [390, 1440]) {
         });
     });
 }
-for (const mode of ["development", "production"]) {
-    test(`${mode} uses home as default and only development exposes showcase`, async ({ page }) => {
+for (const mode of ["development", "production"])
+    test(`${mode} keeps existing resources and minimal navigation`, async ({ page }) => {
         await setup(page, "user", mode);
-        for (const path of ["/", "/dashboard", "/login"]) {
-            await page.goto(path);
-            await expect(page).toHaveURL(/\/home$/);
-            await expect(page.locator("#home-project-title")).toBeVisible();
-        }
-        const showcase = page.locator('.app-sidebar__item[href="/show-case"]');
+        await page.goto("/home");
+        await expect(page.locator(".explore-page")).toBeVisible();
+        const coffee = page.getByRole("link", { name: "Buy Me a Coffee" });
+        await expect(coffee).toHaveCount(mode === "development" ? 1 : 0);
+        await page.locator(".profile-menu__trigger").click();
+        const showcase = page.getByRole("link", { name: "Showcase", exact: true });
         if (mode === "development") {
-            await expect(showcase).toBeVisible();
             await showcase.click();
             await expect(page.locator(".showcase-catalog")).toBeVisible();
-            await page.locator('.app-sidebar__item[href="/home"]').click();
+            await page.locator(".minimal-header__brand").click();
             await expect(page).toHaveURL(/\/home$/);
         } else await expect(showcase).toHaveCount(0);
     });
-}
-for (const mode of ["development", "production"]) {
-    test(`optional support link respects ${mode} mode`, async ({ page }) => {
-        await setup(page, null, mode);
-        await page.goto("/home");
-        await expect(page.locator(".home-overview")).toBeVisible();
-        const link = page.getByRole("link", { name: "Buy Me a Coffee" });
-        if (mode === "development") {
-            await expect(link).toHaveCount(1);
-            await expect(
-                page.locator(".home-overview").getByRole("link", { name: "Buy Me a Coffee" }),
-            ).toHaveCount(0);
-            await expect(page.locator(".home-support")).toHaveCount(0);
-            for (const element of await link.all()) {
-                await expect(element).toHaveAttribute(
-                    "href",
-                    "https://buymeacoffee.com/b4a-test-fixture",
-                );
-                await expect(element).toHaveAttribute("target", "_blank");
-                await expect(element).toHaveAttribute("rel", "noopener noreferrer");
-            }
-            const sidebarLink = page
-                .locator(".app-sidebar__footer")
-                .getByRole("link", { name: "Buy Me a Coffee" });
-            await expect(sidebarLink).toBeVisible();
-            await sidebarLink.hover();
-            await expect(page.getByRole("tooltip", { name: "Buy Me a Coffee" })).toBeVisible();
-            await page.getByRole("button", { name: "Expand sidebar", exact: true }).click();
-            await expect(sidebarLink.locator(".app-sidebar__item-label")).toHaveText(
-                "Buy Me a Coffee",
-            );
-            await page.goto("/settings?section=general");
-            await expect(sidebarLink).toBeVisible();
-        } else {
-            await expect(link).toHaveCount(0);
-        }
-    });
-}
-for (const width of [390, 1440]) {
-    for (const colorScheme of ["light", "dark"] as const) {
-        test(`layout modes preserve settings composition and navigation ${colorScheme} at ${width}`, async ({
-            page,
-        }, info) => {
-            // Given: development Appearance uses the existing settings family.
-            await page.setViewportSize({ width, height: 900 });
-            await page.emulateMedia({ colorScheme });
-            await setup(page, "user", "development");
-            let configRequests = 0;
-            page.on("request", (request) => {
-                if (new URL(request.url()).pathname === "/config") configRequests++;
-            });
-            await page.goto("/settings?section=appearance");
-            await expect(page.getByRole("group", { name: "Layout", exact: true })).toBeVisible();
-            const initialConfigRequests = configRequests;
-            for (const [mode, label] of [
-                ["sidebar", "Sidebar"],
-                ["topnav", "Top navigation"],
-                ["focused", "Minimal"],
-            ]) {
-                // When: choosing each mode without reloading the page.
-                await page.getByRole("button", { name: label, exact: true }).click();
-                await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", mode);
-                await expect(
-                    page.getByRole("button", { name: label, exact: true }),
-                ).toHaveAttribute("aria-pressed", "true");
-                // Then: cards contain their preview and text, page chrome fits and fetches are not repeated.
-                for (const option of await page.locator(".layout-option").all()) {
-                    expect(
-                        await option.evaluate((node) => {
-                            const outer = node.getBoundingClientRect();
-                            return [
-                                ...node.querySelectorAll(
-                                    ".layout-preview, .ui-button__label > span",
-                                ),
-                            ].every((child) => {
-                                const inner = child.getBoundingClientRect();
-                                return (
-                                    inner.top >= outer.top &&
-                                    inner.bottom <= outer.bottom &&
-                                    inner.left >= outer.left &&
-                                    inner.right <= outer.right
-                                );
-                            });
-                        }),
-                    ).toBe(true);
-                }
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
-                if (mode !== "sidebar") {
-                    await expect(
-                        page
-                            .locator(".app-header")
-                            .getByRole("link", { name: "Appearance", exact: true }),
-                    ).toHaveCount(0);
-                    await expect(page.locator(".section-navigation")).toBeVisible();
-                    const github = page
-                        .locator(".app-header")
-                        .getByRole("link", { name: "GitHub", exact: true });
-                    await github.hover();
-                    await expect(
-                        page.getByRole("tooltip", { name: "GitHub", exact: true }),
-                    ).toBeVisible();
-                    await page.mouse.move(width - 5, 850);
-                    if (mode === "focused" || width < 961) {
-                        const menu = page.locator(".app-header__toggle");
-                        await menu.hover();
-                        await expect(
-                            page.getByRole("tooltip", { name: "Open navigation", exact: true }),
-                        ).toBeVisible();
-                        await menu.click();
-                        await expect(menu).toHaveAttribute("aria-expanded", "true");
-                        await expect(page.locator(".app-header__menu")).toBeVisible();
-                        await page.keyboard.press("Escape");
-                        await expect(page.locator(".app-header__menu")).toHaveCount(0);
-                        await expect(menu).toBeFocused();
-                    }
-                    if (mode === "focused") {
-                        expect(
-                            await page
-                                .locator(".app-header")
-                                .evaluate((node) => getComputedStyle(node).backgroundColor),
-                        ).toBe("rgba(0, 0, 0, 0)");
-                    }
-                }
-                await page.locator(".profile-menu__trigger").hover();
-                await expect(
-                    page.getByRole("tooltip", { name: "Open profile menu", exact: true }),
-                ).toBeVisible();
-                await page.locator(".profile-menu__trigger").click();
-                const profile = page.getByRole("dialog", { name: "Profile menu", exact: true });
-                await expect(profile).toBeVisible();
-                const popup = await profile.boundingBox();
-                expect(popup!.x).toBeGreaterThanOrEqual(0);
-                expect(popup!.x + popup!.width).toBeLessThanOrEqual(width);
-                expect(popup!.y).toBeGreaterThanOrEqual(0);
-                expect(popup!.y + popup!.height).toBeLessThanOrEqual(900);
-                await page.keyboard.press("Escape");
-                await page.mouse.move(width - 5, 850);
-                await captureVisual(page, {
-                    path: info.outputPath(`${mode}-appearance.png`),
-                    animations: "disabled",
-                });
-                const menuBox = page.locator(
-                    mode === "sidebar" ? ".app-sidebar" : ".section-navigation",
-                );
-                if (mode !== "sidebar" && width < 961)
-                    await page.locator(".section-navigation__toggle").click();
-                const before = await menuBox.boundingBox();
-                await menuBox.getByRole("link", { name: "General", exact: true }).click();
-                await expect(
-                    page.getByRole("heading", { name: "General", exact: true }),
-                ).toBeVisible();
-                // The menu keeps its position; content has no repeated translate animation.
-                const after = await menuBox.boundingBox();
-                expect(after!.x).toBeCloseTo(before!.x, 0);
-                expect(after!.y).toBeCloseTo(before!.y, 0);
-                expect(
-                    await page
-                        .locator(".settings-content-card")
-                        .evaluate((node) => getComputedStyle(node).animationName),
-                ).toBe("none");
-                await captureVisual(page, {
-                    path: info.outputPath(`${mode}-general-peer.png`),
-                    animations: "disabled",
-                });
-                if (mode !== "sidebar" && width < 961)
-                    await page.locator(".section-navigation__toggle").click();
-                await menuBox.getByRole("link", { name: "Appearance", exact: true }).click();
-            }
-            expect(configRequests).toBe(initialConfigRequests);
-            await page.reload();
-            await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", "focused");
-        });
-    }
-}
 for (const preview of ["topnav", "focused", "invalid"]) {
     test(`production ignores stored layout preview ${preview}`, async ({ page }) => {
         // Given: a stored development selection from a previous session.
@@ -295,7 +119,7 @@ for (const preview of ["topnav", "focused", "invalid"]) {
         // When: opening production Appearance.
         await page.goto("/settings?section=appearance");
         // Then: use the configured default and expose no development selector.
-        await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", "sidebar");
+        await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", "focused");
         await expect(page.getByRole("group", { name: "Layout", exact: true })).toHaveCount(0);
     });
 }
@@ -315,8 +139,10 @@ for (const mode of ["topnav", "focused"]) {
             .getByRole("dialog", { name: "Profile menu" })
             .getByRole("link", { name: "Settings", exact: true })
             .click();
+        await expect(page.locator(".settings-content-card h1")).toBeVisible();
         // Then: private section links are absent and login remains available.
-        await page.locator(".section-navigation__toggle").click();
+        if (await page.locator(".section-navigation__toggle").isVisible())
+            await page.locator(".section-navigation__toggle").click();
         await expect(
             page.locator(".section-navigation").getByRole("link", { name: "Account", exact: true }),
         ).toHaveCount(0);
@@ -326,7 +152,7 @@ for (const mode of ["topnav", "focused"]) {
             .getByRole("link", { name: "Log in", exact: true })
             .click();
         await expect(page.locator(".auth-dialog")).toBeVisible();
-        await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", mode);
+        await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", "focused");
     });
 }
 for (const mode of ["topnav", "focused"]) {
@@ -354,15 +180,15 @@ for (const mode of ["topnav", "focused"]) {
             );
             // When/Then: each page retains its own composition and the chosen chrome.
             for (const [path, selector] of [
-                ["/home", ".home-overview"],
+                ["/home", ".explore-page"],
                 ["/profile", ".personal-profile"],
                 ["/notifications", ".inbox-page"],
                 ["/admin", ".admin-content"],
-                ["/settings?section=appearance", ".layout-options"],
+                ["/settings?section=appearance", ".theme-preview-selector"],
             ]) {
                 await page.goto(path);
                 await expect(page.locator(selector)).toBeVisible();
-                await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", mode);
+                await expect(page.locator(".app-shell")).toHaveAttribute("data-layout", "focused");
                 expect(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                 ).toBe(true);

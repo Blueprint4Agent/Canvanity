@@ -228,7 +228,10 @@ test("signed-in users add another account and retain the current session until s
     ).toBe(true);
     const parentBounds = (await page.locator(".profile-menu__dropdown").boundingBox())!;
     const accountsBounds = (await page.locator(".profile-menu__accounts").boundingBox())!;
-    expect(accountsBounds.x).toBeGreaterThanOrEqual(parentBounds.x + parentBounds.width + 7);
+    expect(
+        accountsBounds.x + accountsBounds.width <= parentBounds.x - 7 ||
+            accountsBounds.x >= parentBounds.x + parentBounds.width + 7,
+    ).toBe(true);
     await expect(page.locator(".profile-menu__account-current .user-avatar")).toHaveCSS(
         "border-radius",
         "50%",
@@ -260,7 +263,9 @@ for (const section of ["general", "appearance", "profile", "account", "developer
         await page.goto(`/settings?section=${section}`);
         const allowed = section === "appearance" ? "appearance" : "general";
         await expect(page).toHaveURL(new RegExp(`section=${allowed}$`));
-        const nav = page.locator("#app-sidebar-navigation");
+        if (await page.locator(".section-navigation__toggle").isVisible())
+            await page.locator(".section-navigation__toggle").click();
+        const nav = page.locator(".section-navigation");
         await expect(nav.getByRole("link", { name: "General", exact: true })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Appearance", exact: true })).toBeVisible();
         await expect(nav.getByRole("link", { name: "Account", exact: true })).toHaveCount(0);

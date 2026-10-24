@@ -1,5 +1,4 @@
 import { captureVisual } from "../fixtures/visual";
-import { readProjectConfig } from "../../scripts/project-config.mjs";
 import { expect, test, type Locator } from "../fixtures/browser";
 
 const config = {
@@ -22,48 +21,6 @@ test.beforeEach(async ({ page }) => {
     await page.goto("/show-case");
     await expect(page.locator(".showcase-catalog")).toBeVisible();
 });
-
-for (const colorScheme of ["light", "dark"] as const) {
-    test(`tooltips anchor to controls and use inverse ${colorScheme} colors`, async ({ page }) => {
-        // When: hovering the sidebar logo in system theme.
-        await page.emulateMedia({ colorScheme });
-        const brand = page.locator(".app-sidebar__brand");
-        await brand.hover();
-        const tooltip = page.getByRole("tooltip");
-        await expect(tooltip).toBeVisible();
-        // Then: the tooltip sits next to the actual logo, not the sidebar wrapper.
-        const control = (await brand.boundingBox())!;
-        const tip = (await tooltip.boundingBox())!;
-        expect(Math.abs(tip.x - control.x - control.width - 8)).toBeLessThan(1);
-        await expect(tooltip).toHaveCSS(
-            "background-color",
-            colorScheme === "light" ? "rgb(16, 16, 16)" : "rgb(234, 242, 255)",
-        );
-        await expect(tooltip).toHaveCSS(
-            "color",
-            colorScheme === "light" ? "rgb(255, 255, 255)" : "rgb(16, 34, 59)",
-        );
-        await expect(brand).toHaveAttribute(
-            "aria-describedby",
-            (await tooltip.getAttribute("id"))!,
-        );
-        await page.keyboard.press("Escape");
-        await expect(tooltip).toHaveCount(0);
-        // When: keyboard focus enters the sidebar navigation.
-        const toggle = page.locator(".app-sidebar__item").first();
-        await toggle.focus();
-        await expect(tooltip).toBeVisible();
-        const toggleBox = (await toggle.boundingBox())!;
-        const sidebarTip = (await tooltip.boundingBox())!;
-        expect(
-            Math.abs(sidebarTip.y + sidebarTip.height / 2 - toggleBox.y - toggleBox.height / 2),
-        ).toBeLessThan(1);
-        await toggle.click();
-        await expect(toggle).toHaveAttribute("aria-current", "page");
-        await expect(tooltip).toHaveCount(0);
-    });
-}
-
 test("tooltip follows scrolling and flips away from the viewport edge", async ({ page }) => {
     // When: focusing the showcase tooltip, then scrolling its content container.
     const trigger = page.locator('[data-component="Tooltip"] button');
@@ -94,44 +51,6 @@ test("tooltip follows scrolling and flips away from the viewport edge", async ({
     await expect(tooltip).toBeHidden();
 });
 
-for (const width of [320, 390, 1440]) {
-    test(`sidebar, profile popover, and settings fit at ${width}px`, async ({ page }) => {
-        // Given: the app uses a persistent rail with no top navigation.
-        await page.setViewportSize({ width, height: 900 });
-        await expect(page.locator(".app-nav")).toHaveCount(0);
-        await expect
-            .poll(() =>
-                page.locator(".app-main").evaluate((main) => main.scrollWidth - main.clientWidth),
-            )
-            .toBeLessThanOrEqual(1);
-        const profile = page.getByRole("button", { name: "Open profile menu" });
-        const profileBox = (await profile.boundingBox())!;
-        expect(profileBox.y + profileBox.height).toBeGreaterThan(850);
-        // When: the bottom profile popover opens.
-        await profile.click();
-        const popup = page.getByRole("dialog", { name: "Profile menu" });
-        await expect(popup).toBeVisible();
-        const box = (await popup.boundingBox())!;
-        expect(box.x).toBeGreaterThan(50);
-        expect(box.x + box.width).toBeLessThanOrEqual(width);
-        expect(box.y).toBeGreaterThanOrEqual(0);
-        expect(box.y + box.height).toBeLessThanOrEqual(900);
-        await page.keyboard.press("Escape");
-        await expect(popup).toHaveCount(0);
-        await expect(profile).toBeFocused();
-        // Then: navigation persists on settings, with no horizontal overflow.
-        await profile.click();
-        await popup.getByRole("link", { name: "Settings", exact: true }).click();
-        await expect(page.locator(".settings-layout")).toBeVisible();
-        await expect(page.locator('.app-sidebar__item[href="/settings"]')).toHaveCount(0);
-        await expect
-            .poll(() =>
-                page.locator(".app-main").evaluate((main) => main.scrollWidth - main.clientWidth),
-            )
-            .toBeLessThanOrEqual(1);
-    });
-}
-
 test("pointer focus does not keep tooltips open after re-hover", async ({ page }) => {
     // Given: a button retains focus after a pointer click.
     const trigger = page.locator('[data-component="Tooltip"] button');
@@ -145,21 +64,6 @@ test("pointer focus does not keep tooltips open after re-hover", async ({ page }
     // Then: pointer-acquired focus must not pin the tooltip open.
     await expect(page.getByRole("tooltip")).toHaveCount(0);
     await expect(trigger).toBeFocused();
-});
-
-test("keyboard tooltips survive pointer leave but dismiss on window blur", async ({ page }) => {
-    // Given: a keyboard-focused sidebar control.
-    const trigger = page.locator(".app-sidebar__brand");
-    await page.keyboard.press("Tab");
-    await expect(trigger).toBeFocused();
-    await expect(page.getByRole("tooltip")).toBeVisible();
-    // When: hovering and then leaving the keyboard-focused control.
-    await trigger.hover();
-    await page.mouse.move(1, 200);
-    // Then: keyboard focus retains its description, but an inactive window does not.
-    await expect(page.getByRole("tooltip")).toBeVisible();
-    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
-    await expect(page.getByRole("tooltip")).toHaveCount(0);
 });
 
 test("menu items keep a single icon gap and consistent touch height", async ({ page }) => {
@@ -181,205 +85,6 @@ test("menu items keep a single icon gap and consistent touch height", async ({ p
         expect(Math.abs(label.x - icon.x - icon.width - 8)).toBeLessThan(1);
         expect(Math.abs(icon.y + icon.height / 2 - box.y - box.height / 2)).toBeLessThan(1);
     }
-});
-
-for (const width of [320, 1440]) {
-    test(`expanded sidebar shows labels and profile without overflow at ${width}px`, async ({
-        page,
-    }) => {
-        // Given: a compact rail that can expand into a labeled navigation panel.
-        await page.setViewportSize({ width, height: 900 });
-        const toggle = page.locator(".app-sidebar__toggle");
-        await toggle.click();
-        // Then: the expanded panel is compact, and reveals real navigation labels.
-        await expect(toggle).toHaveAttribute("aria-expanded", "true");
-        await expect(page.locator(".app-sidebar__brand-name")).toBeVisible();
-        await expect(page.locator(".app-sidebar__item-label").first()).toBeVisible();
-        await expect(page.locator(".profile-menu__trigger-name")).toBeVisible();
-        await expect
-            .poll(async () => (await page.locator(".app-sidebar").boundingBox())!.width)
-            .toBe(224);
-        await page.locator(".app-sidebar__item").first().hover();
-        await expect(page.getByRole("tooltip")).toHaveCount(0);
-        await page.getByRole("button", { name: "Open profile menu" }).click();
-        const popup = page.getByRole("dialog", { name: "Profile menu" });
-        const box = (await popup.boundingBox())!;
-        expect(box.x + box.width).toBeLessThanOrEqual(width);
-        expect(box.y).toBeGreaterThanOrEqual(0);
-        await page.keyboard.press("Escape");
-        await expect(popup).toHaveCount(0);
-        // When: settings uses its own navigation, returning preserves the app panel state.
-        await page.getByRole("button", { name: "Open profile menu" }).click();
-        await popup.getByRole("link", { name: "Settings", exact: true }).click();
-        await expect(page.locator(".settings-layout")).toBeVisible();
-        await expect(page.locator(".app-sidebar")).toHaveCount(1);
-        await expect
-            .poll(() =>
-                page.locator(".app-main").evaluate((main) => main.scrollWidth - main.clientWidth),
-            )
-            .toBeLessThanOrEqual(1);
-        await page.getByRole("link", { name: "Back to app" }).click();
-        await expect(toggle).toHaveAttribute("aria-expanded", "true");
-        if (width < 640) {
-            await page.locator(".app-sidebar-backdrop").click({ position: { x: 220, y: 400 } });
-        } else {
-            await toggle.click();
-        }
-        await expect(toggle).toHaveAttribute("aria-expanded", "false");
-    });
-}
-
-test("compact controls preserve touch targets on coarse pointers", async ({ browser }) => {
-    // Given: a touch-enabled narrow viewport.
-    const context = await browser.newContext({
-        viewport: { width: 320, height: 800 },
-        hasTouch: true,
-    });
-    await context.addInitScript(() => localStorage.setItem("b4a_language", "en"));
-    const page = await context.newPage();
-    await page.route("**/config", (route) => route.fulfill({ json: config }));
-    await page.goto("/show-case");
-    // Then: compact rail controls remain large enough to tap.
-    const control = page.locator(".app-sidebar__item").first();
-    await expect(control).toBeVisible();
-    const box = (await control.boundingBox())!;
-    expect(box.width).toBeGreaterThanOrEqual(44);
-    expect(box.height).toBeGreaterThanOrEqual(44);
-    await page.getByRole("button", { name: "Open profile menu" }).tap();
-    const popup = page.getByRole("dialog");
-    await expect(popup).toBeVisible();
-    expect((await popup.boundingBox())!.x + (await popup.boundingBox())!.width).toBeLessThanOrEqual(
-        320,
-    );
-    await context.close();
-});
-
-test("navigation hover is cleared before opening the profile popover", async ({ page }) => {
-    // Given: the pointer remains over a navigation link during a reload.
-    const navigation = page.locator('.app-sidebar__item[href="/show-case"]');
-    await navigation.hover();
-    await page.reload();
-    await expect(page.locator(".showcase-catalog")).toBeVisible();
-    // When: the pointer moves to open the profile popover.
-    await page.getByRole("button", { name: "Open profile menu" }).click();
-    // Then: no tooltip from an old hover is left behind.
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.getByRole("tooltip")).toHaveCount(0);
-});
-
-test("brand hover reveals expand control and expanded header places close on the right", async ({
-    page,
-}) => {
-    // Given: a collapsed rail showing its brand.
-    const toggle = page.locator(".app-sidebar__toggle");
-    await expect(toggle.locator(".brand-mark")).toHaveCSS("opacity", "1");
-    // When: hovering the brand and expanding.
-    await toggle.hover();
-    await expect(toggle.locator(".brand-mark")).toHaveCSS("opacity", "0");
-    await expect(toggle.locator(".app-sidebar__expand-icon")).toHaveCSS("opacity", "1");
-    await toggle.click();
-    // Then: brand stays left and a separate close control occupies the right end.
-    await expect(toggle).toHaveAttribute("aria-expanded", "true");
-    await expect
-        .poll(async () => (await page.locator(".app-sidebar").boundingBox())!.width)
-        .toBe(224);
-    const brand = (await page.locator(".app-sidebar__brand").boundingBox())!;
-    const close = (await toggle.boundingBox())!;
-    expect(close.x).toBeGreaterThan(brand.x + brand.width);
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-expanded", "false");
-});
-
-for (const colorScheme of ["light", "dark"] as const) {
-    test(`sidebar expansion keeps the same ${colorScheme} surface and supports reduced motion`, async ({
-        page,
-    }) => {
-        // Given: either appearance with the regular width transition enabled.
-        await page.emulateMedia({ colorScheme });
-        const sidebar = page.locator(".app-sidebar");
-        const background = await sidebar.evaluate((e) => getComputedStyle(e).backgroundColor);
-        await expect(sidebar).toHaveCSS("transition-duration", "0.18s");
-        // When: expanding and collapsing.
-        await page.locator(".app-sidebar__toggle").click();
-        await expect(sidebar).toHaveCSS("background-color", background);
-        await expect.poll(async () => (await sidebar.boundingBox())!.width).toBe(224);
-        await page.locator(".app-sidebar__toggle").click();
-        await expect(sidebar).toHaveCSS("background-color", background);
-        await expect.poll(async () => (await sidebar.boundingBox())!.width).toBe(48);
-        // Then: reduced-motion users get a near-instant transition.
-        await page.emulateMedia({ reducedMotion: "reduce" });
-        expect(
-            await sidebar.evaluate((e) => parseFloat(getComputedStyle(e).transitionDuration)),
-        ).toBeLessThan(0.001);
-    });
-}
-
-for (const width of [320, 1440]) {
-    test(`settings appearance previews persist selection at ${width}px`, async ({ page }) => {
-        // Given: settings uses the same sidebar as the app.
-        await page.setViewportSize({ width, height: 900 });
-        await page.goto("/settings");
-        await expect(page.locator(".app-sidebar")).toHaveCount(1);
-        await page.getByRole("link", { name: "Appearance", exact: true }).click();
-        const selector = page.locator(".settings-content-card .theme-preview-selector");
-        // When: a preview is selected, the app appearance updates and persists.
-        await selector.getByRole("button", { name: "Dark mode", exact: true }).click();
-        await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
-        await page.reload();
-        await page.getByRole("link", { name: "Appearance", exact: true }).click();
-        await expect(
-            selector.getByRole("button", { name: "Dark mode", exact: true }),
-        ).toHaveAttribute("aria-pressed", "true");
-        await selector.getByRole("button", { name: "Light mode", exact: true }).click();
-        await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
-        await selector.getByRole("button", { name: "System", exact: true }).click();
-        await expect(page.locator("html")).not.toHaveAttribute("data-theme");
-        // Then: all previews fit and return-to-app remains available.
-        expect(
-            await page.locator(".app-main").evaluate((e) => e.scrollWidth - e.clientWidth),
-        ).toBeLessThanOrEqual(1);
-        await page.getByRole("link", { name: "Back to app" }).click();
-        await expect(page.locator(".app-sidebar")).toBeVisible();
-    });
-}
-
-test("shared sidebar resizes, persists, and keeps settings chrome", async ({ page }) => {
-    // Given: the same expanded sidebar is used in settings and the app.
-    await page.goto("/settings?section=appearance");
-    await page.locator(".app-sidebar__toggle").click();
-    const sidebar = page.locator(".app-sidebar");
-    await expect(sidebar.locator(".app-sidebar__brand-name")).toHaveText(
-        readProjectConfig()?.short_name ?? "B4A",
-    );
-    await expect(page.getByRole("link", { name: "Back to app" })).toBeVisible();
-    const separator = page.getByRole("separator", { name: "Resize sidebar" });
-    await expect.poll(async () => (await sidebar.boundingBox())!.width).toBe(224);
-    // When: the boundary is dragged, content follows the new width.
-    const handle = (await separator.boundingBox())!;
-    await page.mouse.move(handle.x + handle.width / 2, 300);
-    await page.mouse.down();
-    await page.mouse.move(handle.x + handle.width / 2 + 64, 300, { steps: 5 });
-    await page.mouse.up();
-    await expect.poll(async () => (await sidebar.boundingBox())!.width).toBe(288);
-    const profile = page.getByRole("button", { name: "Open profile menu" });
-    await profile.click();
-    await expect(page.locator(".profile-menu__dropdown .theme-toggle-button")).toHaveCount(0);
-    expect((await page.getByRole("dialog").boundingBox())!.width).toBeCloseTo(
-        (await profile.boundingBox())!.width,
-        0,
-    );
-    await page.keyboard.press("Escape");
-    await page.getByRole("link", { name: "Back to app" }).click();
-    await expect.poll(async () => (await sidebar.boundingBox())!.width).toBe(288);
-    await page.reload();
-    await page.locator(".app-sidebar__toggle").click();
-    await expect.poll(async () => (await sidebar.boundingBox())!.width).toBe(288);
-    // Then: keyboard resizing respects the same bounds.
-    await separator.focus();
-    await page.keyboard.press("End");
-    await expect(separator).toHaveAttribute("aria-valuenow", "360");
-    await page.keyboard.press("Home");
-    await expect(separator).toHaveAttribute("aria-valuenow", "200");
 });
 
 for (const width of [320, 1440]) {
@@ -505,45 +210,6 @@ for (const width of [320, 1440]) {
     });
 }
 
-for (const [platform, userAgent, modifier] of [
-    ["Mac", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", "Meta"],
-    ["Windows", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Control"],
-    ["Linux", "Mozilla/5.0 (X11; Linux x86_64)", "Control"],
-]) {
-    test(`${platform} shortcuts show native keys and respect editable controls`, async ({
-        browser,
-    }) => {
-        // Given: a browser with the platform's user agent.
-        const context = await browser.newContext({ userAgent });
-        await context.addInitScript(() => localStorage.setItem("b4a_language", "en"));
-        const page = await context.newPage();
-        await page.route("**/config", (route) => route.fulfill({ json: config }));
-        await page.goto("/show-case");
-        const brand = page.locator(".app-sidebar__brand");
-        await expect(brand).toHaveAttribute("aria-keyshortcuts", `${modifier}+B`);
-        await brand.hover();
-        await expect(page.getByRole("tooltip").locator("kbd")).toHaveText(
-            platform === "Mac" ? "⌘B" : "Ctrl+B",
-        );
-        // When: invoking the advertised sidebar and settings chords.
-        await page.keyboard.press(`${modifier}+b`);
-        await expect(page.locator(".app-sidebar")).toHaveClass(/app-sidebar--expanded/);
-        await page.keyboard.press(`${modifier}+,`);
-        await expect(page).toHaveURL(/\/settings/);
-        await page.getByRole("link", { name: "Back to app", exact: true }).click();
-        await expect(page).toHaveURL(/\/home$/);
-        await page.locator('.app-sidebar__item[href="/show-case"]').click();
-        await page
-            .locator(".showcase-catalog input:not([type=checkbox]):not([type=radio])")
-            .first()
-            .focus();
-        await page.keyboard.press(`${modifier}+b`);
-        // Then: typing context does not toggle the sidebar.
-        await expect(page.locator(".app-sidebar")).toHaveClass(/app-sidebar--expanded/);
-        await context.close();
-    });
-}
-
 for (const width of [390, 1440]) {
     test(`dropdown follows its trigger at ${width}px`, async ({ page }) => {
         // Given: the settings language dropdown at mobile/desktop width.
@@ -633,7 +299,7 @@ for (const colorScheme of ["light", "dark"] as const) {
                 mode === "system" ? "system" : colorScheme,
             );
             await page.reload();
-            const sidebar = page.locator(".app-sidebar");
+            const sidebar = page.locator(".minimal-header__actions");
             const background = await page
                 .locator("body")
                 .evaluate((e) => getComputedStyle(e).backgroundColor);
@@ -782,50 +448,6 @@ test("ToastCard replays without stacking and respects reduced motion", async ({ 
     await expect(page.locator(".ui-toast-card")).toHaveCount(0);
 });
 
-for (const width of [375, 1440]) {
-    test(`project links remain above the profile in collapsed and expanded sidebar at ${width}px`, async ({
-        page,
-    }) => {
-        await page.setViewportSize({ width, height: 800 });
-        const footer = page.locator(".app-sidebar__footer");
-        const links = footer.locator("a[target='_blank']");
-        for (const expanded of [false, true]) {
-            if (expanded) await page.locator(".app-sidebar__toggle").click();
-            await expect(links).toHaveCount(3);
-            await expect(links.nth(0)).toHaveAttribute(
-                "href",
-                "https://github.com/Blueprint4Agent/B4FastAPI",
-            );
-            await expect(links.nth(1)).toHaveAttribute(
-                "href",
-                "https://blueprint4agent.github.io/docs",
-            );
-            await expect(links.nth(2)).toHaveAttribute(
-                "href",
-                "https://buymeacoffee.com/b4a-test-fixture",
-            );
-            const profile = (await footer.locator(".profile-menu__trigger").boundingBox())!;
-            for (const link of await links.all()) {
-                await expect(link).toBeVisible();
-                await expect(link).toHaveAttribute("rel", "noopener noreferrer");
-                await expect(link).toHaveAccessibleName(/\S/);
-                const box = (await link.boundingBox())!;
-                expect(box.y + box.height).toBeLessThanOrEqual(profile.y);
-                expect(box.x).toBeGreaterThanOrEqual(0);
-                expect(box.x + box.width).toBeLessThanOrEqual(width);
-                if (!expanded) {
-                    await link.hover();
-                    await expect(page.getByRole("tooltip")).toHaveText(
-                        (await link.getAttribute("aria-label"))!,
-                    );
-                    await page.keyboard.press("Escape");
-                }
-            }
-        }
-        await captureVisual(page, { path: `test-results/sidebar-project-links-${width}.png` });
-    });
-}
-
 for (const width of [390, 1440]) {
     for (const theme of ["light", "dark"] as const) {
         test(`compact action menu showcase ${theme} at ${width}px`, async ({ page }, info) => {
@@ -971,30 +593,70 @@ test("keyboard cards customize, dismiss on blur and persist unrestricted shortcu
         /Mac/.test(navigator.userAgent) ? "Meta" : "Control",
     );
     const rows = page.locator(".settings-row");
-    await rows.first().getByRole("button", { name: "Toggle sidebar", exact: true }).click();
-    await page.getByRole("textbox", { name: "Toggle sidebar", exact: true }).press(`${modifier}+,`);
+    await rows.first().getByRole("button", { name: "Toggle menu", exact: true }).click();
+    await page.getByRole("textbox", { name: "Toggle menu", exact: true }).press(`${modifier}+,`);
     await expect(page.locator(".ui-toast-card")).toContainText("already uses");
     await expect(rows.locator("[role=alert]")).toHaveCount(0);
     await page.getByRole("heading", { name: "Keyboard", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "Toggle sidebar", exact: true })).toHaveCount(0);
-    await rows.first().getByRole("button", { name: "Toggle sidebar", exact: true }).click();
-    await page.getByRole("textbox", { name: "Toggle sidebar", exact: true }).press("b");
-    await expect(page.getByRole("textbox", { name: "Toggle sidebar", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("textbox", { name: "Toggle menu", exact: true })).toHaveCount(0);
+    await rows.first().getByRole("button", { name: "Toggle menu", exact: true }).click();
+    await page.getByRole("textbox", { name: "Toggle menu", exact: true }).press("b");
+    await expect(page.getByRole("textbox", { name: "Toggle menu", exact: true })).toHaveCount(0);
     expect(account.keyboard_shortcuts?.toggleSidebar).toEqual(["b"]);
     expect(
         await page.evaluate(() => localStorage.getItem("b4react.keyboard-shortcuts.v1")),
     ).toBeNull();
     await page.reload();
     await expect(rows.first().locator("kbd")).toContainText("B");
-    const sidebar = page.locator(".app-sidebar");
-    const before = await sidebar.getAttribute("class");
     await page.keyboard.press("b");
-    await expect(sidebar).not.toHaveAttribute("class", before!);
+    await expect(page.locator(".profile-menu__dropdown")).toBeVisible();
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Restore defaults" }).click();
     await expect.poll(() => account.keyboard_shortcuts).toBeNull();
     await page.reload();
-    await expect(page.locator("[aria-keyshortcuts]").first()).toHaveAttribute(
+    await expect(page.locator(".profile-menu__trigger")).toHaveAttribute(
         "aria-keyshortcuts",
         `${modifier}+B`,
     );
+    await page.keyboard.press(`${modifier}+b`);
+    await expect(page.locator(".profile-menu__dropdown")).toBeVisible();
 });
+
+for (const width of [320, 390, 1440])
+    test(`minimal header and popover stay contained ${width}`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await expect(page.locator(".app-sidebar")).toHaveCount(0);
+        await expect(page.locator(".app-header--minimal")).toHaveCSS(
+            "background-color",
+            "rgba(0, 0, 0, 0)",
+        );
+        const links = page.locator(".minimal-header__resource");
+        await expect(links).toHaveCount(3);
+        for (const link of await links.all()) {
+            await expect(link).toBeVisible();
+            await link.hover();
+            await expect(page.getByRole("tooltip")).toHaveText(
+                (await link.getAttribute("aria-label"))!,
+            );
+            await page.keyboard.press("Escape");
+        }
+        const trigger = page.locator(".profile-menu__trigger");
+        await trigger.click();
+        const menu = page.getByRole("dialog", { name: "Profile menu" });
+        await expect(menu).toBeVisible();
+        const box = (await menu.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(width);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        await page.keyboard.press("Escape");
+        await expect(trigger).toBeFocused();
+        await page.goto("/settings?section=appearance");
+        await expect(page.locator(".layout-option")).toHaveCount(0);
+        const selector = page.locator(".theme-preview-selector");
+        await selector.getByRole("button", { name: "Dark mode", exact: true }).click();
+        await page.reload();
+        await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+            true,
+        );
+    });
