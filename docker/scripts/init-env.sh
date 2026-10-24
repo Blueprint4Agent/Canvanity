@@ -6,7 +6,7 @@ DOCKER_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ROOT_DIR="$(cd "${DOCKER_DIR}/.." && pwd)"
 
 if [ ! -f "${ROOT_DIR}/src/frontend/.env.example" ]; then
-    echo "B4React submodule is missing. Run: git submodule update --init --recursive" >&2
+    echo "통합 프런트엔드 소스가 없습니다. src/frontend/.env.example을 확인하세요." >&2
     exit 1
 fi
 

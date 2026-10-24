@@ -1,114 +1,105 @@
-# Initialization coverage and completion audit
+# 초기화 적용 범위와 완료 감사
 
-[한국어](notes/ko/PROJECT_ONBOARDING_AUDIT.md)
+> Canvanity 적용: 개발 문서·커밋·PR은 한국어이며, src/frontend는 같은 저장소의 일반 디렉터리입니다. 아래 기반 템플릿의 별도 저장소·서브모듈 절차는 적용하지 않습니다. 루트 AGENTS.md와 PROJECT_BRIEF.md를 우선합니다.
 
-Use this checklist with [onboarding](PROJECT_ONBOARDING.md), before applying changes
-and again before claiming completion. In the actual target project, create
-`PROJECT_INITIALIZATION_AUDIT.md` with the rows below. This file is a procedure/template,
-not evidence that any project has passed. The agent must fill evidence from actual tools.
+[온보딩](PROJECT_ONBOARDING.md)과 함께 적용 전과 완료 보고 전에 확인하는 절차입니다.
+실제 대상 프로젝트에 아래 항목을 담은 `PROJECT_INITIALIZATION_AUDIT.md`를 작성합니다.
+이 파일은 절차/양식이며 프로젝트의 통과 근거가 아닙니다. 실제 도구 결과로 채워야 합니다.
 
-## Target and rollback record
+## 대상과 복구 기록
 
-Record actual initialization versus trigger rehearsal, absolute target path, parent
-and child remotes/branches/pins, initial dirty files, accepted public configuration,
-and the input/output inventory. Rehearsals use an independent disposable clone with
-its own Git configuration, example env files and pinned child; never copy credentials,
-change upstream env, or push from that clone. A worktree shares Git configuration,
-so it alone is not sufficient isolation for hook-install experiments.
+실제 초기화인지 트리거 리허설인지, 절대 대상 경로, 부모/자식 remote·branch·pin,
+기존 변경 파일, 확정된 공개 설정과 입출력 목록을 기록합니다. 리허설은 독립된 임시
+복제본의 Git 설정·예제 env·고정 자식으로 진행하며 인증정보 복사·원본 env 변경·push를
+하지 않습니다. worktree는 Git 설정을 공유하므로 훅 설치 실험을 격리하기에 충분하지 않습니다.
 
-For real setup, capture existence, bytes and modes of files that will be replaced,
-including ignored generated config/assets, before `make init` or any generator.
-Keep private backups ignored and never print secret content. Record new paths to
-remove on rollback; distinguish existing generated outputs from newly created ones.
-Recover authored files and private env exactly. Regenerate derived builds if their
-original bytes were not captured, and state that this is regeneration, not byte identity.
+실제 적용은 `make init`이나 생성기 실행 전에 교체 대상의 존재 여부·내용·권한을
+기록합니다. 무시된 생성 설정/자산도 포함합니다. 비공개 백업은 Git에서 제외하고
+비밀값을 출력하지 않습니다. 롤백 시 제거할 신규 경로와 기존 생성물을 구분합니다.
+원본 소스와 env는 정확히 복원합니다. 기존 빌드 바이트를 보관하지 않았다면 파생
+산출물을 재생성하고 바이트 동일성 복구가 아닌 재생성이라고 명시합니다.
 
-## Required surface inventory
+## 필수 표면 목록
 
-Give every row: actual paths/owners, requested result, implementation path, status,
-verification command or visual artifact, and remaining findings. Allowed completion
-states are **verified**, **not applicable (reason)**, or **explicitly deferred (decision
-and impact)**. Missing rows, planned-only evidence and unresolved required items block
-completion. Do not use a filled checkbox as proof that rendering was checked.
+각 행에 실제 경로/소유자, 요구 결과, 적용 경로, 상태, 검증 명령이나 시각 산출물,
+남은 항목을 기록합니다. 완료 상태는 **검증 완료**, **해당 없음(이유)**,
+**명시적 보류(선택과 영향)**입니다. 빠진 행·계획만 있는 근거·필수 미해결 항목이
+있으면 완료로 판단하지 않습니다. 체크 표시 자체가 실제 렌더링의 증거는 아닙니다.
 
-| Surface | Required inspection and evidence |
+| 표면 | 필수 확인과 근거 |
 | --- | --- |
-| Shared brand | Navbar, sidebar, public/auth shell, responsive and light/dark marks; inspect actual image requests, not only generated filenames. |
-| Secondary UI | Showcase/avatar samples, dialogs, image viewer titles, notifications/toasts and empty/loading/error screens with hardcoded brands. |
-| Browser identity | Actual title, favicon request/response, HTML lang, sharing/OG/Twitter metadata; web manifest/apple-touch icons if present. |
-| Brand assets | Light/dark fallbacks, SVG text, raster images, preview screenshots, README screenshots and embedded logos; inspect images visually. |
-| UI language | Fresh browser with a different OS locale, retained English/Korean switch and saved preference after reload; scoped storage and fallback. |
-| Backend identity | APP_NAME/API title, public generated identity and configured email/service names; inspect public values without exposing private env. |
-| Console | Interactive/plain/redirected startup, ASCII art/tagline, shutdown farewell and failure paths; old logos can survive a renamed log prefix. |
-| Messages | Welcome inbox records and localized rendering, auth/lifecycle email brand paths; no real email/provider call for a branding test. |
-| Documents | Active root/domain/setup/verification/deploy guides, linked first-party docs, image captions and service-name examples. |
-| Document language | Actual body text and navigation, incomplete translated sections and relative links/anchors; preserve executable commands and governance. |
-| Commit/PR language | User-selected title/body language, while preserving Conventional Commit types, PR tags and required machine section names. |
-| Public introduction | Default-only /about/discovery pages must not advertise the upstream product as the configured service. |
-| Desktop | Product/window names and installer/native icons only for selected targets; web-only must record a scoped reason. |
-| Technical identity | Distinguish runtime display names from module/package IDs, storage keys, event names, Stripe metadata and contract namespaces. |
-| Origin/history | Preserve legitimate upstream URLs, licenses, source provenance and historical worklogs; explain each retained reference category. |
-| Feature/runtime scope | Login/email/OAuth, restart/build requirements, configured provider dependencies and explicit deferrals. |
+| 공통 브랜드 | 내비게이션·사이드바·공개/인증 셸, 반응형·라이트/다크 로고. 생성 파일명만이 아니라 실제 이미지 요청 확인. |
+| 보조 UI | 쇼케이스/아바타 예시, 대화상자·이미지 뷰어 제목·알림/토스트·빈/로딩/오류 화면의 고정 브랜드. |
+| 브라우저 식별 | 실제 title, favicon 응답, HTML lang, 공유/OG/Twitter 메타데이터. manifest/apple-touch 아이콘이 있으면 포함. |
+| 브랜드 자산 | 라이트/다크 fallback, SVG 내부 문구, 래스터·미리보기·README 이미지와 삽입 로고를 시각적으로 확인. |
+| UI 언어 | OS 언어가 다른 새 브라우저, 영어/한국어 전환과 재접속 후 선택 유지, 경로별 저장과 fallback. |
+| 백엔드 식별 | APP_NAME/API 제목, 공개 생성 설정과 메일/서비스 이름. 비공개 env 노출 없이 공개 값 확인. |
+| 콘솔 | 대화형/일반/리다이렉트 시작 출력, ASCII 로고·태그라인, 종료 인사·실패 경로. 로그 접두사 변경만으로 끝내지 않기. |
+| 메시지 | 저장된 환영 알림과 번역 렌더링, 인증/수명주기 메일 브랜드. 검사 목적으로 실제 메일/제공자 호출 금지. |
+| 문서 | 실제 루트/도메인/설정/검증/배포 진입 문서와 연결 자체 가이드, 이미지 설명·서비스명 예시. |
+| 문서 언어 | 실제 본문·언어 이동·번역 미완료 구간·상대 링크/앵커. 명령과 거버넌스 의무는 보존. |
+| 커밋/PR 언어 | 사용자 지정 제목/본문 언어. Conventional Commit 타입·PR 태그·기계 검증용 필수 섹션명은 보존. |
+| 공개 소개 | 설정된 서비스를 원본 제품으로 소개하지 않도록 기본 전용 /about·검색 소개 미노출 확인. |
+| 데스크톱 | 선택한 대상의 제품/창 이름과 설치/네이티브 아이콘. 웹 전용이면 제외 이유 명시. |
+| 기술 식별 | 사용자 표시 이름과 모듈/패키지 ID·저장 키·이벤트명·Stripe 메타데이터·계약 네임스페이스 구분. |
+| 출처/과거 기록 | 정상적인 upstream URL·라이선스·자산 출처·과거 워크로그 보존. 유지한 참조 유형별 이유 기록. |
+| 기능/실행 범위 | 로그인/이메일/OAuth, 재시작/빌드 필요사항, 제공자 설정 의존성과 명시적 보류. |
 
-## Inventory before implementation
+## 구현 전 조사
 
-Search the actual project, not a remembered list of two branding keys. Search current
-and prior names, abbreviations, slugs, browser titles and logo filenames. For example:
+기억하고 있는 브랜드 키 두 개가 아니라 실제 프로젝트 전체를 조사합니다. 기존/새
+이름·약어·slug·브라우저 제목·로고 파일명을 검색합니다. 예시는 다음과 같습니다.
 
 ```sh
 rg -n -i 'b4a|blueprint4agent|blueprint4fastapi|b4fastapi|b4react' src/backend src/frontend/src src/frontend/public notes README.md AGENTS.md PROJECT_SETUP.md DEPLOY.md
 rg --files branding src/frontend/public notes/assets
 ```
 
-Also inspect the HTML/build generators and ignored generated branding inputs. Do not
-scan private env values into public reports. Text searches do not inspect PNG/WebP
-pixels; identify and open relevant images separately. Source fallback strings and
-upstream URLs can remain valid: record their role and prove that an active configured
-surface uses its override. Do not rename compatibility keys or rewrite source URLs
-just to make a search empty. A visibly rendered old logo is not provenance merely
-because its filename belongs to the template.
+HTML/빌드 생성기와 무시된 생성 브랜드 입력도 확인합니다. 비공개 env 값을 공개
+보고서로 수집하지 않습니다. 텍스트 검색으로 PNG/WebP 내부를 확인할 수 없으므로
+관련 이미지는 별도로 열어봅니다. 소스 fallback과 upstream URL은 유효할 수 있으므로
+역할과 실제 설정된 표면에서 override를 사용한다는 근거를 기록합니다. 검색 결과를
+없애려고 호환성 키나 원본 URL을 바꾸지 않습니다. 화면에 노출된 이전 로고는
+파일이 템플릿에 속한다는 이유만으로 출처 표기가 되지 않습니다.
 
-List mismatches between the current initializer's owned fields and the requested
-surfaces before editing. Existing `readProjectConfig()` / `__PROJECT_BRAND__` and
-backend settings are the preferred owners. No project config means existing defaults;
-configured values override the corresponding public surfaces. Do not introduce a
-second global config or read a parent's files from the independent frontend.
-Unsupported choices require implementation in the actual downstream target and its
-governed child repository, or an explicit unresolved item; do not quietly claim that
-writing the brief applies them. A rehearsal does not authorize fixes in upstream.
+수정 전에 기존 초기화 도구의 관리 필드와 요구 표면 사이의 차이를 정리합니다.
+기존 `readProjectConfig()` / `__PROJECT_BRAND__`와 백엔드 설정을 우선 재사용합니다.
+설정이 없으면 기존 기본값을 유지하고, 있으면 해당 공개 표면을 대체합니다.
+두 번째 전역 설정이나 독립 프론트엔드의 부모 파일 읽기를 추가하지 않습니다.
+지원되지 않는 선택은 실제 downstream 대상과 그 자식 저장소의 절차에 따라 구현하거나
+미해결로 표시합니다. 브리프 작성만으로 적용됐다고 하지 않습니다. 리허설은 upstream
+수정 권한을 의미하지 않습니다.
 
-## Completion gate
+## 완료 판정
 
-After implementation settles, rerun the inventory and classify every remaining
-finding as a verified fallback, legitimate technical/origin reference, explicit
-scope exclusion, or unresolved defect. Keep paths/line numbers and evidence. Original
-screenshots may remain only as an explicit decision with their original-template
-status visible; changing their alt text to the new brand is not rebranding the image.
-A name in a document is not the same as an executed console or browser observation.
+구현이 정리된 후 다시 조사해 남은 항목을 검증한 fallback, 정상적인 기술/출처 참조,
+명시적 범위 제외, 미해결 결함으로 분류합니다. 경로/줄 번호와 근거를 남깁니다.
+원본 화면 이미지는 명시적으로 유지하기로 결정하고 원본 템플릿임이 보여야 합니다.
+대체 텍스트만 새 브랜드로 바꾸는 것은 이미지 브랜드 변경이 아닙니다.
+문서에 이름을 적는 것과 실제 콘솔/브라우저에서 관찰한 것은 구분합니다.
 
-Before broad verification, finish the surface inventory and a focused smoke check;
-do not repeatedly launch the full suite while still discovering obvious missing
-surfaces. Then use root `make verify-plan` / `make verify` without manually narrowing
-shared or unknown impact. Record executed versus merely planned commands, changed
-implementations versus unchanged consumers, reasons for broader checks, receipt reuse,
-failures and final results. Unchanged code can still need regression tests after
-shared i18n/config changes. Do not call every broad check redundant or silently skip it.
-Verification-cache improvements belong in their own task, not the initialization PR.
+전체 검증 전에 표면 조사와 집중 스모크 확인을 끝냅니다. 눈에 띄는 누락을 계속
+발견하는 동안 전체 검증을 반복 실행하지 않습니다. 이후 루트 `make verify-plan`과
+`make verify`를 따르고 공유/불명확한 영향을 수동 축소하지 않습니다.
+실행한 명령과 계획만 한 명령, 바뀐 구현과 그대로인 소비자, 넓은 검사 이유,
+결과 재사용·실패·최종 결과를 기록합니다. 공통 i18n/설정 변경은 코드가 그대로인
+화면에도 회귀 검사가 필요할 수 있습니다. 모든 넓은 검사를 중복으로 취급하거나
+조용히 생략하지 않습니다. 검증 캐시 개선은 초기화 PR과 별도 작업으로 다룹니다.
 
-Required acceptance scenarios:
+필수 수용 시나리오는 다음과 같습니다.
 
-- No project config: original branding, fallback assets and browser-language behavior.
-- Configured name and logos: all applicable surfaces use the override in both themes.
-- Identical name/short_name and localized names: assertions target the intended surface,
-  rather than assuming the visible text occurs only once.
-- Korean default in an English browser: fresh entry is Korean; explicit English choice
-  survives reload. Tests selecting English must not mask the fresh-default test.
-- Missing dark logo and optional settings: intentional fallback, not a mixed old/new brand.
-- Configured project: default-only public introduction remains excluded; assert this
-  alternative behavior instead of skipping the test or expecting the template page.
-- Resume: inventory applied outputs; keep accepted answers and unrelated changes.
-- Rehearsal/rollback: source, env and pinned child of the original workspace remain intact.
+- 설정 없음: 기존 브랜드·기본 자산·브라우저 언어 동작 유지.
+- 이름/로고 설정: 해당 표면 전체에서 양쪽 테마에 override 적용.
+- 이름과 짧은 이름이 같거나 다국어인 경우: 문구가 한 번만 나온다고 가정하지 않고
+  의도한 표면을 구체적으로 검증.
+- 영어 브라우저의 한국어 기본값: 새 진입은 한국어, 영어 선택은 재접속에도 유지.
+  문구 테스트의 영어 고정이 실제 기본값 검사를 가리지 않도록 분리.
+- 다크 로고/선택 설정 생략: 의도한 fallback이며 이전/새 브랜드 혼용이 아님을 확인.
+- 설정된 프로젝트: 기본 전용 공개 소개는 제외되는 대체 동작을 검증하며 테스트를
+  건너뛰거나 원본 소개 페이지를 기대하지 않기.
+- 재개: 실제 적용 상태를 조사하고 확정 답변과 무관한 변경 보존.
+- 리허설/롤백: 원본 작업공간의 소스·env·고정 자식이 그대로인지 확인.
 
-Set the brief to complete only when the accepted scope and this gate are satisfied.
-Report explicit deferrals and remaining references. This is an agent execution
-obligation supported by tests; the document itself is not an automated visual guarantee.
+합의한 범위와 이 판정을 충족한 경우에만 브리프를 완료로 바꿉니다. 보류와 잔여 참조는
+최종 보고에 포함합니다. 이는 테스트가 뒷받침하는 에이전트 실행 의무이며 문서 자체가
+자동 시각 검증을 보장하는 것은 아닙니다.

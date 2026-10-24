@@ -1,285 +1,263 @@
-# Change-scoped verification
+# 변경 영역별 검증
 
-`make verify-plan` shows affected **areas**, application regression depth, and selected
-commands. `python3 scripts/verification.py plan --json` also exposes each changed
-file's ownership. `make verify` runs that plan. Git governance remains mandatory.
+`make verify-plan`은 영향 **영역**, 앱 회귀 검증 깊이와 선택 명령을 보여줍니다.
+`python3 scripts/verification.py plan --json`에서는 파일별 소유 영역도 확인합니다.
+`make verify`가 이 계획을 실행하며 Git 거버넌스는 계속 필수입니다.
 
-## Ownership and regression depth
+## 영향 영역과 검증 깊이
 
-Area and depth are independent: an authentication change keeps broad application
-regressions without automatically running unrelated editor or discovery tooling.
-Plans compose the union of all changed areas, including pinned and dirty child changes.
+영역과 깊이는 별개입니다. 인증 변경은 앱 회귀 검증을 넓게 유지하지만,
+그 이유만으로 무관한 스타일 편집기·discovery 도구까지 실행하지 않습니다.
+혼합 변경은 영역의 합집합을 검증하며 부모는 자식 gitlink와 로컬 변경도 확인합니다.
 
-| Changed area                                                             | Selected checks                                                                                                                                   |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ordinary Markdown documentation (excluding governance guides)            | UTF-8, whitespace and JSON checks; no runtime dependencies                                                                                        |
-| AGENTS/domain/test guides, worklog template, Git hooks                   | Governance/harness fixtures plus text validation                                                                                                  |
-| Existing locale string values with identical shape/placeholders/markup   | Text/JSON only                                                                                                                                    |
-| Locale key/shape changes                                                 | Broad frontend application checks, unit/UI and production-route tests                                                                             |
-| Backend application/tests/migrations/dependencies                        | Independent domain lint/architecture/tests/contracts; shared security/data changes retain complete backend suite                                  |
-| Frontend application/auth/API/shared state                               | Application static/type/API/format checks, unit tests; UI/browser and production routes according to depth                                        |
-| Contracts                                                                | Consumer baseline/breaking changes: contract/types/app/unit/production routes; parent-verified additive provider-only changes: consumer api-check |
-| Docker/deployment                                                        | Env/initializer checks and fake-Docker orchestration tests; no live deployment                                                                    |
-| Public discovery tooling                                                 | Discovery fixtures and isolated static build/browser checks; parent IndexNow tools have separate publication checks                               |
-| Style studio                                                             | Application regression checks, editor file-access fixtures and editor browser suite                                                               |
-| Branding                                                                 | Public identity fixtures, production build/routes; parent adds isolated customized build                                                          |
-| Verification harness                                                     | Classifier, scheduler, receipts and governance fixtures                                                                                           |
-| Shared build inputs (Makefile/Vite/dependencies/CI) or unknown ownership | All repository areas                                                                                                                              |
+| 변경 영역                                              | 선택하는 검증                                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| 일반 Markdown 설명 문서(거버넌스 가이드 제외)          | UTF-8·공백·JSON 확인; 런타임 의존성 불필요                                                            |
+| AGENTS·도메인·테스트 가이드, 작업 기록 양식, Git 훅    | 거버넌스·하네스 fixture와 텍스트 검증                                                                 |
+| 키·구조·치환자·마크업이 같은 번역 문자열               | 텍스트·JSON만 검증                                                                                    |
+| 번역 키·구조 변경                                      | 프론트 앱 정적·단위·UI·프로덕션 라우트 검증                                                           |
+| 백엔드 앱·테스트·마이그레이션·의존성                   | 독립 도메인 린트·아키텍처·테스트·계약; 공유 보안/데이터는 전체 백엔드 유지                            |
+| 프론트 앱·인증·API·공유 상태                           | 정적 정책·타입·API·포맷·단위 테스트, 깊이에 따른 UI·프로덕션 라우트                                   |
+| 계약                                                   | 소비자 기준선/기존 계약 변경: 계약·타입·앱·단위·라우트; 부모가 확인한 제공자 추가만: 소비자 api-check |
+| Docker·배포                                            | 환경/초기화 검사와 가짜 Docker 기반 오케스트레이션 테스트; 실제 배포 없음                             |
+| Discovery 도구                                         | 도구 fixture·격리 정적 빌드·브라우저; 부모 IndexNow는 publication으로 별도 분리                       |
+| 스타일 편집기                                          | 앱 회귀 검증·파일 접근 fixture·편집기 브라우저 테스트                                                 |
+| 브랜딩                                                 | 공개 식별자 fixture·프로덕션 빌드/라우트; 부모는 사용자 지정 격리 빌드 추가                           |
+| 검증 하네스                                            | 분류기·스케줄러·캐시·거버넌스 fixture                                                                 |
+| 공유 빌드 입력(Makefile/Vite/의존성/CI)·소유 범위 불명 | 저장소 전체 영역                                                                                      |
 
-The application risk levels remain `none/docs/copy/behavior/ui/full` for existing
-consumers. `full` depth means broad application coverage; `VERIFY_FULL=1` means
-**all areas**. Root and nested AGENTS guides are governance, other Markdown is
-text only. A missing comparison revision expands to all areas. Invalid/deleted
-locale data expands application checks; malformed JSON also fails lightweight validation.
-Shared CSS retains broad app checks; shared app.css changes additionally select style studio and discovery because both
-consume its tokens/styles. Domain-owned CSS uses actual runtime consumers and existing coverage, as described below.
-Structural changes to discovery/home.project locale data and editor API/locales select
-their actual tool consumers too. Unknown impact within the app retains
-broad app suites. No manual skip/downgrade flag is provided.
+기존 소비자를 위해 `none/docs/copy/behavior/ui/full` 깊이를 유지합니다.
+`full` 깊이는 앱 전체 회귀 검증이고, `VERIFY_FULL=1`은 **모든 영역** 검증입니다.
+루트/하위 AGENTS와 지정 가이드는 거버넌스, 그 밖의 Markdown은 텍스트 검사입니다.
+비교 이력을 확인할 수 없으면 모든 영역으로 확대합니다. 손상/삭제된 번역은 앱 검증을
+확대하고 잘못된 JSON은 경량 검사에서도 실패합니다. 공유 CSS는 앱 전체 검증을 유지하며,
+공유 app.css 변경은 토큰/스타일을 사용하는 편집기와 discovery도 선택합니다.
+도메인 전용 CSS는 아래 실제 소비자·기존 커버리지 규칙에 따라 관련 검사를 선택합니다. Discovery/home.project 번역 구조와
+편집기 API/번역 구조 변경도 실제 소비 도구를 함께 선택합니다. 앱 내부의 영향을
+확정할 수 없으면 앱 검사를 넓힙니다. 수동 생략·강등 플래그는 제공하지 않습니다.
 
-Existing reviewed billing/admin selections remain supported. Backend domain selection follows the strict #152 policy below; shared auth/security/data regressions remain complete. A new locale key does not imply that browser tests can be skipped.
+기존 billing/admin 관련 검사 선택은 유지합니다. 페이지 매핑은 아래 #94 절을 따르며 백엔드 도메인 선택은 아래 #152 절을 따르며 파일명만으로 줄이지 않습니다.
+인증·권한·데이터 테스트는 전체 유지합니다. 번역 키 추가가 브라우저 검사 생략을 뜻하지 않습니다.
 
-## Commands and compatibility
+## 실행 명령과 호환성
 
 ```sh
 make verify-plan
 make verify
 VERIFY_BASE=$(git merge-base origin/main HEAD) make verify
 VERIFY_FULL=1 make verify
-VERIFY_FULL=1 VERIFY_JOBS=1 make verify # identical checks, sequential command lanes
+VERIFY_FULL=1 VERIFY_JOBS=1 make verify # 같은 검사, 명령 묶음은 순차 실행
 python3 scripts/verification.py plan --json
 ```
 
-The default comparison includes staged, unstaged and untracked changes against HEAD.
-Use VERIFY_HEAD for an immutable endpoint. Manual Actions/CI keep all areas and
-ignore receipts. `--domain backend|frontend` retains separate manual CI jobs;
-root governance is validated independently of application-domain filtering.
+기본 비교는 HEAD 대비 staged·unstaged·untracked 전체입니다. 고정 끝점은 VERIFY_HEAD를
+사용합니다. 수동 Actions/CI는 전체 영역을 검증하고 캐시를 사용하지 않습니다.
+`--domain backend|frontend`는 기존 수동 CI 작업 분리를 유지합니다. 루트 거버넌스는
+앱 도메인 필터와 별개로 검사합니다.
 
-`check-app` runs static application policy, types, formatting and generated API drift
-without unrelated harness fixtures. `verification-harness-test` runs isolated Python
-fixtures; `app-tooling-test` runs static-checker fixtures. `test-production` builds and
-checks production routes. Existing `check`, `hooks-test`, `test-routes` and other
-standalone Make commands remain available; `test-routes` still includes discovery.
+`check-app`은 무관한 하네스 fixture 없이 앱 정적 정책·타입·포맷·생성 API 차이를 검사합니다.
+`verification-harness-test`는 격리 Python fixture, `app-tooling-test`는 정적 검사기 fixture를
+실행합니다. `test-production`은 빌드와 프로덕션 라우트를 검사합니다. 기존 `check`,
+`hooks-test`, `test-routes` 등 독립 Make 명령은 유지하며 `test-routes`는 discovery도 포함합니다.
 
-## Bounded parallel execution
+## 제한된 병렬 실행
 
-The runner defaults to `VERIFY_JOBS=2`. Independent backend checks can overlap the
-ordered frontend pipeline. `VERIFY_JOBS=1` / `--jobs 1` keeps sequential scheduling
-for comparison or constrained machines. This controls command lanes, not individual
-test worker counts. Backend pytest remains sequential: no xdist dependency or
-unverified DB/process isolation change is introduced.
+기본 `VERIFY_JOBS=2`에서 독립 백엔드 검사는 순서를 지키는 프론트 검사 흐름과 겹쳐
+실행할 수 있습니다. `VERIFY_JOBS=1` 또는 `--jobs 1`은 비교·저사양 환경용 순차 실행입니다.
+이는 명령 묶음 수이며 개별 테스트 worker 수가 아닙니다. 백엔드 pytest는 순차 실행을 유지합니다.
+xdist 의존성이나 입증되지 않은 DB/프로세스 격리 변경은 추가하지 않았습니다.
 
-Frontend generators, checks, builds, browser suites and isolated custom-brand builds
-retain order. Browser suites share report output/fixed ports; they must not run as
-separate concurrent commands. Packaging waits for all preceding checks, including
-backend static-serving tests, before replacing backend dist. The app Playwright
-config enables `fullyParallel` for independent browser contexts while retaining the
-existing worker budget (CLI `--workers` remains supported). Production/editor/
-discovery suites retain their existing scheduling.
+프론트 생성·검사·빌드·브라우저·사용자 지정 브랜딩 빌드는 순서를 유지합니다.
+별도 브라우저 명령들은 리포트 경로와 고정 포트를 공유하므로 동시에 실행하지 않습니다.
+패키징은 백엔드 정적 파일 테스트를 포함한 앞선 검사가 모두 끝난 뒤 backend dist를 교체합니다.
+앱 Playwright는 기존 worker 한도를 유지하면서 독립 브라우저 context를 사용하는 테스트를
+`fullyParallel`로 분배합니다. CLI `--workers`는 계속 사용할 수 있습니다.
+프로덕션·편집기·discovery 내부 스케줄링은 기존 설정을 유지합니다.
 
-On failure, no new commands start; already-running commands finish before the runner
-returns nonzero. Downstream packaging cannot run after failure. Each invocation has
-its own log directory in `.git/verification-logs/run-*`; concise progress prints
-command durations and the final wall time, with failure excerpts and complete logs.
-Do not start two verification runners concurrently against the same checkout.
+실패 후 새 명령을 시작하지 않고 실행 중 명령을 회수한 뒤 실패로 종료합니다.
+실패 뒤 후속 패키징은 실행하지 않습니다. 실행별 `.git/verification-logs/run-*`에
+개별 로그를 저장하며 명령 시간·전체 실측 시간·실패 발췌와 원문 경로를 출력합니다.
+같은 checkout에서 검증 runner 두 개를 동시에 시작하지 마세요.
 
-Playwright's independent-case scheduling follows its [parallelism documentation](https://playwright.dev/docs/test-parallel).
-Browser fixtures use per-test contexts and request mocks; no suite-level shared
-page, ordered workflow across tests or developer backend is used by app E2E tests.
+테스트 단위 스케줄링은 [Playwright 공식 병렬 실행 문서](https://playwright.dev/docs/test-parallel)를
+따릅니다. 앱 E2E는 테스트별 context와 요청 mock을 사용하며, suite 단위 공유 page나
+테스트 사이의 순차 업무 흐름·개발자 백엔드를 사용하지 않습니다.
 
-## Receipts and integration
+## 결과 재사용과 통합
 
-Successful unchanged local commands may reuse content-bound receipts for up to 24h.
-Source/configuration/tool/environment/output changes invalidate them; command scope
-is part of the key. Text/Git governance always run. Worklog-only result edits still
-receive text and governance validation. Forced full and CI neither reuse nor save
-receipts. Failed commands invalidate their prior receipt.
+로컬에서 통과한 동일 명령은 내용에 결합된 결과를 최대 24시간 재사용할 수 있습니다.
+소스·설정·도구·환경·빌드 출력 변경은 무효화하며 선택 명령도 키에 포함합니다.
+텍스트/Git 거버넌스는 항상 검사합니다. 작업 기록 결과만 수정해도 텍스트·거버넌스는 검사합니다.
+강제 전체 검증과 CI는 캐시를 재사용하거나 저장하지 않습니다. 실패 명령의 기존 결과는 무효화합니다.
 
-Follow child-first integration: merge the B4React task PR, then update the parent
-pin. Parent contracts and packaging still run. Keep related edits in one task PR,
-record selected/omitted checks and reasons, and do not repeat successful unchanged
-checks as separate check/test/ci rituals. See [local hooks](local-hooks.md).
+자식 B4React 작업 PR을 먼저 병합하고 부모 pin을 갱신합니다. 부모 계약·패키징은 유지합니다.
+연관 수정은 하나의 작업 PR로 묶고 선택/생략 검사와 이유를 기록합니다. 통과한 같은 검사를
+check/test/ci 관행 때문에 다시 실행하지 않습니다. [로컬 훅](local-hooks.md)도 참고하세요.
 
-## Historical measurements
+## 과거 측정값
 
-The measurements below describe the 2026-10-07 implementation and revision range,
-not current universal timing guarantees. For this ownership/parallel change, use
-the observed results and scope recorded in the matching worklog.
+아래는 2026-10-07 구현과 해당 revision 범위의 기록이며 현재의 보편적인 시간 보장이 아닙니다.
+이번 영역 분리·병렬 실행의 실제 시간과 검증 범위는 해당 작업 기록을 기준으로 확인합니다.
 
-## Measured results — 2026-10-07
+## 검증 시간 측정 결과 — 2026-10-07
 
-The existing billing/admin UI change was used as the benchmark: B4React
-`ca3f83f..57a67d5`, B4FastAPI `06e55ba..7c4922e`. Timings are single local
-wall-clock samples from `/usr/bin/time -p`, not a guarantee for every change.
+직전 결제·관리자 UI 변경을 같은 비교 범위로 사용했습니다.
+B4React `ca3f83f..57a67d5`, B4FastAPI `06e55ba..7c4922e` 기준이며
+`/usr/bin/time -p`로 측정한 로컬 1회 실행의 실제 경과 시간입니다.
+모든 변경에서 같은 시간을 보장하는 수치는 아닙니다.
 
-| Scenario                                  |                                              Before |       After |
-| ----------------------------------------- | --------------------------------------------------: | ----------: |
-| First UI verification                     |                                            121.01 s | **30.72 s** |
-| Identical UI verification repeated        | Expensive checks were repeated in hooks/integration |  **1.08 s** |
-| Parent integration of the same UI change  |                                            122.36 s |  **1.65 s** |
-| Unit/component/integration cases selected |                                                 140 |      **39** |
-| Browser cases selected                    |                                                 164 |      **32** |
+| 측정 항목                            |                        개선 전 |     개선 후 |
+| ------------------------------------ | -----------------------------: | ----------: |
+| UI 첫 검증                           |                       121.01초 | **30.72초** |
+| 동일 UI 변경 재검증                  | 훅·통합에서 무거운 검사를 반복 |  **1.08초** |
+| 같은 UI 변경의 상위 저장소 통합 검증 |                       122.36초 |  **1.65초** |
+| 선택된 단위·컴포넌트·통합 테스트     |                          140개 |    **39개** |
+| 선택된 브라우저 테스트               |                          164개 |    **32개** |
 
-The final first run spent 9.3 s on static policy/types/changed-file formatting,
-2.2 s on related unit/integration tests, 13.2 s on browser scenarios and 4.9 s
-on the build, plus runner overhead: approximately **75% less wall time**.
-Parent integration still checked contracts and packaged the verified build.
-The earlier domain-only iteration took 101.16 s; the final 30.72 s additionally
-uses render ownership, affected checks and isolated parallel browser scheduling.
+최종 첫 실행은 정적 규칙·타입·변경 파일 포맷 검사 9.3초, 관련 일반 테스트 2.2초,
+브라우저 시나리오 13.2초, 빌드 4.9초와 실행기 부가 시간으로 구성됩니다.
+첫 검증 시간은 **약 75% 감소**했습니다. 상위 통합에서도 계약 검사와 패키징은 유지합니다.
+도메인만 선택했던 중간 결과는 101.16초였고, 최종 30.72초에는 컴포넌트 렌더링 영향 분석,
+변경 대상 정적 검사, 격리된 브라우저 병렬 실행까지 적용됐습니다.
 
-The original child login shell used Python 3.9 while the parent used Python 3.14.
-Follow-up commands use one root shell via `make -C` / `git -C`; this environment
-standardization is part of the workflow improvement, so these are workflow
-measurements rather than an isolated microbenchmark of the selector alone.
-Real toolchain changes still invalidate receipts. No live payment or email was sent.
+기존 자식 로그인 셸은 Python 3.9, 상위 셸은 Python 3.14를 선택했습니다.
+개선 후에는 같은 상위 셸에서 `make -C` / `git -C`로 실행 환경을 통일했습니다.
+따라서 순수 분류기만의 미세 벤치마크가 아닌 작업 흐름 전체의 개선 수치입니다.
+실제 도구 환경이 달라지면 결과를 재사용하지 않습니다. 실결제·이메일 발송은 하지 않았습니다.
 
-Backend-only verification has not been separately benchmarked here: the backend
-stage measured approximately 44 s, so roughly 45 s for backend-only and roughly
-75 s for this UI change plus backend work are **estimates**, not measured totals.
-Protected/shared/unknown changes keep broader verification (about 200 s in the
-full harness run). Cache reuse is conditional on unchanged inputs and outputs.
+백엔드만 변경한 전체 실행은 별도로 실측하지 않았습니다. 백엔드 단계가 약 44초였으므로
+백엔드만 약 45초, 이번 UI와 백엔드가 함께 바뀌면 약 75초는 **단계 합산 예상치**입니다.
+인증·공통 코드·검증 도구 등 영향이 넓거나 불명확한 변경은 전체 검사를 유지합니다.
+이번 전체 검증은 약 200초 수준이며, 캐시 재사용은 입력과 산출물이 동일할 때만 가능합니다.
 
-Commands used for the final UI measurements:
+최종 UI 측정 명령:
 
 ```sh
 VERIFY_BASE=ca3f83f VERIFY_HEAD=57a67d5 make -C src/frontend verify
-# Repeat the same command to measure receipt reuse.
+# 같은 명령을 다시 실행해 결과 재사용 시간을 측정합니다.
 VERIFY_BASE=06e55ba VERIFY_HEAD=7c4922e make verify
 ```
 
-Raw local logs: `/tmp/b4-verify-baseline-first.log`,
+원본 로컬 로그: `/tmp/b4-verify-baseline-first.log`,
 `/tmp/b4-verify-baseline-integration.log`, `/tmp/b4-verify-refined-first.log`,
 `/tmp/b4-verify-refined-repeat.log`, `/tmp/b4-verify-refined-integration.log`.
-The benchmark intentionally evaluates the already-merged UI revision range.
-The verification-tool changes themselves are separately checked at full branch scope.
+벤치마크는 이미 머지된 UI 변경 범위를 명시해서 비교합니다.
+검증 도구 구현 변경 자체는 별도로 브랜치 전체 범위 검증을 수행합니다.
 
-### Before/after by change scenario
+### 상황별 개선 전후 비교
 
-| Scenario                                    | Before                                          | After                                                  |                          Previous time |      New time | Evidence                                                     |
-| ------------------------------------------- | ----------------------------------------------- | ------------------------------------------------------ | -------------------------------------: | ------------: | ------------------------------------------------------------ |
-| Registered billing/admin rendering edit     | All unit/browser cases                          | Affected components/render scenarios and related tests |                               121.01 s |       30.72 s | Measured UI revision range                                   |
-| Unchanged repeated verification             | Hooks/integration could repeat expensive checks | Reuse matching successful receipts                     | No separate identical-command baseline |        1.08 s | New behavior measured                                        |
-| Parent integration of that UI edit          | Repeat child checks/build                       | Reuse child proof; retain contracts/packaging          |                               122.36 s |        1.65 s | Measured                                                     |
-| Backend only                                | Backend suite                                   | Backend suite retained                                 |                             About 45 s |    About 45 s | Estimate from roughly 44 s backend stage                     |
-| That UI edit plus backend changes           | Broad UI plus backend                           | Affected UI plus backend                               |                            About 165 s |    About 75 s | Sum-of-stages estimate                                       |
-| Verification scripts, auth or shared config | Broad/full checks                               | Broad/full checks retained                             |                          Roughly 200 s | Roughly 200 s | Full-run reference, not a controlled before/after comparison |
+| 변경 상황                         | 개선 전 동작                    | 개선 후 동작                                    |                  개선 전 시간 |  개선 후 시간 | 근거                                          |
+| --------------------------------- | ------------------------------- | ----------------------------------------------- | ----------------------------: | ------------: | --------------------------------------------- |
+| 결제·관리자 UI 배치 변경          | 전체 일반/브라우저 테스트 실행  | 영향 컴포넌트·렌더 시나리오 및 관련 테스트 선택 |                      121.01초 |       30.72초 | 같은 UI 변경 범위 실측                        |
+| 변경 없는 재검증                  | 훅/통합 단계에서 검사 반복 발생 | 입력·환경·산출물이 일치하는 성공 결과 재사용    | 별도 동일 명령 반복 실측 없음 |        1.08초 | 개선 후 실측                                  |
+| UI 변경의 상위 저장소 통합        | 자식 테스트·빌드까지 다시 실행  | 자식 검증 결과 재사용, 계약·패키징 유지         |                      122.36초 |        1.65초 | 실측                                          |
+| 백엔드만 변경                     | 백엔드 전체 검사                | 백엔드 전체 검사 유지                           |                       약 45초 |       약 45초 | 백엔드 단계 약 44초 기반 예상                 |
+| 위 UI와 백엔드 동시 변경          | UI 전체 검사 + 백엔드 검사      | UI 영향 검사 + 백엔드 검사                      |                      약 165초 |       약 75초 | 단계별 시간 합산 예상                         |
+| 검증 스크립트·인증·공통 설정 변경 | 광범위/전체 검사                | 광범위/전체 검사 유지                           |                 약 200초 수준 | 약 200초 수준 | 엄밀한 개선 전후 비교가 아닌 전체 실행 참고값 |
 
-The 30 s UI figure applies to this registered render-only case, not arbitrary shared CSS,
-global state or dependency changes. Backend tests are not blindly selected by changed filenames.
-The 45 s/75 s values are estimates rather than separately measured end-to-end totals. Reuse
-requires matching source/configuration/toolchain/selected suites, valid age and build outputs;
-it never carries old successful proof across a changed implementation.
+여기서 UI 약 30초는 이번처럼 등록된 컴포넌트의 렌더링 변경을 판별할 수 있는 사례입니다.
+공통 CSS·전역 상태·의존성 변경 등은 이 수치를 적용하지 않습니다. 백엔드 테스트를 변경 파일만으로
+무조건 줄이지 않았으며, 45초·75초는 별도 전체 실행을 측정한 확정값이 아닙니다.
+재사용도 수정된 코드에 과거 성공 결과를 그대로 적용하는 방식이 아닙니다.
+소스·설정·실제 도구·선택 테스트·유효 기간·빌드 산출물이 조건을 만족할 때만 재사용합니다.
 
-## Backend test environment
+## 백엔드 테스트 환경
 
-Root `backend-test` and `deployment-check` set `TRACING_ENABLED=false` for pytest.
-This isolates tests from developer OTLP exporters and avoids native gRPC fork crashes
-in macOS subprocess fixtures. Runtime `.env` is unchanged; tracing-specific tests may
-explicitly opt in with a mocked exporter. See the backend test guide.
+루트 `backend-test`와 `deployment-check`는 pytest에 `TRACING_ENABLED=false`를 지정합니다.
+개발자 OTLP exporter로부터 테스트를 격리하고 macOS 하위 프로세스 fixture의 gRPC fork 충돌을
+방지하기 위한 설정입니다. 런타임 `.env`는 바꾸지 않으며 tracing 전용 테스트는 mocked exporter로
+명시적으로 활성화할 수 있습니다. 백엔드 테스트 가이드도 참고하세요.
 
-## Reviewed page ownership (#94)
+## 페이지별 검증 소유 범위 (#94)
 
-The file-level registry now covers home (HomePage/ProjectOverview/legacy LandingPage),
-profile, support, inbox and prompt-builder as well as billing/admin. Home owns
-`home.spec.ts`; runtime/auth/shared-shell checks stay in `runtime-modes.spec.ts`.
-Profile retains account/profile-photo browser cases and related component/hook tests;
-prompt-builder retains its component and pure-logic tests. Support/inbox currently
-have browser coverage rather than dedicated Vitest files: selecting their complete
-browser files does not invent unrelated unit work. Multiple owners form a deduplicated
-union. Unknown/shared components, auth/recovery/API transport, shared CSS and the
-app-wide InboxProvider still broaden. Missing mapped coverage also broadens.
-The new pages use test-file ownership, not per-JSX title registration. Selected paths
-appear in the plan and command-bound receipt keys. Production-route receipts bind dist
-contents too; missing/changed builds cannot authorize packaging.
+파일 단위 매핑을 기존 billing/admin에서 home(HomePage·ProjectOverview·기존 LandingPage),
+profile, support, inbox, prompt-builder로 확대했습니다. Home은 home.spec.ts가 소유하고,
+런타임·인증·공통 shell 검사는 runtime-modes.spec.ts에 유지합니다. Profile은 계정/사진 브라우저와
+관련 컴포넌트/훅 검사를, prompt-builder는 컴포넌트와 순수 로직 검사를 유지합니다.
+Support/inbox에는 전용 Vitest 파일이 없으므로 기존 브라우저 파일 전체를 선택하며 무관한 단위
+검사를 만들지 않습니다. 복수 영역은 중복 없는 합집합으로 선택합니다. 공유 컴포넌트·인증/복구·
+API transport·공유 CSS·앱 전체 InboxProvider와 미등록 영향, 누락된 커버리지는 넓게 검사합니다.
+새 페이지는 JSX마다 제목을 등록하지 않고 테스트 파일에 연결합니다. 선택 경로는 계획과 명령별
+캐시 키에 포함합니다. 프로덕션 라우트 검사 결과도 dist 내용에 결합해 누락/변경된 빌드를 재사용하지 않습니다.
 
-Support mutations run once per role, inbox mutation/retry/reload once, and viewport/theme
-cases start with prepared populated/closed/empty state. Billing paid/manual mutations
-and error recovery have representative business owners; their geometry matrices retain
-responsive/theme checks. Home repeats business navigation once and keeps the shell/footer
-matrix. Provider/security cases and actual geometry/color assertions remain. The old
-fixed marketing-card count and private danger/text CSS class spellings are not product
-contracts. Legacy loginEnabled variants share one parameterized assertion body, and retry
-still asserts no window drag both before and after clicking.
+Support 변경 업무는 역할별 1회, inbox 변경/오류/재시도/reload는 1회 검증하고 폭·테마 조합은
+준비된 populated/closed/empty 상태에서 확인합니다. Billing 결제 변경·정보 수정·오류 복구는
+대표 업무 케이스가 소유하고 반응형/테마 geometry 조합은 유지합니다. Home의 업무 탐색은
+대표 1회로 줄이고 shell/footer 조합은 보존합니다. Provider/보안 분기와 실제 geometry/색상
+assertion은 유지합니다. 마케팅 카드 개수와 내부 danger/text CSS 클래스 이름은 제품 계약으로
+고정하지 않습니다. 기존 loginEnabled 호환성은 하나의 매개변수화된 assertion으로 유지하고,
+재시도 버튼은 클릭 전후 모두 창 드래그를 시작하지 않는지 확인합니다.
 
-Successful screenshots are review artifacts, not pixel assertions. Playwright automatically
-captures failures; use `B4F_CAPTURE_VISUALS=1 make test-ui` for optional successful review
-images (also supported by discovery/editor suites). Direct screenshot assertions added in
-future remain independent of this artifact helper. No tests are skipped by this flag.
-Small-page first/repeat/parent timings are recorded in the matching worklog, not enforced
-as a wall-time gate. Backend domain selection follows #152 below.
+성공 스크린샷은 픽셀 비교가 아닌 검토 자료입니다. 실패 캡처는 Playwright가 자동 저장하며,
+성공 이미지가 필요하면 `B4F_CAPTURE_VISUALS=1 make test-ui`를 사용합니다(discovery/editor도 지원).
+이 플래그로 테스트를 생략하지 않으며 향후 실제 이미지 assertion은 자료 저장 helper와 별개입니다.
+페이지 최초/반복/부모 통합 시간은 작업 기록에 남기고 시간 자체를 실패 게이트로 만들지 않습니다.
+백엔드 도메인 선택은 아래 #152 절을 따릅니다.
 
-## Independent backend domains and provider additions (#152)
+## 독립 백엔드 도메인과 제공자 API 추가 (#152)
 
-The parent selects static import consumers and existing domain test files, not filenames
-alone. Router/service/model names match `tests/api/v1/<domain>/`, optional integration
-folders, and `test_<domain>*.py`; no per-feature registry is required. Multiple domains
-form a union. Runtime changes retain smoke/OpenAPI checks; test-only changes select the
-changed files. A router needs real API/integration coverage, and persistence imports need
-owned integration coverage. Missing/deleted/unsafe paths, dynamic/star imports or unknown
-ownership broaden. Shared auth/API-key/users/admin/billing, core settings/infrastructure,
-ORM/model/migration/shared root fixture changes keep the complete backend suite. Domain-local conftest changes select their actual pytest subtree. Pytest remains sequential.
+부모는 파일명만 보지 않고 실제 정적 import 소비 관계와 기존 도메인 테스트 경로를 선택합니다.
+라우터/서비스/모델 이름과 tests/api/v1/<domain>, 필요한 integration 폴더, test\_<domain>\*.py를
+연결하므로 기능마다 하네스를 등록하지 않습니다. 복수 도메인은 합집합으로 선택합니다.
+런타임 변경은 smoke/OpenAPI를 유지하고 테스트만 바꾸면 해당 파일을 선택합니다.
+라우터에는 API/integration 커버리지가, 저장 의존성에는 해당 integration 커버리지가 필요합니다.
+누락/삭제/안전하지 않은 경로·동적/star import·소유 범위 불명은 넓힙니다. 공유 인증/API-key/
+사용자/admin/billing·공통 설정/인프라·ORM/모델/마이그레이션/공통 루트 fixture 변경은 전체 백엔드를 유지하고, 도메인 전용 conftest는 해당 pytest 하위 경로를 선택합니다.
+개별 pytest 케이스는 순차 실행합니다.
 
-The narrow entry-point exception only accepts new router imports and constant API-prefix
-registrations immediately after existing include_router calls and before mounts/returns.
-Other startup, transport, lifecycle or existing route registration edits stay broad. Static
-selection is not proof that a new feature's tests cover every behavior: review auth/ownership,
-errors and real side effects where applicable. `make backend-test PYTEST_ARGS='tests/...'`
-is the existing executable interface; the planner puts its selected paths in the command
-and receipt key. Explicit full/CI ignores scoped selection and local receipts.
+진입점의 예외는 새 라우터 import와 상수 API prefix의 include_router를 기존 등록 직후,
+mount/return 이전에 추가하는 경우만 인정합니다. 다른 startup·전송·lifecycle·기존 등록 변경은
+넓게 검사합니다. 정적 선택이 새 기능의 모든 동작을 증명하지는 않으므로 해당 인증/소유권·실패·
+부수효과를 검토해야 합니다. 실행 인터페이스는 기존 make backend-test PYTEST_ARGS='tests/...'를
+사용하고 선택 경로를 명령과 캐시 키에 포함합니다. 강제 전체/CI는 선택 축소와 로컬 캐시를 사용하지 않습니다.
 
-Provider compatibility allows only new paths/methods/components while every existing
-operation/component and global field stays exact. Changes to existing schemas (even optional
-fields), inherited parameters/servers, security or removed operations are not assumed safe.
-`contract-check` checks export freshness and this pinned-consumer relation; type drift is
-checked from the child's own baseline. An unused provider addition does not regenerate or
-rewrite the child and does not run frontend UI/build/editor/branding. A frontend adopting
-that API still owns a coordinated child baseline/provenance/type/caller PR. Contract checker
-implementation changes run its fixtures/provider guard/consumer type check; actual consumer
-or breaking contract changes retain broader checks. The parent-only helper modules are not
-read by standalone B4React; absent helpers keep legacy broad backend behavior.
+제공자 계약은 기존 operation/component/전역 필드를 그대로 두고 path/method/component만 추가한
+경우를 인정합니다. 기존 스키마의 optional 필드·상속 parameter/server·security 변경이나 삭제를
+자동으로 안전하다고 가정하지 않습니다. contract-check는 내보내기 최신 여부와 고정 소비자 계약을
+검사하고, 생성 타입은 자식 자체 기준 파일로 확인합니다. 사용하지 않는 제공자 API 추가 때문에
+자식 파일을 덮어쓰거나 UI/build/편집기/branding을 실행하지 않습니다. 실제 소비자가 도입할 때는
+자식 PR에서 기준 파일/출처/타입/호출부를 함께 갱신합니다. 계약 검사기 자체 변경은 fixture·제공자
+검사·소비자 타입 검사를 수행하고 실제 소비자/기존 계약 변경은 넓은 검증을 유지합니다.
+부모 전용 helper는 독립 B4React에서 부모를 읽지 않으며, helper가 없으면 기존 넓은 백엔드 동작을 유지합니다.
 
-Schema rejection belongs at the router/model boundary without DB/signup/login per input.
-A representative invalid-after-valid persisted-state test remains. Full-system scenarios
-own seeded login/duplicate-email behavior; billing identity adoption uses one seeded principal,
-while aggregate scenarios keep their 50-record dataset. Stateless input-free GETs do not need
-artificial integration/422/seeded cases or boilerplate comments. See the backend test guide.
+Schema rejection은 DB/가입/로그인을 반복하지 않는 라우터/모델 계층이 소유하고,
+정상 저장 뒤 잘못된 요청이 기존 값을 유지하는 대표 integration은 남깁니다. 종합 시나리오가
+seeded 로그인/중복 이메일을 소유하며 결제 식별자 연결은 주 사용자 1명만 준비합니다.
+집계 시나리오의 기존 50명은 유지합니다. 상태/입력 없는 GET에 형식적인 integration/422/seeded나
+반복 주석을 강제하지 않습니다. 백엔드 테스트 가이드를 참고하세요.
 
-The deliberately strict compatibility rule follows the OpenAPI
-[Paths/Components model](https://spec.openapis.org/oas/v3.1.0.html); it does not claim to
-prove all semantic backward compatibility. Probe first/repeat timings and omitted checks
-are recorded in the task worklog, without a timing gate.
+이 엄격한 판별은 [OpenAPI Paths/Components 구조](https://spec.openapis.org/oas/v3.1.0.html)를
+따르며 모든 의미적 하위 호환성을 증명한다고 주장하지 않습니다. 최초/반복 실측과 생략 이유는
+작업 기록에 남기고 시간 자체를 새 실패 게이트로 만들지 않습니다.
 
-## CSS ownership from runtime consumers
+## 실제 소비자로 판별하는 CSS 소유 범위
 
-CSS-only edits are not shared merely because they live in `app.css`. For each changed
-rule, the classifier requires a leading class anchor and finds its runtime consumers
-under `src`, `scripts` and `public` (excluding tests/generated outputs). Every consumer
-must belong to a registered domain with existing mapped coverage. Home, profile,
-support, inbox and prompt-builder follow the same rule as billing/admin; class names
-need no domain prefix or per-selector registry. Multiple owners select the union.
+CSS가 `app.css`에 있다는 이유만으로 공유 변경으로 취급하지 않습니다. 변경된 각 규칙은
+클래스로 시작해야 하며, `src`·`scripts`·`public`에서 실제 사용 파일을 찾습니다.
+테스트·생성 출력은 제외하고, 모든 소비자가 기존 커버리지가 있는 등록 도메인에 속해야
+관련 검사를 선택합니다. Home·profile·support·inbox·prompt-builder도 billing/admin과
+같은 규칙을 따릅니다. 클래스에 도메인 접두사를 붙이거나 선택자마다 등록할 필요는 없습니다.
+여러 소유자가 있으면 검사를 합집합으로 선택합니다.
 
-A domain-owned class and its descendants, child selectors and ordinary pseudo states
-can select that domain's static/unit/browser/build checks. Existing reviewed render-case
-selection remains available when all owners qualify. Shared controls, global selectors or
-tokens, keyframes, missing consumers/coverage, script/static producers outside mapped
-domains, sibling combinators and unsupported selector syntax retain broad checks.
-Unknown/shared `app.css` changes also retain editor/discovery checks. `VERIFY_FULL=1`
-and CI retain all areas. This policy does not change repository-wide receipt binding;
-dependency-specific receipts remain a separate follow-up (#149).
+도메인 소유 클래스와 그 자손·자식·일반 상태 선택자는 해당 도메인의 정적·단위·브라우저·빌드
+검사로 연결합니다. 기존에 검토된 렌더 케이스 선택도 소유자가 모두 조건을 만족하면 유지합니다.
+공유 컨트롤·전역 선택자/토큰·keyframes·소비자 또는 커버리지 누락·등록 영역 밖의 스크립트/정적
+문서 생성자·형제 결합자·해석하지 못하는 구문은 넓게 검증합니다. 영향이 불명확하거나 공유되는
+`app.css` 변경은 편집기·discovery 검사도 유지합니다. `VERIFY_FULL=1`과 CI는 전체 영역을
+검증합니다. 저장소 전체 내용을 묶는 receipt 정책은 이번 범위에서 바꾸지 않으며,
+검사별 의존성 receipt는 별도 후속 #149에 남습니다.
 
-## Literal response cache-header changes
+## 고정 응답 캐시 헤더 변경
 
-A bounded exception handles existing router edits that change only a literal
-`Cache-Control` value in an explicitly imported FastAPI/Starlette response constructor.
-The classifier compares complete ASTs after masking that value; imports, authentication,
-service calls, response body and every other header must remain identical. Constructor
-aliases are accepted only when unshadowed. Dynamic values, dictionary unpacking and
-unresolved constructors do not qualify.
+기존 라우터에서 명시적으로 import한 FastAPI/Starlette 응답 생성자의 고정 문자열
+`Cache-Control` 값만 수정한 경우에는 제한된 예외를 적용합니다. 해당 값만 가린 전체 AST를
+비교하므로 import·인증·서비스 호출·응답 본문·다른 헤더는 모두 같아야 합니다.
+별칭은 다른 바인딩에 가려지지 않았을 때만 허용하며 동적 값·딕셔너리 unpack·출처가
+불명확한 생성자는 이 경로를 사용하지 않습니다.
 
-This proven transport-only edit does not require a new persistence integration test just
-because an unchanged response schema shares a module with ORM entities. It still runs the
-domain's existing tests plus common smoke/OpenAPI, architecture, lint and contract checks.
-Shared/protected domains, model/DB/migration changes, missing coverage, simultaneous service
-persistence changes and explicit full/CI retain their existing broader requirements.
-This is not general symbol-level Pydantic/ORM inference: other changes that merely import
-response schemas may still conservatively broaden. No fake DB test is added to unlock scope.
+이렇게 전송 헤더만 바뀌었음이 확인되면, 변경하지 않은 응답 스키마가 ORM과 같은 파일에
+있다는 이유만으로 새 DB 통합 테스트를 요구하지 않습니다. 기존 도메인 테스트와 공통
+smoke/OpenAPI·아키텍처·린트·계약 검사는 유지합니다. 공유/보호 도메인·모델/DB/마이그레이션·
+커버리지 누락·동시에 수정한 서비스의 영속 동작과 강제 전체/CI 검증은 기존 확대 규칙을 따릅니다.
+모든 Pydantic/ORM 심볼을 추론하는 기능은 아니므로 그 밖의 응답 스키마 import는 여전히
+보수적으로 확대될 수 있습니다. 범위를 줄이려고 형식적인 DB 테스트를 추가하지 않습니다.

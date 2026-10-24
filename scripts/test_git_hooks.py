@@ -65,6 +65,17 @@ class GitHookTests(unittest.TestCase):
         self.assertIn("invalid Conventional", self.command("git", "commit", "-qm", "invalid" + BODY, ok=False))
         self.command("git", "commit", "-qm", TITLE + BODY)
 
+    def test_korean_commit_and_pr_titles(self):
+        self.prepare()
+        title = "docs: 한국어 개발 문서를 갱신한다"
+        log = self.root / "worklog/0001-fixture-guide.md"
+        log.write_text(log.read_text().replace(TITLE, title))
+        self.command("git", "add", "worklog")
+        self.command("git", "commit", "-qm", title + BODY)
+        body = self.root / ".git/pr.md"
+        body.write_text("\n".join(f"## {h}\n\n검증한 변경 내용.\n" for h in ("Summary", "Scope", "Reason", "Verification", "Documentation", "Risk / Impact")))
+        self.command("python3", "scripts/validate_git_governance.py", "--pr-title", "[docs] 한국어 개발 문서 갱신", "--pr-body-file", str(body))
+
     def test_push_runs_local_plan_and_verification(self):
         self.commit()
         self.command("git", "push", "-q", "origin", "HEAD")

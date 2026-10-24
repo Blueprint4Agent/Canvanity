@@ -1,7 +1,7 @@
 ---
 name: 문서 요청
 about: 문서 추가 또는 수정을 요청합니다
-title: "[Docs] "
+title: "[docs] "
 labels: documentation
 assignees: ""
 ---

@@ -32,6 +32,19 @@ class AreaTests(unittest.TestCase):
         file.parent.mkdir(parents=True, exist_ok=True)
         file.write_text(text)
 
+    def test_gitlink_replaced_with_plain_frontend_directory(self):
+        root = self.fixture(parent=True)
+        commit = v.git(root, "rev-parse", "HEAD").decode().strip()
+        v.git(root, "update-index", "--add", "--cacheinfo", f"160000,{commit},src/frontend")
+        v.git(root, "commit", "-qm", "pin frontend")
+        v.git(root, "rm", "--cached", "src/frontend")
+        self.change(root, "src/frontend/package.json", "{}\n")
+        scope = v.plan(root)
+        self.assertNotIn("child", scope)
+        self.assertFalse(scope["forced"])
+        self.assertEqual(set(scope["areas"]), PARENT_AREAS)
+        self.assertEqual(scope["frontend"], "full")
+
     def test_explicit_owners_exclude_unrelated_runtime_tools(self):
         cases = [
             (True, "contracts/README.md", set()),
