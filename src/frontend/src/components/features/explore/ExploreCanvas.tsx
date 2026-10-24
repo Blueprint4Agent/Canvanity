@@ -112,7 +112,7 @@ export function ExploreCanvas() {
                         {searchResults.map((topic) => (
                             <Button
                                 key={topic.id}
-                                appearance="text"
+                                appearance="canvas"
                                 onClick={() => selectTopic(topic.id)}
                             >
                                 {t(`explore.topics.${topic.id}.label`)}
@@ -122,7 +122,7 @@ export function ExploreCanvas() {
                         {!searchResults.length ? <p>{t("explore.noResults")}</p> : null}
                     </div>
                     <Button
-                        appearance="text"
+                        appearance="canvas"
                         iconOnly
                         aria-label={t("explore.closeSearch")}
                         onClick={() => closeSearch()}
@@ -181,7 +181,7 @@ export function ExploreCanvas() {
                     side="right"
                 >
                     <Button
-                        appearance="text"
+                        appearance="canvas"
                         iconOnly
                         aria-label={t("explore.select")}
                         aria-pressed={tool === "select"}
@@ -213,7 +213,7 @@ export function ExploreCanvas() {
             {selected ? (
                 <aside className="explore-selection" aria-live="polite">
                     <Button
-                        appearance="text"
+                        appearance="canvas"
                         iconOnly
                         aria-label={t("explore.back")}
                         onClick={() => {
@@ -244,7 +244,7 @@ export function ExploreCanvas() {
                         side="right"
                     >
                         <Button
-                            appearance="text"
+                            appearance="canvas"
                             iconOnly
                             aria-label={t("explore.zoomIn")}
                             disabled={camera.zoom >= CANVAS_RULES.maxZoom}
@@ -264,7 +264,7 @@ export function ExploreCanvas() {
                         side="right"
                     >
                         <Button
-                            appearance="text"
+                            appearance="canvas"
                             iconOnly
                             aria-label={t("explore.zoomOut")}
                             disabled={camera.zoom <= CANVAS_RULES.minZoom}
@@ -284,7 +284,7 @@ export function ExploreCanvas() {
                         side="right"
                     >
                         <Button
-                            appearance="text"
+                            appearance="canvas"
                             iconOnly
                             aria-label={t("explore.fit")}
                             aria-keyshortcuts="0"
@@ -295,7 +295,7 @@ export function ExploreCanvas() {
                     </Tooltip>
                 </div>
                 <Button
-                    appearance="text"
+                    appearance="canvas"
                     className="explore-minimap"
                     aria-label={t("explore.mapNavigate")}
                     onClick={camera.onMapClick}
@@ -323,7 +323,7 @@ export function ExploreCanvas() {
                     </span>
                 </Button>
                 {snapshot.failed ? (
-                    <Button appearance="text" onClick={snapshot.refresh}>
+                    <Button appearance="canvas" onClick={snapshot.refresh}>
                         {t("explore.retrySnapshot")}
                     </Button>
                 ) : null}
