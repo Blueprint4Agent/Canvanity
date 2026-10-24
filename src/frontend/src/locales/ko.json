@@ -1533,42 +1533,51 @@
         "retrySnapshot": "미니맵 다시 만들기",
         "topics": {
             "agent": {
-                "label": "AI / Agent",
+                "label": "관심 있는 사람들의 캔버스",
                 "sample": "아이디어에서 시작하는 작은 자동화",
-                "description": "도구와 에이전트를 연결한 생각들을 둘러보세요.",
-                "handwriting": "Make room for ideas"
+                "description": "캔버스를 확대해서 자세히 살펴보세요.",
+                "handwriting": "People, stories, connections"
             },
             "build": {
-                "label": "개발 · 생산성",
+                "label": "지금 떠오르는 캔버스",
                 "sample": "나만의 작업 흐름 만들기",
-                "description": "작게 만들고 다듬는 작업을 만나보세요.",
-                "handwriting": "Build, iterate, grow"
+                "description": "캔버스를 확대해서 자세히 살펴보세요.",
+                "handwriting": "Something new is taking shape"
             },
             "daily": {
-                "label": "일상 · 기록",
+                "label": "지금 주목받는 캔버스",
                 "sample": "오늘의 장면과 짧은 메모",
-                "description": "평범한 하루에서 발견한 이야기를 펼쳐보세요.",
+                "description": "캔버스를 확대해서 자세히 살펴보세요.",
                 "handwriting": "The art of noticing"
             },
             "learn": {
-                "label": "학습 · 성장",
+                "label": "당신을 위한 추천",
                 "sample": "배운 것을 한 장에 정리하기",
-                "description": "새로운 배움과 함께 자라는 기록을 둘러보세요.",
-                "handwriting": "Keep learning"
-            },
-            "play": {
-                "label": "게임 · 취미",
-                "sample": "좋아하는 세계를 모으는 시간",
-                "description": "몰입하는 순간과 취향을 나누는 이야기를 만나보세요.",
-                "handwriting": "Create your own space"
-            },
-            "ideas": {
-                "label": "아이디어",
-                "sample": "아직 완성되지 않은 생각들",
-                "description": "가볍게 떠올린 생각이 다음 시작이 될 수 있어요.",
-                "handwriting": "Ideas in motion"
+                "description": "캔버스를 확대해서 자세히 살펴보세요.",
+                "handwriting": "A little inspiration for you"
             }
         },
-        "tagline": "Space for every idea."
+        "tagline": "Space for every idea.",
+        "authors": {
+            "seoyeon": "서연",
+            "minjae": "민재",
+            "doyun": "도윤",
+            "haneul": "하늘",
+            "jiwon": "지원",
+            "yuna": "유나",
+            "jun": "준"
+        },
+        "posts": {
+            "light": "빛이 머무는 모서리",
+            "quiet": "조용히 집중하는 시간",
+            "escape": "잠시 머물고 싶은 풍경",
+            "routine": "초록을 돌보는 작은 습관",
+            "workspace": "오늘의 작업 공간",
+            "days": "일상의 작은 발견",
+            "collected": "좋아하는 장면을 모아서"
+        },
+        "openSample": "{{name}}의 캔버스: {{title}}",
+        "likeCount": "좋아요 {{count}}개",
+        "commentCount": "댓글 {{count}}개"
     }
 }
