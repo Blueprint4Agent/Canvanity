@@ -1,7 +1,7 @@
 ---
 name: Backend task
 about: Plan backend work for FastAPI, database, auth, observability, or Docker runtime
-title: "[Backend] "
+title: "[feat] "
 labels: backend
 assignees: ""
 ---

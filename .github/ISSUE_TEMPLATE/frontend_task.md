@@ -1,7 +1,7 @@
 ---
 name: Frontend task
 about: Plan frontend work for UI, routing, API integration, or tests
-title: "[Frontend] "
+title: "[feat] "
 labels: frontend
 assignees: ""
 ---

@@ -1,7 +1,7 @@
 ---
 name: 프론트엔드 작업
 about: UI, 라우팅, API 연동, 테스트 관련 프론트엔드 작업을 정의합니다
-title: "[Frontend] "
+title: "[feat] "
 labels: frontend
 assignees: ""
 ---
