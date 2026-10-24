@@ -11,6 +11,8 @@ import {
     Shield,
     UserRound,
     ChevronRight,
+    LayoutGrid,
+    WandSparkles,
     Check,
     Plus,
 } from "lucide-react";
@@ -29,6 +31,7 @@ type ProfileDropdownProps = {
     showLogin?: boolean;
     showAdmin?: boolean;
     showAdminDemo?: boolean;
+    showDevelopmentLinks?: boolean;
     inboxUnread?: number | null;
     allowAccountSwitching?: boolean;
     avatarLabel?: string;
@@ -50,6 +53,7 @@ export function ProfileDropdown({
     showLogin = false,
     showAdmin = false,
     showAdminDemo = false,
+    showDevelopmentLinks = false,
     inboxUnread: unread = null,
     allowAccountSwitching = false,
     avatarLabel,
@@ -187,7 +191,12 @@ export function ProfileDropdown({
             }}
         >
             <Tooltip
-                content={t(showLogin ? "authDialog.entry" : "nav.aria.openMenu")}
+                content={
+                    <span className="ui-shortcut-hint">
+                        {t(showLogin ? "authDialog.entry" : "nav.aria.openMenu")}
+                        <KeyboardShortcut keys={bindings.toggleSidebar} />
+                    </span>
+                }
                 side={tooltipSide}
                 disabled={menuOpen || expanded}
                 className="profile-menu__trigger-tooltip"
@@ -197,6 +206,7 @@ export function ProfileDropdown({
                     type="button"
                     className="profile-menu__trigger"
                     aria-label={t(showLogin ? "authDialog.entry" : "nav.aria.openMenu")}
+                    aria-keyshortcuts={shortcutAriaKeys(bindings.toggleSidebar)}
                     aria-haspopup="dialog"
                     aria-controls={menuOpen ? popupId : undefined}
                     aria-expanded={menuOpen}
@@ -397,6 +407,18 @@ export function ProfileDropdown({
                             </span>
                             <span>{t("admin.title")}</span>
                         </Link>
+                    ) : null}
+                    {showDevelopmentLinks ? (
+                        <>
+                            <Link to="/show-case" className="profile-menu__item">
+                                <LayoutGrid size={16} />
+                                <span>{t("nav.showcase")}</span>
+                            </Link>
+                            <Link to="/prompt-builder" className="profile-menu__item">
+                                <WandSparkles size={16} />
+                                <span>{t("nav.promptBuilder")}</span>
+                            </Link>
+                        </>
                     ) : null}
                     {showAdminDemo ? (
                         <Link to="/demo/admin" className="profile-menu__item">
