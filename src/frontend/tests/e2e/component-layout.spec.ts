@@ -37,11 +37,11 @@ for (const colorScheme of ["light", "dark"] as const) {
         expect(Math.abs(tip.x - control.x - control.width - 8)).toBeLessThan(1);
         await expect(tooltip).toHaveCSS(
             "background-color",
-            colorScheme === "light" ? "rgb(16, 16, 16)" : "rgb(255, 255, 255)",
+            colorScheme === "light" ? "rgb(16, 16, 16)" : "rgb(234, 242, 255)",
         );
         await expect(tooltip).toHaveCSS(
             "color",
-            colorScheme === "light" ? "rgb(255, 255, 255)" : "rgb(16, 16, 16)",
+            colorScheme === "light" ? "rgb(255, 255, 255)" : "rgb(16, 34, 59)",
         );
         await expect(brand).toHaveAttribute(
             "aria-describedby",
