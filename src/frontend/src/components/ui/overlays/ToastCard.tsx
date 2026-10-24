@@ -1,16 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Check, Info, CircleAlert } from "lucide-react";
+
+export type ToastTone = "neutral" | "success" | "error";
 
 type ToastCardProps = {
     message: string;
     durationMs?: number;
     onDismiss?: () => void;
+    tone?: ToastTone;
 };
 
 const EXIT_DURATION_MS = 180; // Keep in sync with ui-toast-exit in app.css.
 
 /** Mount to show; use a new React key to replay the same message. */
-export function ToastCard({ message, durationMs = 3000, onDismiss }: ToastCardProps) {
+export function ToastCard({
+    message,
+    durationMs = 3000,
+    onDismiss,
+    tone = "neutral",
+}: ToastCardProps) {
     const [phase, setPhase] = useState<"hidden" | "visible" | "closing">("hidden");
     const dismissRef = useRef(onDismiss);
     dismissRef.current = onDismiss;
@@ -43,7 +52,17 @@ export function ToastCard({ message, durationMs = 3000, onDismiss }: ToastCardPr
             {phase !== "hidden" ? (
                 <div
                     className={`ui-toast-card${phase === "closing" ? " ui-toast-card--closing" : ""}`}
+                    data-tone={tone}
                 >
+                    <span className="ui-toast-card__status" aria-hidden="true">
+                        {tone === "success" ? (
+                            <Check />
+                        ) : tone === "error" ? (
+                            <CircleAlert />
+                        ) : (
+                            <Info />
+                        )}
+                    </span>
                     {text}
                 </div>
             ) : null}

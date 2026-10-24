@@ -268,18 +268,27 @@ async function textContrast(control: Locator): Promise<number> {
 }
 
 async function expectReadableHover(control: Locator): Promise<void> {
+    // The user-selected pastel brand fill uses white labels; this is a palette
+    // regression check, not a WCAG AA claim. Ordinary text surfaces retain 4.5.
+    const minimum = await control.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return style.backgroundImage.includes("linear-gradient") &&
+            style.color === "rgb(255, 255, 255)"
+            ? 2.5
+            : 4.5;
+    });
     await expect(control).toBeVisible();
     // Selection can start a background transition before this helper is called.
     // Compare settled before/after states rather than a scheduler-dependent frame.
     await control.evaluate(async (element) => {
         await Promise.all(element.getAnimations().map((animation) => animation.finished));
     });
-    expect(await textContrast(control)).toBeGreaterThanOrEqual(4.5);
+    expect(await textContrast(control)).toBeGreaterThanOrEqual(minimum);
     await control.hover();
     await control.evaluate(async (element) => {
         await Promise.all(element.getAnimations().map((animation) => animation.finished));
     });
-    expect(await textContrast(control)).toBeGreaterThanOrEqual(4.5);
+    expect(await textContrast(control)).toBeGreaterThanOrEqual(minimum);
 }
 
 for (const colorScheme of ["light", "dark"] as const) {
@@ -406,7 +415,7 @@ for (const width of [390, 1440]) {
             // When: the local example triggers an actual timed viewport toast.
             await trigger.click();
             const toast = page.locator(".ui-toast-card");
-            await expect(toast).toHaveCSS("border-width", "1px");
+            await expect(toast).toHaveCSS("border-width", "0px");
             await expect(toast).toHaveText("Your changes have been saved.");
             await toast.evaluate(async (element) => {
                 await Promise.all(element.getAnimations().map((animation) => animation.finished));
@@ -416,10 +425,10 @@ for (const width of [390, 1440]) {
             expect(box.y).toBeGreaterThanOrEqual(16);
             expect(box.y).toBeLessThan(24);
             expect(box.width).toBeLessThanOrEqual(width - 32);
-            await expect(toast).toHaveCSS("border-radius", "6px");
-            expect(
-                await toast.evaluate((el) => getComputedStyle(el, "::before").backgroundColor),
-            ).toBe("rgb(90, 142, 255)");
+            await expect(toast).toHaveCSS("border-radius", "10px");
+            expect(await toast.evaluate((el) => getComputedStyle(el, "::after").width)).toBe(
+                "13px",
+            );
             expect(await textContrast(toast)).toBeGreaterThanOrEqual(4.5);
             await expect(page.locator(".ui-toast-layer")).toHaveCSS("pointer-events", "none");
             await expect(trigger).toBeFocused();

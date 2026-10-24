@@ -1,10 +1,11 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { buttonClassName, type ButtonAppearance } from "../../../utils/buttonStyles";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     children: ReactNode;
     loading?: boolean;
     iconOnly?: boolean;
-    appearance?: "default" | "pill" | "pill-secondary" | "text" | "canvas" | "canvas-card";
+    appearance?: ButtonAppearance;
 };
 
 export function Button({
@@ -17,7 +18,7 @@ export function Button({
     disabled,
     ...props
 }: ButtonProps) {
-    const nextClassName = `ui-button${iconOnly ? " ui-button--icon" : ""}${appearance !== "default" ? ` ui-button--${appearance}` : ""}${className ? ` ${className}` : ""}`;
+    const nextClassName = buttonClassName(appearance, iconOnly, className);
     const isDisabled = Boolean(disabled || loading);
 
     return (
