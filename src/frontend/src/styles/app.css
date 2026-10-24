@@ -9094,124 +9094,193 @@ body.public-discovery {
 }
 .explore-intro {
     position: absolute;
-    left: 100px;
-    top: 135px;
-    width: 350px;
+    left: 460px;
+    top: 220px;
+    width: 700px;
 }
 .explore-intro h1 {
     display: flex;
-    gap: 0.65rem;
     align-items: center;
+    gap: 16px;
     margin: 0;
-    font: 600 90px/1 var(--font-handwriting);
+    font: 600 120px/1 var(--font-handwriting);
     letter-spacing: -0.035em;
-    color: var(--text);
 }
 .explore-intro .brand-mark {
-    width: 62px;
-    height: 62px;
+    width: 96px;
+    height: 96px;
     flex-shrink: 0;
 }
 .explore-intro__tagline {
-    margin: 0.65rem 0 0 0.5rem;
-    font: 400 34px/1.2 var(--font-handwriting);
+    margin: 15px 0 0 12px;
+    font: 400 42px/1.2 var(--font-handwriting);
     color: var(--accent);
 }
 .explore-cluster {
     position: absolute;
-    width: 280px;
-}
-.explore-cluster--agent {
-    left: 100px;
-    top: 380px;
-    width: 240px;
-}
-.explore-cluster--build {
-    left: 160px;
-    top: 650px;
-    width: 350px;
 }
 .explore-cluster--daily {
-    left: 480px;
-    top: 205px;
-    width: 290px;
+    left: 440px;
+    top: 500px;
+    width: 850px;
 }
 .explore-cluster--learn {
-    left: 670px;
-    top: 650px;
-    width: 280px;
+    left: 1530px;
+    top: 390px;
+    width: 850px;
 }
-.explore-cluster--play {
-    left: 1100px;
-    top: 600px;
-    width: 280px;
+.explore-cluster--agent {
+    left: 530px;
+    top: 1080px;
+    width: 800px;
 }
-.explore-cluster--ideas {
-    left: 900px;
-    top: 140px;
-    width: 410px;
+.explore-cluster--build {
+    left: 1420px;
+    top: 1030px;
+    width: 850px;
+}
+.explore-feed-heading {
+    height: 100px;
+}
+.explore-feed-heading h2 {
+    margin: 0;
+    font-size: 38px;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    color: var(--text);
+}
+.explore-topic__handwriting {
+    margin: 7px 0 0;
+    font: 400 28px/1.2 var(--font-handwriting);
+    color: var(--accent);
+}
+.explore-posts {
+    position: relative;
 }
 .explore-cluster .explore-topic {
+    position: absolute;
     display: block;
-    width: 100%;
-    height: auto;
     min-height: 0;
     margin: 0;
     padding: 0;
     border: 0;
-    border-radius: 0;
+    border-radius: 4px;
     background: transparent;
     color: var(--text);
     box-shadow: none;
     text-align: left;
+    overflow: hidden;
 }
 .explore-topic .ui-button__content,
 .explore-topic .ui-button__label {
     display: block;
     width: 100%;
+    height: 100%;
+}
+.explore-topic .ui-button__label::after {
+    content: "";
+    position: absolute;
+    inset: 35% 0 0;
+    background: linear-gradient(to top, rgba(10, 18, 22, 0.64), transparent 72%);
+    pointer-events: none;
 }
 .explore-topic__image {
     display: block;
     width: 100%;
-    height: 180px;
+    height: 100%;
     object-fit: cover;
-    filter: saturate(0.65);
+    filter: saturate(0.7);
 }
-.explore-cluster--agent .explore-topic__image {
-    height: 135px;
+.explore-cluster--daily .explore-posts {
+    height: 340px;
 }
-.explore-cluster--ideas .explore-topic__image {
+.explore-cluster--daily .explore-topic {
+    width: 850px;
+    height: 340px;
+    border-radius: 8px;
+}
+.explore-cluster--learn .explore-posts {
+    height: 320px;
+}
+.explore-cluster--learn .explore-topic--1 {
+    left: 0;
+    top: 0;
+    width: 390px;
+    height: 240px;
+}
+.explore-cluster--learn .explore-topic--2 {
+    left: 440px;
+    top: 80px;
+    width: 390px;
+    height: 240px;
+}
+.explore-cluster--agent .explore-posts {
+    height: 280px;
+}
+.explore-cluster--agent .explore-topic--1 {
+    left: 0;
+    top: 0;
+    width: 370px;
     height: 225px;
 }
-.explore-cluster--build .explore-topic__image,
-.explore-cluster--play .explore-topic__image {
-    height: 185px;
+.explore-cluster--agent .explore-topic--2 {
+    left: 420px;
+    top: 60px;
+    width: 360px;
+    height: 220px;
 }
-.explore-cluster--learn .explore-topic__image {
-    height: 165px;
+.explore-cluster--build .explore-posts {
+    height: 340px;
 }
-.explore-topic__title {
-    display: block;
-    margin: 0.7rem 0 0 0.85rem;
-    font-size: 20px;
+.explore-cluster--build .explore-topic--1 {
+    left: 0;
+    top: 0;
+    width: 390px;
+    height: 230px;
+}
+.explore-cluster--build .explore-topic--2 {
+    left: 440px;
+    top: 90px;
+    width: 410px;
+    height: 250px;
+}
+.explore-post-meta {
+    position: absolute;
+    z-index: 2;
+    right: 18px;
+    bottom: 14px;
+    left: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 16px;
+    color: #fff;
+    font-size: 21px;
+    font-weight: 400;
     line-height: 1.3;
-    font-weight: 600;
-    letter-spacing: -0.035em;
+    white-space: nowrap;
+    text-shadow: 0 1px 5px rgba(0, 0, 0, 0.3);
 }
-.explore-topic__handwriting {
-    display: block;
-    margin: 0.15rem 0 0 0.85rem;
-    font: 400 28px/1.15 var(--font-handwriting);
-    color: var(--accent);
+.explore-post-meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
 }
-.explore-cluster .explore-topic:hover {
-    background: transparent;
-    color: var(--accent);
+.explore-post-meta svg {
+    flex-shrink: 0;
 }
-.explore-cluster[data-active="true"] .explore-topic__title {
+.explore-cluster--agent .explore-post-meta,
+.explore-cluster--learn .explore-post-meta,
+.explore-cluster--build .explore-post-meta {
+    font-size: 20px;
+    gap: 11px;
+    left: 12px;
+    right: 12px;
+}
+.explore-cluster[data-active="true"] .explore-feed-heading h1,
+.explore-cluster[data-active="true"] .explore-feed-heading h2 {
     color: var(--accent);
-    text-decoration: underline;
-    text-underline-offset: 5px;
 }
 
 .explore-tools {
@@ -9536,10 +9605,10 @@ body.public-discovery {
 
 .explore-content {
     position: absolute;
-    left: 480px;
-    top: 300px;
-    width: 1440px;
-    height: 1000px;
+    left: 0;
+    top: 0;
+    width: 3200px;
+    height: 2100px;
 }
 .explore-viewport:focus,
 .explore-viewport:focus-visible {
@@ -9557,7 +9626,7 @@ body.public-discovery {
 }
 .explore-map .explore-minimap {
     height: auto;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 32 / 21;
 }
 
 /* Compact secondary pages and account menus share one density. */
