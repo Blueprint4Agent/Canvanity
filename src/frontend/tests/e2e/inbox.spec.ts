@@ -102,7 +102,7 @@ for (const width of [1440])
             await expect(page.locator(".settings-content-card h1")).toBeVisible();
             const peer = await geometry();
             const sidebarLinks = await page
-                .locator("#app-sidebar-navigation a")
+                .locator(".section-navigation a")
                 .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
             await page.locator(".profile-menu__trigger").click();
             const menuOrder = await page
@@ -119,7 +119,7 @@ for (const width of [1440])
             await expect
                 .poll(() =>
                     page
-                        .locator("#app-sidebar-navigation a")
+                        .locator(".section-navigation a")
                         .evaluateAll((links) => links.map((link) => link.getAttribute("href"))),
                 )
                 .toEqual(sidebarLinks);

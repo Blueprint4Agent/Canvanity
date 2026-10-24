@@ -416,7 +416,9 @@
         },
         "guest": "Guest",
         "brand": "B4A",
-        "home": "Home"
+        "home": "Home",
+        "showcase": "Showcase",
+        "promptBuilder": "Prompt builder"
     },
     "settings": {
         "title": "Settings",
@@ -604,7 +606,7 @@
         },
         "keyboard": {
             "description": "Customize shortcuts for frequently used actions.",
-            "toggleSidebar": "Toggle sidebar",
+            "toggleSidebar": "Toggle menu",
             "openSettings": "Open settings",
             "press": "Press a key combination",
             "reset": "Restore defaults",
@@ -1503,5 +1505,70 @@
                 "all": "All"
             }
         }
+    },
+    "explore": {
+        "browse": "Explore",
+        "title": "What’s on\nyour mind?",
+        "description": "Follow your curiosity.\nDiscover ideas and people.",
+        "exampleLabel": "Example content",
+        "search": "Find an interest",
+        "searchLabel": "What would you like to explore?",
+        "searchPlaceholder": "AI, building, everyday life…",
+        "noResults": "Try another interest.",
+        "closeSearch": "Close search",
+        "canvasLabel": "Explore canvas",
+        "tools": "Canvas tools",
+        "select": "Select",
+        "pan": "Pan",
+        "panHold": "Hold Space to pan",
+        "zoomIn": "Zoom in",
+        "zoomOut": "Zoom out",
+        "fit": "Fit all",
+        "back": "Back to the center",
+        "mapNavigate": "Navigate with the minimap",
+        "zoomLevel": "Zoom level",
+        "openExample": "Explore {{topic}} examples",
+        "snapshotError": "Preview unavailable",
+        "snapshotLoading": "Preparing minimap",
+        "retrySnapshot": "Refresh minimap",
+        "topics": {
+            "agent": {
+                "label": "AI / Agent",
+                "sample": "Small automations, new possibilities",
+                "description": "Explore ideas that connect tools and agents.",
+                "handwriting": "Make room for ideas"
+            },
+            "build": {
+                "label": "Building & productivity",
+                "sample": "A workflow that feels like yours",
+                "description": "Discover small tools and work in progress.",
+                "handwriting": "Build, iterate, grow"
+            },
+            "daily": {
+                "label": "Life & journals",
+                "sample": "A moment and a small note",
+                "description": "Find stories in ordinary days.",
+                "handwriting": "The art of noticing"
+            },
+            "learn": {
+                "label": "Learning & growth",
+                "sample": "A page for what you learned",
+                "description": "Explore notes that grow with you.",
+                "handwriting": "Keep learning"
+            },
+            "play": {
+                "label": "Games & hobbies",
+                "sample": "Worlds worth getting lost in",
+                "description": "Discover the things people love.",
+                "handwriting": "Create your own space"
+            },
+            "ideas": {
+                "label": "Ideas",
+                "sample": "Thoughts still taking shape",
+                "description": "A small thought can be a new beginning.",
+                "handwriting": "Ideas in motion"
+            }
+        },
+        "tagline": "Space for every idea."
     }
 }

@@ -57,10 +57,9 @@ describe("App configuration guard", () => {
         expect(screen.getByRole("heading", { name: "Server unavailable" })).toBeInTheDocument();
         expect(screen.getByText(/protected pages remain locked/i)).toBeInTheDocument();
         expect(screen.queryByText("User")).not.toBeInTheDocument();
-        expect(screen.queryByRole("banner")).not.toBeInTheDocument();
-        const sidebar = screen.getByRole("complementary");
-        expect(within(sidebar).getByRole("navigation")).toBeInTheDocument();
-        expect(within(sidebar).getByRole("status")).toBeInTheDocument();
+        const header = screen.getByRole("banner");
+        expect(within(header).getByRole("status")).toBeInTheDocument();
+        expect(screen.queryByRole("complementary")).not.toBeInTheDocument();
 
         // When: the user requests another connection attempt.
         const user = userEvent.setup();

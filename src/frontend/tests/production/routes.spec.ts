@@ -38,7 +38,7 @@ test("defers secondary chunks and retains the shell while settings loads", async
     await page.locator(".profile-menu__trigger").click();
     await page.getByRole("link", { name: "Settings", exact: true }).click();
     await expect(page.locator(".page-state")).toBeVisible();
-    await expect(page.locator(".app-sidebar")).toBeVisible();
+    await expect(page.locator(".app-header--minimal")).toBeVisible();
     release();
     // Then: settings renders after its own chunk arrives.
     await expect(page.locator(".settings-layout")).toBeVisible();
@@ -50,7 +50,7 @@ test("failed chunk offers an explicit reload that restores the current route", a
     await page.route(/\/assets\/SettingsPage-[^/]+\.js$/, (route) => route.abort());
     await page.goto("/settings");
     await expect(page.getByRole("heading", { name: "Unable to load this page" })).toBeVisible();
-    await expect(page.locator(".app-sidebar")).toBeVisible();
+    await expect(page.locator(".app-header--minimal")).toBeVisible();
     // When: the chunk becomes available and the user reloads.
     await page.unroute(/\/assets\/SettingsPage-[^/]+\.js$/);
     await page.getByRole("button", { name: "Reload page" }).click();
@@ -113,9 +113,6 @@ test("production runtime redirects showcase to the guest home", async ({ page })
             .locator(".app-sidebar, .app-header")
             .getByRole("link", { name: "GitHub", exact: true }),
     ).toHaveCount(0);
-    await expect(
-        page.locator(".home-hero__actions").getByRole("link", { name: "GitHub", exact: true }),
-    ).toHaveAttribute("href", "https://github.com/Blueprint4Agent/B4FastAPI");
 });
 
 test("production home remains available when a secondary route chunk fails", async ({ page }) => {
@@ -150,7 +147,7 @@ test("production home remains available when a secondary route chunk fails", asy
     await page.getByRole("button", { name: "Home", exact: true }).click();
     await expect(page).toHaveURL(/\/home$/);
     await expect(page.locator("#home-project-title")).toBeVisible();
-    await expect(page.locator(".home-account__link")).toHaveCount(5);
+    await expect(page.locator(".explore-cluster")).toHaveCount(6);
 });
 
 for (const layout of ["sidebar", "topnav", "focused"]) {
@@ -170,28 +167,20 @@ for (const layout of ["sidebar", "topnav", "focused"]) {
         // When: the application loads its deployment config.
         await page.goto("/home");
         // Then: server configuration owns the shell, without rebuilding or exposing development controls.
-        await expect(page.locator(`.app-shell--${layout}`)).toBeVisible();
+        await expect(page.locator(".app-shell--focused")).toBeVisible();
         await expect(page.locator("#home-project-title")).toBeVisible();
-        await expect(page.locator(".home-section-nav a")).toHaveCount(4);
+        await expect(page.locator(".explore-cluster")).toHaveCount(6);
         await page.goto("/settings?section=appearance");
-        await expect(page.locator(`.app-shell--${layout}`)).toBeVisible();
+        await expect(page.locator(".app-shell--focused")).toBeVisible();
         await expect(page.locator(".layout-option")).toHaveCount(0);
     });
 }
 
-test("development can clear a saved preview and follow the deployment default", async ({
-    page,
-}) => {
+test("development keeps minimal shell despite legacy preview", async ({ page }) => {
     await page.addInitScript(() => localStorage.setItem("blueprint_layout_preview", "sidebar"));
-    await page.route("**/config", (route) =>
-        route.fulfill({ json: { ...config, app_layout: "topnav" } }),
-    );
     await page.goto("/settings?section=appearance");
-    await expect(page.locator(".app-shell--sidebar")).toBeVisible();
-    await page.getByRole("button", { name: "Use service default" }).click();
-    await expect(page.locator(".app-shell--topnav")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Use service default" })).toBeDisabled();
-    expect(await page.evaluate(() => localStorage.getItem("blueprint_layout_preview"))).toBeNull();
+    await expect(page.locator(".app-shell--focused")).toBeVisible();
+    await expect(page.locator(".layout-option")).toHaveCount(0);
 });
 
 test("production prompt builder is public and loads its own lazy chunk", async ({ page }) => {
@@ -206,10 +195,9 @@ test("production prompt builder is public and loads its own lazy chunk", async (
         if (request.resourceType() === "script") scripts.push(request.url());
     });
     await page.goto("/home");
-    const link = page.locator('nav#app-sidebar-navigation a[href="/prompt-builder"]');
-    await expect(link).toBeVisible();
+    const link = page.locator('a[href="/prompt-builder"]');
     expect(scripts.some((url) => /\/PromptBuilderPage-/.test(url))).toBe(false);
-    await link.click();
+    await page.goto("/prompt-builder");
     await expect(page.getByRole("button", { name: "Start with Blueprint?" })).toBeVisible();
     expect(scripts.some((url) => /\/PromptBuilderPage-/.test(url))).toBe(true);
     await page.reload();

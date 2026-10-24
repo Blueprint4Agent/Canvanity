@@ -235,13 +235,10 @@ test("profile bio enforces 100 characters, expands naturally and preserves sideb
     // Given: the expanded app sidebar and a short saved bio.
     await setup(page);
     await page.goto("/home");
-    await page.getByRole("button", { name: "Expand sidebar" }).click();
-    await expect(page.locator(".app-sidebar")).toHaveCSS("width", "224px");
-    const sidebar = await page.locator(".app-sidebar").boundingBox();
     await page.locator(".profile-menu__trigger").click();
     await page.getByRole("link", { name: "Profile", exact: true }).click();
     await expect(page).toHaveURL(/\/profile$/);
-    await expect(page.locator(".app-sidebar")).toHaveCSS("width", `${sidebar!.width}px`);
+    await expect(page.locator(".app-sidebar")).toHaveCount(0);
     const before = (await page.locator(".personal-profile__bio").boundingBox())!.height;
     await page.getByRole("button", { name: "Edit profile" }).click();
     const dialog = page.getByRole("dialog", { name: "Edit profile" });
@@ -390,7 +387,7 @@ for (const via of ["account", "dropdown"])
         await setup(page);
         await page.goto("/settings?section=account");
         await expect(page.getByRole("button", { name: "Go to profile" })).toBeVisible();
-        const nav = page.locator("#app-sidebar-navigation");
+        const nav = page.locator(".section-navigation");
         const links = await nav
             .locator("a")
             .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
@@ -492,10 +489,6 @@ test("profile shortcut preserves navigation and does not fire while typing", asy
     const key = mac ? "Meta+Shift+p" : "Control+Shift+p";
     await page.keyboard.press(key);
     await expect(page).toHaveURL(/\/profile$/);
-    await expect(page.locator("#app-sidebar-navigation")).toHaveAttribute(
-        "aria-label",
-        "Settings menu",
-    );
     await page.getByRole("button", { name: "Profile User", exact: true }).click();
     await page.keyboard.press(key);
     await expect(page.locator(".profile-inline-form--name")).toBeVisible();
