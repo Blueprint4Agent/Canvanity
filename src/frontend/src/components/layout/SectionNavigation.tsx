@@ -15,6 +15,15 @@ export function SectionNavigation() {
     if (!hasSections) return null;
     return (
         <aside className={`section-navigation${open ? " section-navigation--open" : ""}`}>
+            <div className="section-navigation__editorial" aria-hidden="true">
+                <img
+                    src={isSettings ? "/images/explore/build.webp" : "/images/explore/agent.webp"}
+                    alt=""
+                    width="720"
+                    height="400"
+                />
+                <span>{isSettings ? "Settings" : "Admin"}</span>
+            </div>
             <h2 className="section-navigation__title">{label}</h2>
             <Button
                 className="section-navigation__toggle"
@@ -36,7 +45,7 @@ export function SectionNavigation() {
                             isSettings ? (isSectionActive(section) ? "page" : false) : undefined
                         }
                         className={({ isActive }) =>
-                            `section-navigation__item${(isSettings ? isSectionActive(section) : isActive) ? " section-navigation__item--active" : ""}`
+                            `section-navigation__item ui-action ui-action--pencil${(isSettings ? isSectionActive(section) : isActive) ? " section-navigation__item--active" : ""}`
                         }
                     >
                         <Icon aria-hidden="true" />

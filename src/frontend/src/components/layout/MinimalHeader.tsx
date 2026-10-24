@@ -61,7 +61,7 @@ export function MinimalHeader({ subscriptionTier, inboxUnread }: MinimalHeaderPr
                             href={href}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="minimal-header__resource"
+                            className="minimal-header__resource ui-action"
                             aria-label={label}
                         >
                             {Icon ? (

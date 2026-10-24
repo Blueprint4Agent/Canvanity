@@ -174,6 +174,8 @@ export default function StyleStudio({
                         <div className="style-studio__header-actions">
                             <Tooltip content={t("styleStudio.reload")} side="left">
                                 <Button
+                                    appearance="canvas"
+                                    iconOnly
                                     className="style-studio__icon-button"
                                     aria-label={t("styleStudio.reload")}
                                     disabled={studio.busy}
@@ -184,6 +186,8 @@ export default function StyleStudio({
                             </Tooltip>
                             <Tooltip content={t("styleStudio.close")} side="left">
                                 <Button
+                                    appearance="canvas"
+                                    iconOnly
                                     className="style-studio__icon-button"
                                     aria-label={t("styleStudio.close")}
                                     onClick={() => setOpen(false)}

@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import { useAppLayout } from "../../hooks/useAppLayout";
 import { InquirySettings } from "../support/InquirySettings";
 import { AccountNameSettings } from "./AccountNameSettings";
@@ -225,14 +226,17 @@ export function SettingsPage() {
                             <article className="settings-row">
                                 <h2>{t("settings.menu.profile")}</h2>
                                 <Button
-                                    appearance="pill"
+                                    appearance="canvas"
+                                    iconOnly
+                                    aria-label={t("settings.account.editProfile")}
+                                    title={t("settings.account.editProfile")}
                                     onClick={() =>
                                         navigate("/profile", {
                                             state: { profileSidebarPath: "/settings" },
                                         })
                                     }
                                 >
-                                    {t("settings.account.editProfile")}
+                                    <ChevronRight aria-hidden="true" />
                                 </Button>
                             </article>
                             <CurrentPlanRow
