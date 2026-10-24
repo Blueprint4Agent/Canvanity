@@ -9,5 +9,6 @@
         "login": true,
         "email": false,
         "oauth": false
-    }
+    },
+    "logo": "branding/canvanity-mark.png"
 }
