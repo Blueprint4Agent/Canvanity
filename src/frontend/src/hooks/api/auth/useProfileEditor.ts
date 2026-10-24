@@ -41,7 +41,7 @@ export function useProfileEditor() {
         try {
             await action();
             if (current !== epoch.current) return;
-            toast(t("toast.profileSuccess"));
+            toast(t("toast.profileSuccess"), { tone: "success" });
             if (close) {
                 setOpen(false);
                 setEditing(null);
