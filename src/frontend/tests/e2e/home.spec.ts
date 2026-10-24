@@ -1,375 +1,242 @@
 import { captureVisual } from "../fixtures/visual";
 import { expect, test } from "../fixtures/browser";
-import { readProjectConfig } from "../../scripts/project-config.mjs";
-import { member, setup } from "../fixtures/runtime";
-for (const width of [390, 1440])
+import { setup } from "../fixtures/runtime";
+for (const width of [320, 390, 1440])
     for (const colorScheme of ["light", "dark"] as const) {
-        test(`production landing preserves shared surfaces and account routes ${colorScheme} at ${width}`, async ({
-            page,
-        }, info) => {
+        test(`finite canvas menu ${colorScheme} ${width}`, async ({ page }, info) => {
             await page.setViewportSize({ width, height: 1000 });
             await page.emulateMedia({ colorScheme });
-            await setup(page, "manager");
-            await page.goto("/");
-            await expect(page).toHaveURL(/\/home$/);
-            await expect(page.locator("#home-project-title")).toBeVisible();
-            await expect(page.locator(".home-account__link")).toHaveCount(6);
-            await expect(page.locator('.home-account__link[href="/admin"]')).toBeVisible();
-            await expect(page.locator('a[href="/show-case"]')).toHaveCount(0);
-            const geometry = () =>
-                page.evaluate(() => {
-                    const shell = document.querySelector(".home-landing, .settings-content-card")!;
-                    const style = getComputedStyle(shell);
-                    return { font: style.fontFamily, color: style.color };
-                });
-            await expect(page.locator('.home-account__link[href="/notifications"]')).toBeVisible();
-            await expect(
-                page.locator('.home-account__link[href="/settings?section=support"]'),
-            ).toBeVisible();
-            await expect(page.locator(".home-capabilities")).toContainText(
-                "opt-in WebSocket provider template",
-            );
-            const preview = page.locator('.home-preview__images > img[data-active="true"]');
-            await expect(preview).toBeVisible();
-            await expect
-                .poll(() =>
-                    preview.evaluate(
-                        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-                    ),
-                )
-                .toBe(true);
-            if (width !== 1440 || colorScheme !== "light") {
-                const home = await geometry();
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
-                await captureVisual(page, { path: info.outputPath("home.png"), fullPage: true });
-                await page.goto("/settings?section=general");
-                await expect(page.locator(".settings-content-card h1")).toBeVisible();
-                expect(await geometry()).toEqual(home);
-                return;
-            }
-            await page.getByRole("button", { name: "Users", exact: true }).click();
-            await expect(preview).toHaveAttribute("src", /users-en.webp$/);
-            await expect
-                .poll(() =>
-                    preview.evaluate(
-                        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-                    ),
-                )
-                .toBe(true);
-            await page.getByRole("button", { name: "Showcase", exact: true }).click();
-            await expect(preview).toHaveAttribute("src", /components-en.webp$/);
-            await expect(page.locator(".home-hero .home-eyebrow")).toHaveText(
-                readProjectConfig()?.name ?? "B4A",
-            );
-            await expect(
-                page.getByRole("button", { name: "Open screen", exact: true }),
-            ).toHaveCount(0);
-            const heroActions = await page
-                .locator(".home-hero .home-hero__actions > a")
-                .evaluateAll((buttons) =>
-                    buttons.map((button) => ({
-                        height: button.getBoundingClientRect().height,
-                        radius: getComputedStyle(button).borderRadius,
-                    })),
-                );
-            expect(heroActions).toHaveLength(3);
-            expect(heroActions[0]).toEqual(heroActions[1]);
-            expect(heroActions[0]).toEqual(heroActions[2]);
-            await page.getByRole("button", { name: "Billing", exact: true }).click();
-            await expect(preview).toHaveAttribute("src", /billing-en.webp$/);
-            await expect
-                .poll(() =>
-                    preview.evaluate(
-                        (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-                    ),
-                )
-                .toBe(true);
-            const enlarge = page.getByRole("button", { name: "Enlarge", exact: true });
-            await enlarge.click();
-            const viewer = page.getByRole("dialog", {
-                name: `${readProjectConfig()?.short_name ?? "B4A"} · Billing`,
-            });
-            await expect(viewer).toBeVisible();
-            await expect
-                .poll(() =>
-                    viewer
-                        .locator("img")
-                        .evaluate(
-                            (image: HTMLImageElement) => image.complete && image.naturalWidth > 0,
-                        ),
-                )
-                .toBe(true);
-            expect(
-                await viewer.evaluate((element) => element.scrollWidth <= element.clientWidth),
-            ).toBe(true);
-            await page.keyboard.press("Escape");
-            await expect(viewer).toHaveCount(0);
-            await expect(enlarge).toBeFocused();
-            await page.getByRole("button", { name: "Open screen", exact: true }).click();
-            await expect(page).toHaveURL(/section=billing$/);
+            await setup(page, "manager", "development");
             await page.goto("/home");
-            await expect(page.locator(".home-account__link")).toHaveCount(6);
-            await page.locator('.home-section-nav a[href$="#home-product-preview"]').click();
+            await expect(page.locator("#home-project-title")).toBeVisible();
+            await expect(page.locator(".explore-cluster")).toHaveCount(6);
+            await expect(page.locator(".app-sidebar")).toHaveCount(0);
+            await expect(page.locator(".app-header--minimal")).toBeVisible();
+            await expect(page.getByRole("link", { name: "GitHub", exact: true })).toBeVisible();
+            await expect(
+                page.getByRole("link", { name: "Buy Me a Coffee", exact: true }),
+            ).toBeVisible();
+            const image = page.locator(".explore-minimap img");
+            await expect(image).toBeVisible();
             await expect
                 .poll(() =>
-                    page
-                        .locator("#home-product-preview")
-                        .evaluate((element) => element.getBoundingClientRect().top),
+                    image.evaluate(
+                        (img: HTMLImageElement) => img.complete && img.naturalWidth === 288,
+                    ),
                 )
-                .toBeLessThan(180);
-            await page.getByRole("button", { name: "Server status", exact: true }).click();
-            await expect(preview).toHaveAttribute("src", /server-en.webp$/);
-            await expect(
-                page.getByRole("button", { name: "Open screen", exact: true }),
-            ).toHaveCount(0);
-            const home = await geometry();
+                .toBe(true);
             expect(
                 await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
             ).toBe(true);
-            await captureVisual(page, {
-                path: info.outputPath("home.png"),
-                animations: "disabled",
-                fullPage: true,
-            });
-            await page.locator(".home-capability").last().scrollIntoViewIfNeeded();
-            await captureVisual(page, {
-                path: info.outputPath("home-features.png"),
-                animations: "disabled",
-            });
-            await page.locator('.home-account__link[href="/settings?section=general"]').click();
-            await expect(page).toHaveURL(/\/settings\?section=general$/);
-            await expect(page.getByRole("heading", { name: "General", exact: true })).toBeVisible();
-            await expect(page.locator(".settings-row").first()).toBeVisible();
-            expect(await geometry()).toEqual(home);
-            await captureVisual(page, {
-                path: info.outputPath("general-peer.png"),
-                animations: "disabled",
-                fullPage: true,
-            });
-            await page.getByRole("link", { name: "Back to app", exact: true }).click();
-            await expect(page).toHaveURL(/\/home$/);
-            await page.locator('.home-account__link[href="/settings?section=account"]').click();
-            await expect(page).toHaveURL(/\/settings\?section=account$/);
+            const grid = await page
+                .locator(".explore-viewport")
+                .evaluate((el) => getComputedStyle(el).backgroundImage);
+            expect(grid).toContain("linear-gradient");
+            expect(grid).not.toContain("radial-gradient");
+            await page.keyboard.press("+");
+            await expect(page.locator(".explore-zoom")).not.toHaveText("25%");
+            await page.keyboard.press("/");
+            await expect(page.getByRole("searchbox")).toBeFocused();
+            await page.getByRole("searchbox").fill("AI");
+            await page.keyboard.press("Enter");
+            await expect(page.locator(".explore-selection")).toContainText("AI");
+            await page.keyboard.press("0");
+            await expect(page.locator(".explore-selection")).toHaveCount(0);
+            await captureVisual(page, { path: info.outputPath("canvas.png"), fullPage: true });
         });
     }
-test("Korean production home wraps long account names and hides privileged shortcuts", async ({
+test("camera limits, browser chord isolation, wheel and minimap use one bounded camera", async ({
     page,
-}, info) => {
-    await page.setViewportSize({ width: 390, height: 900 });
-    await page.addInitScript(() => localStorage.setItem("b4a_language", "ko"));
-    await setup(page, "user");
-    await page.route("**/api/v1/auth/me", (route) =>
-        route.fulfill({
-            json: {
-                ...member,
-                role: "user",
-                name: "아주긴이름을사용하는사용자아주긴이름을사용하는사용자",
-            },
-        }),
-    );
-    await page.goto("/dashboard");
-    await expect(page).toHaveURL(/\/home$/);
-    await expect(page.locator("#home-project-title")).toBeVisible();
-    await expect(page.locator(".home-account__link")).toHaveCount(5);
-    await expect(page.locator('.home-account__link[href="/admin"]')).toHaveCount(0);
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
-        true,
-    );
-    await captureVisual(page, {
-        path: info.outputPath("home-ko.png"),
-        animations: "disabled",
-        fullPage: true,
-    });
-});
-test("signed-out visitors use home and sign in for account access", async ({ page }) => {
+}) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
     await setup(page, null);
     await page.goto("/home");
-    await expect(page).toHaveURL(/\/home$/);
-    await page.getByRole("button", { name: "Log in", exact: true }).click();
-    await expect(page.getByRole("dialog")).toBeVisible();
-    await expect(page.locator('.home-account__link[href="/admin"]')).toHaveCount(0);
-});
-test("public previews do not request administrator data or expose restricted destinations", async ({
-    page,
-}) => {
-    await setup(page, null, "production");
-    let adminRequests = 0;
-    page.on("request", (request) => {
-        if (/\/api\/v1\/(admin|auth\/admin)/.test(request.url())) adminRequests++;
+    const canvas = page.locator(".explore-viewport");
+    await expect(canvas).toBeVisible();
+    await canvas.focus();
+    for (let i = 0; i < 25; i++) await page.keyboard.press("+");
+    await expect(page.locator(".explore-zoom")).toHaveText("200%");
+    await expect(page.getByRole("button", { name: "Zoom in", exact: true })).toBeDisabled();
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "false");
+    await page.keyboard.press("Control+-");
+    await expect(page.locator(".explore-zoom")).not.toHaveText("200%");
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "false");
+    await page.mouse.move(800, 500);
+    await page.mouse.wheel(50000, 50000);
+    await page.waitForTimeout(50);
+    const bounded = await page.locator(".explore-world").evaluate((el) => {
+        const m = new DOMMatrix(getComputedStyle(el).transform);
+        return { x: m.e, y: m.f };
     });
-    await page.goto("/home");
-    for (const name of ["Users", "Server status", "Showcase"]) {
-        await page.getByRole("button", { name, exact: true }).click();
-        await expect(page.getByRole("button", { name: "Open screen", exact: true })).toHaveCount(0);
-    }
-    expect(adminRequests).toBe(0);
-    await page.getByRole("button", { name: "Billing", exact: true }).click();
-    await page.getByRole("button", { name: "Open screen", exact: true }).click();
-    await expect(page).toHaveURL(/\/plans$/);
+    expect(bounded.x).toBeGreaterThanOrEqual(-3360);
+    expect(bounded.y).toBeGreaterThanOrEqual(-2200);
+    const image = page.locator(".explore-minimap img");
+    await expect(image).toBeVisible();
+    const src = await image.getAttribute("src");
+    await page.locator(".explore-minimap").click({ position: { x: 10, y: 10 } });
+    expect(await image.getAttribute("src")).toBe(src);
+    for (let i = 0; i < 35; i++) await page.keyboard.press("-");
+    await expect(page.locator(".explore-zoom")).toHaveText("25%");
+    await expect(
+        page.locator(".explore-topic__handwriting").filter({ hasText: "The art of noticing" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Zoom out", exact: true })).toBeDisabled();
+    await page.getByRole("button", { name: "Zoom in", exact: true }).hover();
+    await expect(page.getByRole("tooltip")).toContainText("+");
 });
-for (const mode of ["sidebar", "topnav", "focused"]) {
-    for (const width of [390, 1440]) {
-        for (const theme of ["light", "dark"] as const) {
-            test(`landing capsule and footer ${mode} ${width} ${theme}`, async ({ page }, info) => {
-                // Given: a localized landing in each shell, with both motion preferences covered.
-                await page.setViewportSize({ width, height: 960 });
-                await page.emulateMedia({
-                    colorScheme: theme,
-                    reducedMotion: theme === "light" ? "reduce" : "no-preference",
-                });
-                await page.addInitScript((value) => {
-                    localStorage.setItem("blueprint_layout_preview", value);
-                    localStorage.setItem("b4a_language", "ko");
-                }, mode);
-                await setup(page, "manager", "development");
-                await page.goto("/home");
-                const capsule = page.locator(".home-section-nav");
-                await expect(capsule).toBeVisible();
-                await expect(capsule.locator("a")).toHaveCount(4);
-                if (mode !== "sidebar" && width === 1440) {
-                    const navBox = await capsule.boundingBox();
-                    const headerBox = await page.locator(".app-header").boundingBox();
-                    expect(navBox).not.toBeNull();
-                    expect(headerBox).not.toBeNull();
-                    expect(navBox!.x + navBox!.width / 2).toBeCloseTo(
-                        headerBox!.x + headerBox!.width / 2,
-                        0,
-                    );
-                    // The header's one-pixel bottom border is outside its positioning box.
-                    const borderBottom = await page
-                        .locator(".app-header")
-                        .evaluate((node) => parseFloat(getComputedStyle(node).borderBottomWidth));
-                    expect(navBox!.y + navBox!.height / 2).toBeCloseTo(
-                        headerBox!.y + (headerBox!.height - borderBottom) / 2,
-                        1,
-                    );
-                    expect(navBox!.y + navBox!.height).toBeLessThanOrEqual(
-                        headerBox!.y + headerBox!.height,
-                    );
-                    expect(await capsule.evaluate((node) => getComputedStyle(node).boxShadow)).toBe(
-                        "none",
-                    );
-                }
 
-                await expect(page.locator(".home-hero .home-hero__actions a")).toHaveCount(3);
-                await expect(page.locator(".home-preview__chrome")).toHaveCount(0);
-                await expect(
-                    page.locator(".home-overview").getByRole("link", { name: "Buy Me a Coffee" }),
-                ).toHaveCount(0);
-                expect(
-                    await page
-                        .locator(".app-main")
-                        .evaluate((node) => getComputedStyle(node).scrollBehavior),
-                ).toBe(theme === "light" ? "auto" : "smooth");
-                await expect
-                    .poll(() =>
-                        page
-                            .locator('.home-preview__images > img[data-active="true"]')
-                            .evaluate(
-                                (img: HTMLImageElement) => img.complete && img.naturalWidth > 0,
-                            ),
-                    )
-                    .toBe(true);
-                await captureVisual(page, {
-                    path: info.outputPath("landing-top.png"),
-                    animations: "disabled",
-                });
-                // When: navigating to each section through native fragment links.
-                for (const id of [
-                    "home-capabilities",
-                    "home-workflow",
-                    "home-use-cases",
-                    "home-product-preview",
-                ]) {
-                    await capsule.locator(`a[href$="#${id}"]`).click();
-                    await expect(page).toHaveURL(new RegExp(`#${id}$`));
-                    const target = page.locator(`#${id}`);
-                    await expect
-                        .poll(async () => {
-                            const nav = await capsule.boundingBox();
-                            const box = await target.boundingBox();
-                            return box!.y >= nav!.y + nav!.height && box!.y < 400;
-                        })
-                        .toBe(true);
-                    await expect(capsule).toBeInViewport();
-                    if (id === "home-capabilities")
-                        await captureVisual(page, {
-                            path: info.outputPath("landing-features.png"),
-                            animations: "disabled",
-                        });
-                }
-                // Then: footer links retain permissions; keyboard navigation also reaches a section.
-                await page.locator(".home-footer").scrollIntoViewIfNeeded();
-                await expect(capsule).toBeInViewport();
-                const footerWidth = await page
-                    .locator(".home-footer")
-                    .evaluate((node) => node.getBoundingClientRect().width);
-                const mainWidth = await page
-                    .locator(".app-main")
-                    .evaluate((node) => node.clientWidth);
-                expect(footerWidth).toBeCloseTo(mainWidth, 0);
-                await expect(page.locator(".home-footer .home-account__link")).toHaveCount(6);
-                await expect(page.locator(".home-workflow__steps > li")).toHaveCount(3);
-                await expect(page.locator(".home-use-cases__grid > article")).toHaveCount(4);
-                expect(
-                    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
-                ).toBe(true);
-                await captureVisual(page, {
-                    path: info.outputPath("landing-footer.png"),
-                    animations: "disabled",
-                });
-                const featureLink = capsule.locator('a[href$="#home-capabilities"]');
-                await featureLink.focus();
-                await page.keyboard.press("Enter");
-                await expect(page.locator("#home-capabilities")).toBeFocused();
-            });
-        }
-    }
-}
-test("home preview rotates while hovered and pauses explicitly or for reduced motion", async ({
+test("touch pinch shares finite zoom rules and minimap has no blue fill", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await setup(page, null);
+    await page.goto("/home");
+    await expect(page.locator(".explore-viewport")).toBeVisible();
+    const session = await page.context().newCDPSession(page);
+    await session.send("Emulation.setTouchEmulationEnabled", { enabled: true });
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "false");
+    const before = Number((await page.locator(".explore-zoom").innerText()).replace("%", ""));
+    await session.send("Input.dispatchTouchEvent", {
+        type: "touchStart",
+        touchPoints: [
+            { x: 150, y: 450 },
+            { x: 230, y: 450 },
+        ],
+    });
+    await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+            { x: 90, y: 450 },
+            { x: 290, y: 450 },
+        ],
+    });
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await expect
+        .poll(async () =>
+            Number((await page.locator(".explore-zoom").innerText()).replace("%", "")),
+        )
+        .toBeGreaterThan(before);
+    await expect(page.locator(".explore-minimap__viewport")).toHaveCSS(
+        "background-color",
+        "rgba(0, 0, 0, 0)",
+    );
+    await expect(page.locator("#explore-keyboard-help")).toHaveCount(0);
+    const bounds = await page.locator(".explore-page").boundingBox();
+    expect(bounds?.x).toBe(0);
+    expect(bounds?.width).toBe(390);
+    expect(bounds?.height).toBe(900);
+    await session.detach();
+});
+
+test("zoom controls animate the actual scene and respect reduced motion", async ({ page }) => {
+    await setup(page, null);
+    await page.goto("/home");
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "false");
+    const world = page.locator(".explore-world");
+    const before = await world.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+    await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "true");
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "false");
+    const after = await world.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a);
+    expect(after).toBeCloseTo(before * 1.2, 2);
+    await page.getByRole("button", { name: "Zoom out", exact: true }).click();
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    expect(
+        await world.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a),
+    ).toBeCloseTo(before, 2);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    await expect(page.locator(".explore-local-heading")).toHaveCount(0);
+});
+
+test("plain vertical zoom tools and photo hover follow the minimal reference", async ({ page }) => {
+    await setup(page, null, "development");
+    await page.goto("/home");
+    await expect(page.locator(".explore-world")).toHaveAttribute("data-camera-moving", "false");
+    await expect(page.locator(".minimal-header__actions")).toHaveCSS(
+        "background-color",
+        "rgba(0, 0, 0, 0)",
+    );
+    await expect(page.locator(".explore-zoom-tools")).toHaveCSS("flex-direction", "column");
+    await expect(page.locator(".explore-zoom-tools")).toHaveCSS(
+        "background-color",
+        "rgba(0, 0, 0, 0)",
+    );
+    await expect(page.locator(".explore-minimap")).toHaveCSS("border-top-width", "0px");
+    await expect(page.locator(".explore-minimap")).toHaveCSS("box-shadow", "none");
+    const topic = page.locator(".explore-cluster--ideas .explore-topic");
+    await topic.hover();
+    await expect
+        .poll(() => topic.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).a))
+        .toBeGreaterThan(1.02);
+    await expect(topic).toHaveCSS("text-decoration-line", "none");
+    await expect(topic.locator(".ui-button__label")).toHaveCSS("text-decoration-line", "none");
+});
+
+test("trackpad pinch and browser zoom chords belong to the mounted canvas", async ({ page }) => {
+    await setup(page, null);
+    await page.goto("/home");
+    const world = page.locator(".explore-world");
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    const initial = await page.locator(".explore-zoom").innerText();
+    const cancelled = await page.locator(".explore-viewport").evaluate(
+        (el) =>
+            !el.dispatchEvent(
+                new WheelEvent("wheel", {
+                    deltaY: -30,
+                    ctrlKey: true,
+                    clientX: 500,
+                    clientY: 400,
+                    bubbles: true,
+                    cancelable: true,
+                }),
+            ),
+    );
+    expect(cancelled).toBe(true);
+    await expect(page.locator(".explore-zoom")).not.toHaveText(initial);
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    const before = await page.locator(".explore-zoom").innerText();
+    await page.keyboard.press("Meta+-");
+    await expect(page.locator(".explore-zoom")).not.toHaveText(before);
+    const zoom = await page.locator(".explore-zoom").innerText();
+    await page.mouse.move(800, 500);
+    await page.mouse.wheel(100, 100);
+    await expect(page.locator(".explore-zoom")).toHaveText(zoom);
+    expect(await page.evaluate(() => visualViewport?.scale)).toBe(1);
+});
+
+test("Space temporarily pans, release and blur restore clicks without native text selection", async ({
     page,
 }) => {
-    // Given: the preview is visible, with normal motion and no pointer/focus interaction.
-    await page.setViewportSize({ width: 1440, height: 1000 });
-    await page.emulateMedia({ reducedMotion: "no-preference" });
-    await page.clock.install();
-    await setup(page, null, "production");
+    await setup(page, null);
     await page.goto("/home");
-    const image = page.locator('.home-preview__images > img[data-active="true"]');
-    await expect(image).toHaveAttribute("src", /components-en.webp$/);
-    await expect(page.locator("#home-product-preview")).toBeInViewport();
-    await page.mouse.move(0, 0);
-    // When/Then: time advances through all four previews and wraps.
-    for (const preview of ["users", "server", "billing", "components"]) {
-        await page.clock.runFor(6100);
-        await expect(image).toHaveAttribute("src", new RegExp(`${preview}-en.webp$`));
-    }
-    await page.locator(".home-preview__images").hover();
-    await expect(page.locator(".home-preview__controls")).toHaveAttribute("data-rotating", "true");
-    await page.clock.runFor(6100);
-    await expect(image).toHaveAttribute("src", /users-en.webp$/);
-    // Explicit pause persists after pointer and keyboard focus leave the preview.
-    await page.getByRole("button", { name: "Pause preview rotation" }).click();
-    await page.locator('.home-section-nav a[href$="#home-product-preview"]').focus();
-    await page.mouse.move(0, 0);
-    await page.clock.runFor(7000);
-    await expect(image).toHaveAttribute("src", /users-en.webp$/);
-    await page.getByRole("button", { name: "Resume preview rotation" }).click();
-    await page.locator('.home-section-nav a[href$="#home-product-preview"]').focus();
-    await page.mouse.move(0, 0);
-    await page.clock.runFor(6100);
-    await expect(image).toHaveAttribute("src", /server-en.webp$/);
-    // An enlarged screenshot stays stable while being read.
-    await page.getByRole("button", { name: "Enlarge", exact: true }).click();
-    await page.clock.runFor(7000);
-    await expect(page.getByRole("dialog").locator("img")).toHaveAttribute("src", /server-en.webp$/);
-    await page.keyboard.press("Escape");
-    await page.emulateMedia({ reducedMotion: "reduce" });
-    await page.locator('.home-section-nav a[href$="#home-product-preview"]').focus();
-    await page.mouse.move(0, 0);
-    await page.clock.runFor(7000);
-    await expect(image).toHaveAttribute("src", /server-en.webp$/);
-    await expect(page.getByRole("button", { name: "Pause preview rotation" })).toHaveCount(0);
+    const world = page.locator(".explore-world");
+    await expect(world).toHaveAttribute("data-camera-moving", "false");
+    const transform = () => world.evaluate((el) => getComputedStyle(el).transform);
+    const before = await transform();
+    await page.mouse.move(800, 540);
+    await page.mouse.down();
+    await page.mouse.move(900, 580, { steps: 5 });
+    await page.mouse.up();
+    expect(await transform()).toBe(before);
+    expect(await page.evaluate(() => window.getSelection()?.toString())).toBe("");
+    await page.keyboard.down("Space");
+    await expect(page.locator(".explore-page")).toHaveAttribute("data-tool", "hand");
+    await page.mouse.move(800, 540);
+    await page.mouse.down();
+    await page.mouse.move(900, 580, { steps: 5 });
+    await expect.poll(transform).not.toBe(before);
+    await page.keyboard.up("Space");
+    await expect(page.locator(".explore-page")).toHaveAttribute("data-tool", "select");
+    await page.mouse.up();
+    await page.keyboard.down("Space");
+    await page.evaluate(() => window.dispatchEvent(new Event("blur")));
+    await expect(page.locator(".explore-page")).toHaveAttribute("data-tool", "select");
+    await page.keyboard.up("Space");
+    await page.locator(".explore-cluster--ideas button").click();
+    await expect(page.locator(".explore-selection")).toContainText("Ideas");
+    await page.keyboard.press("/");
+    await page.getByRole("searchbox").fill("AI");
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("searchbox")).toHaveValue("AI ");
+    await expect(page.locator(".explore-page")).toHaveAttribute("data-tool", "select");
 });

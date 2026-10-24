@@ -416,7 +416,9 @@
         },
         "guest": "게스트",
         "brand": "B4A",
-        "home": "홈"
+        "home": "홈",
+        "showcase": "쇼케이스",
+        "promptBuilder": "프롬프트 빌더"
     },
     "settings": {
         "title": "설정",
@@ -604,7 +606,7 @@
         },
         "keyboard": {
             "description": "자주 쓰는 기능의 단축키를 변경할 수 있습니다.",
-            "toggleSidebar": "사이드바 펼치기 / 접기",
+            "toggleSidebar": "메뉴 열기 / 닫기",
             "openSettings": "설정 열기",
             "press": "키 조합을 누르세요",
             "reset": "기본값으로 복원",
@@ -1503,5 +1505,70 @@
                 "all": "전체"
             }
         }
+    },
+    "explore": {
+        "browse": "둘러보기",
+        "title": "어떤 이야기가\n궁금하세요?",
+        "description": "관심 있는 이야기를 펼치고,\n생각과 사람을 만나보세요.",
+        "exampleLabel": "예시 콘텐츠",
+        "search": "관심사 찾기",
+        "searchLabel": "어떤 이야기를 찾으세요?",
+        "searchPlaceholder": "AI, 개발, 일상…",
+        "noResults": "다른 관심사를 찾아보세요.",
+        "closeSearch": "검색 닫기",
+        "canvasLabel": "둘러보기 캔버스",
+        "tools": "캔버스 도구",
+        "select": "선택",
+        "pan": "화면 이동",
+        "panHold": "Space를 누르는 동안 화면 이동",
+        "zoomIn": "확대",
+        "zoomOut": "축소",
+        "fit": "전체 보기",
+        "back": "가운데로 돌아가기",
+        "mapNavigate": "미니맵에서 화면 이동",
+        "zoomLevel": "확대 비율",
+        "openExample": "{{topic}} 예시 둘러보기",
+        "snapshotError": "미리보기를 불러오지 못했습니다",
+        "snapshotLoading": "미니맵 준비 중",
+        "retrySnapshot": "미니맵 다시 만들기",
+        "topics": {
+            "agent": {
+                "label": "AI / Agent",
+                "sample": "아이디어에서 시작하는 작은 자동화",
+                "description": "도구와 에이전트를 연결한 생각들을 둘러보세요.",
+                "handwriting": "Make room for ideas"
+            },
+            "build": {
+                "label": "개발 · 생산성",
+                "sample": "나만의 작업 흐름 만들기",
+                "description": "작게 만들고 다듬는 작업을 만나보세요.",
+                "handwriting": "Build, iterate, grow"
+            },
+            "daily": {
+                "label": "일상 · 기록",
+                "sample": "오늘의 장면과 짧은 메모",
+                "description": "평범한 하루에서 발견한 이야기를 펼쳐보세요.",
+                "handwriting": "The art of noticing"
+            },
+            "learn": {
+                "label": "학습 · 성장",
+                "sample": "배운 것을 한 장에 정리하기",
+                "description": "새로운 배움과 함께 자라는 기록을 둘러보세요.",
+                "handwriting": "Keep learning"
+            },
+            "play": {
+                "label": "게임 · 취미",
+                "sample": "좋아하는 세계를 모으는 시간",
+                "description": "몰입하는 순간과 취향을 나누는 이야기를 만나보세요.",
+                "handwriting": "Create your own space"
+            },
+            "ideas": {
+                "label": "아이디어",
+                "sample": "아직 완성되지 않은 생각들",
+                "description": "가볍게 떠올린 생각이 다음 시작이 될 수 있어요.",
+                "handwriting": "Ideas in motion"
+            }
+        },
+        "tagline": "Space for every idea."
     }
 }

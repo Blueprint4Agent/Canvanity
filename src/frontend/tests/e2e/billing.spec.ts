@@ -285,6 +285,7 @@ test("standalone plans close to their originating page and direct visits have a 
     await page.goto("/show-case");
     await page.locator(".profile-menu__trigger").click();
     await page.getByRole("link", { name: "Upgrade plan", exact: true }).click();
+    await expect(page.locator(".plans-screen")).toBeVisible();
     await expect(page.locator(".app-sidebar")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Won", exact: true })).toHaveAttribute(
         "aria-pressed",
@@ -300,7 +301,7 @@ test("standalone plans close to their originating page and direct visits have a 
     await close.focus();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/show-case$/);
-    await expect(page.locator(".app-sidebar")).toBeVisible();
+    await expect(page.locator(".app-header--minimal")).toBeVisible();
     await page.goto("/plans");
     await page.getByRole("button", { name: "Close plan selection" }).click();
     await expect(page).toHaveURL(/\/settings\?section=billing$/);

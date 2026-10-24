@@ -159,6 +159,8 @@ for (const width of [390, 1440])
             await page.getByRole("searchbox").fill("no-match");
             await page.getByRole("button", { name: "Search", exact: true }).click();
             await expect(page.getByText("No matching users.")).toBeVisible();
+            if (await page.locator(".section-navigation__toggle").isVisible())
+                await page.locator(".section-navigation__toggle").click();
             await page.getByRole("link", { name: "Server status", exact: true }).click();
             await expect(page.getByText("SQLite", { exact: true })).toBeVisible();
             await expect(page.getByText(/Read-only view of real server health/)).toBeVisible();
