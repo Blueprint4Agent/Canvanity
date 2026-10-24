@@ -4,7 +4,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
     children: ReactNode;
     loading?: boolean;
     iconOnly?: boolean;
-    appearance?: "default" | "pill" | "pill-secondary" | "text";
+    appearance?: "default" | "pill" | "pill-secondary" | "text" | "canvas" | "canvas-card";
 };
 
 export function Button({

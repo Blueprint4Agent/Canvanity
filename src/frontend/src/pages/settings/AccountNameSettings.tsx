@@ -35,7 +35,7 @@ export function AccountNameSettings({ name }: { name: string }) {
                     <>
                         <span>{name}</span>
                         <Button
-                            appearance="text"
+                            appearance="canvas"
                             className="account-name-edit-trigger"
                             iconOnly
                             aria-label={t("settings.profile.editName")}

@@ -406,7 +406,7 @@ for (const width of [390, 1440]) {
             // When: the local example triggers an actual timed viewport toast.
             await trigger.click();
             const toast = page.locator(".ui-toast-card");
-            await expect(toast).toHaveCSS("border-width", "0px");
+            await expect(toast).toHaveCSS("border-width", "1px");
             await expect(toast).toHaveText("Your changes have been saved.");
             await toast.evaluate(async (element) => {
                 await Promise.all(element.getAnimations().map((animation) => animation.finished));
@@ -416,14 +416,15 @@ for (const width of [390, 1440]) {
             expect(box.y).toBeGreaterThanOrEqual(16);
             expect(box.y).toBeLessThan(24);
             expect(box.width).toBeLessThanOrEqual(width - 32);
+            await expect(toast).toHaveCSS("border-radius", "6px");
             expect(
-                await toast.evaluate((e) => parseFloat(getComputedStyle(e).borderRadius)),
-            ).toBeGreaterThan(box.height / 2);
+                await toast.evaluate((el) => getComputedStyle(el, "::before").backgroundColor),
+            ).toBe("rgb(90, 142, 255)");
             expect(await textContrast(toast)).toBeGreaterThanOrEqual(4.5);
             await expect(page.locator(".ui-toast-layer")).toHaveCSS("pointer-events", "none");
             await expect(trigger).toBeFocused();
             await captureVisual(page, {
-                path: testInfo.outputPath("capsule-toast.png"),
+                path: testInfo.outputPath("minimal-toast.png"),
                 fullPage: false,
             });
             // Then: it disappears automatically without trapping or moving focus.
@@ -510,7 +511,7 @@ for (const width of [390, 1440]) {
             await action.focus();
             await expect(action).toHaveCSS("outline-style", "solid");
             await action.hover();
-            await expect(action).toHaveCSS("text-decoration-line", "underline");
+            await expect(action).toHaveCSS("text-decoration-line", "none");
             await captureVisual(page, {
                 path: info.outputPath("text-actions.png"),
                 fullPage: true,

@@ -347,10 +347,10 @@ test("compact inline edits preserve metadata geometry and account names share th
     await page.locator(".profile-menu__trigger").click();
     await page.getByRole("link", { name: "Settings", exact: true }).click();
     const edit = page.getByRole("button", { name: "Edit name", exact: true });
-    await expect(edit).toHaveCSS("border-radius", "8px");
+    await expect(edit).toHaveCSS("border-radius", "6px");
     await expect(page.getByRole("button", { name: "Change password", exact: true })).toHaveCSS(
         "border-radius",
-        "8px",
+        "6px",
     );
     await edit.click();
     const form = page.locator(".account-name-form");
@@ -512,9 +512,11 @@ test("showcase exposes transparent edit save and cancel icons", async ({ page })
     await sample.scrollIntoViewIfNeeded();
     await expect(sample.getByRole("button")).toHaveCount(3);
     for (const button of await sample.getByRole("button").all()) {
+        await page.mouse.move(0, 0);
         await expect(button).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
         await button.hover();
-        await expect(button).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+        await expect(button).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+        await expect(button).toHaveCSS("text-decoration-line", "none");
     }
 });
 

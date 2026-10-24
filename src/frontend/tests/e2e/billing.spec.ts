@@ -802,7 +802,10 @@ for (const width of [390, 1440]) {
         const viewAll = historyHeader.getByRole("button", { name: "모두 보기", exact: true });
         const titleBox = (await historyHeader.getByRole("heading").boundingBox())!;
         const actionBox = (await viewAll.boundingBox())!;
-        expect(actionBox.x - titleBox.x - titleBox.width).toBeLessThanOrEqual(16);
+        expect(actionBox.x).toBeGreaterThan(titleBox.x + titleBox.width);
+        expect(actionBox.x + actionBox.width).toBeLessThanOrEqual(
+            (await historyHeader.boundingBox())!.x + (await historyHeader.boundingBox())!.width + 1,
+        );
         expect(
             Math.abs(actionBox.y + actionBox.height / 2 - titleBox.y - titleBox.height / 2),
         ).toBeLessThanOrEqual(2);

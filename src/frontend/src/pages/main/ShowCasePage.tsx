@@ -306,6 +306,69 @@ export function ShowCasePage() {
                                 </Button>
                             </div>
                         </ShowcaseItem>
+                        <ShowcaseItem component="Button (canvas actions)">
+                            <div className="showcase-catalog__stack">
+                                <Button
+                                    appearance="canvas"
+                                    onClick={() => showToast(t("showCase.catalog.localOnly"))}
+                                >
+                                    {t("settings.profile.editName")} <Pencil aria-hidden="true" />
+                                </Button>
+                                <Tooltip content={t("settings.profile.editName")}>
+                                    <Button
+                                        appearance="canvas"
+                                        iconOnly
+                                        aria-label={t("settings.profile.editName")}
+                                    >
+                                        <Pencil aria-hidden="true" />
+                                    </Button>
+                                </Tooltip>
+                                <Button appearance="canvas" aria-pressed="true">
+                                    {t("authDialog.buttonPrimary")}
+                                </Button>
+                                <Button appearance="canvas" loading>
+                                    {t("authDialog.buttonLoading")}
+                                </Button>
+                                <Button appearance="canvas" disabled>
+                                    {t("authDialog.buttonDisabled")}
+                                </Button>
+                            </div>
+                        </ShowcaseItem>
+                        <ShowcaseItem component="Button (pencil menu highlight)">
+                            <div className="showcase-catalog__stack">
+                                <Button appearance="canvas" className="ui-action--pencil">
+                                    {t("settings.menu.general")}
+                                </Button>
+                                <Button
+                                    appearance="canvas"
+                                    className="ui-action--pencil"
+                                    aria-pressed="true"
+                                >
+                                    {t("settings.menu.account")}
+                                </Button>
+                                <Button appearance="canvas" className="ui-action--pencil" disabled>
+                                    {t("authDialog.buttonDisabled")}
+                                </Button>
+                            </div>
+                        </ShowcaseItem>
+                        <ShowcaseItem component="Button (canvas-card)">
+                            <Button
+                                appearance="canvas-card"
+                                className="showcase-canvas-card"
+                                onClick={() => showToast(t("showCase.catalog.localOnly"))}
+                                aria-label={t("showCase.catalog.localOnly")}
+                            >
+                                <img
+                                    src="/images/explore/build.webp"
+                                    alt=""
+                                    width="720"
+                                    height="400"
+                                />
+                            </Button>
+                            <Button appearance="canvas-card" disabled>
+                                {t("authDialog.buttonDisabled")}
+                            </Button>
+                        </ShowcaseItem>
                         <ShowcaseItem component="SegmentedControl">
                             <div className="showcase-catalog__stack">
                                 {[false, true].map((disabled) => (

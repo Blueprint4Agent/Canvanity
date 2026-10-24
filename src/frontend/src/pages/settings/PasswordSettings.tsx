@@ -1,3 +1,4 @@
+import { ChevronRight } from "lucide-react";
 import {
     PasswordRequirements,
     PasswordConfirmationRequirements,
@@ -260,8 +261,15 @@ export function PasswordSettings({
                         <p className="muted">{t("settings.account.passwordEmailRequired")}</p>
                     ) : null}
                 </div>
-                <Button disabled={!hasPassword || !emailEnabled} onClick={() => setOpen(true)}>
-                    {t("settings.account.passwordTitle")}
+                <Button
+                    appearance="canvas"
+                    disabled={!hasPassword || !emailEnabled}
+                    onClick={() => setOpen(true)}
+                    aria-label={t("settings.account.passwordTitle")}
+                    title={t("settings.account.passwordTitle")}
+                >
+                    <span aria-hidden="true">••••••••</span>
+                    <ChevronRight aria-hidden="true" />
                 </Button>
             </article>
             {open ? (
