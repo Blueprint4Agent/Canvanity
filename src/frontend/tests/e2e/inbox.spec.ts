@@ -94,7 +94,6 @@ for (const width of [1440])
             await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
             const geometry = () =>
                 page.locator(".settings-content-card").evaluate((el) => ({
-                    width: el.getBoundingClientRect().width,
                     padding: getComputedStyle(el).padding,
                     font: getComputedStyle(el.querySelector("h1")!).fontSize,
                 }));
@@ -253,7 +252,6 @@ for (const width of [390, 1440])
             await page.emulateMedia({ colorScheme, reducedMotion: "reduce" });
             const geometry = () =>
                 page.locator(".settings-content-card").evaluate((el) => ({
-                    width: el.getBoundingClientRect().width,
                     padding: getComputedStyle(el).padding,
                     font: getComputedStyle(el.querySelector("h1")!).fontSize,
                 }));

@@ -5063,19 +5063,30 @@ input,
     pointer-events: none;
 }
 .ui-toast-card {
+    position: relative;
     max-width: min(28rem, 100%);
-    padding: 10px 20px;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: var(--tooltip-bg);
-    color: var(--tooltip-fg);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    padding: 11px 18px 11px 21px;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--bg) 97%, var(--accent));
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(24, 44, 65, 0.12);
     font-size: 13px;
     font-weight: 500;
     line-height: 1.4;
-    text-align: center;
+    text-align: left;
     overflow-wrap: anywhere;
     animation: ui-toast-enter 180ms ease-out both;
+}
+.ui-toast-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 2px 2px 0;
+    background: #5a8eff;
 }
 .ui-toast-card--closing {
     animation: ui-toast-exit 180ms ease-in both;
@@ -9306,9 +9317,6 @@ body.public-discovery {
     background: color-mix(in srgb, var(--accent) 12%, var(--panel));
     color: var(--accent);
 }
-.explore-tools .ui-button:hover {
-    background: color-mix(in srgb, var(--accent) 9%, transparent);
-}
 .explore-search {
     position: absolute;
     z-index: 8;
@@ -9374,9 +9382,6 @@ body.public-discovery {
     background: transparent;
     border-color: transparent;
     box-shadow: none;
-}
-.explore-zoom-tools .ui-button:hover {
-    background: color-mix(in srgb, var(--accent) 9%, transparent);
 }
 .explore-zoom {
     margin: 0;
@@ -9577,28 +9582,6 @@ body.public-discovery {
     background: transparent;
     box-shadow: none;
 }
-.explore-cluster .explore-topic {
-    transition: transform 180ms ease;
-    transform-origin: center center;
-    text-decoration: none;
-}
-.explore-cluster .explore-topic:hover {
-    transform: scale(1.035);
-    color: var(--text);
-    text-decoration: none;
-}
-.explore-cluster .explore-topic:hover .ui-button__label,
-.explore-cluster .explore-topic:focus .ui-button__label {
-    text-decoration: none;
-}
-.explore-cluster[data-active="true"] .explore-topic__title {
-    text-decoration: none;
-}
-@media (prefers-reduced-motion: reduce) {
-    .explore-cluster .explore-topic {
-        transition: none;
-    }
-}
 .explore-minimap__viewport[hidden] {
     display: none;
 }
@@ -9708,4 +9691,474 @@ body.public-discovery {
 }
 .app-shell--minimal .server-environment-panel.panel {
     padding-inline: 0.75rem;
+}
+
+/* Minimal Canvas: shared action and card states, previewed in Showcase. */
+.ui-action,
+.ui-button.ui-button--canvas,
+.ui-button.ui-button--text {
+    --action-wash: color-mix(in srgb, var(--accent) 8%, transparent);
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-soft);
+    box-shadow: none;
+    text-decoration: none;
+    transition:
+        color 160ms ease,
+        transform 160ms ease;
+}
+.ui-button.ui-button--canvas {
+    min-height: 32px;
+    padding: 6px 10px;
+}
+.ui-button.ui-button--canvas.ui-button--icon {
+    width: var(--action-size, 32px);
+    height: var(--action-size, 32px);
+    padding: 6px;
+}
+.ui-action:hover,
+.ui-button.ui-button--canvas:where(:not(:disabled)):hover,
+.ui-button.ui-button--text:where(:not(:disabled)):hover {
+    background: var(--action-wash);
+    color: var(--accent-hover);
+    text-decoration: none;
+    transform: none;
+}
+.ui-button.ui-button--canvas[aria-pressed="true"] {
+    background: transparent;
+    color: var(--accent);
+}
+.ui-action:focus-visible,
+.ui-button.ui-button--canvas:focus-visible,
+.ui-button.ui-button--text:focus-visible,
+.ui-button--canvas-card:focus-visible {
+    outline: 2px solid var(--text-soft);
+    outline-offset: 3px;
+}
+.ui-button--canvas-card {
+    display: block;
+    height: auto;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text);
+    box-shadow: none;
+    text-decoration: none;
+    transform-origin: center;
+    transition: transform 180ms ease;
+}
+.ui-button--canvas-card:where(:not(:disabled)):hover {
+    transform: scale(1.025);
+    background: transparent;
+    text-decoration: none;
+}
+.ui-button--canvas-card .ui-button__label,
+.ui-button--canvas-card .ui-button__content {
+    display: block;
+    text-decoration: none;
+}
+.showcase-canvas-card {
+    width: 240px;
+    overflow: hidden;
+}
+.showcase-canvas-card img {
+    display: block;
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+/* Fixed editorial workspace; settings and administration share the same shell. */
+.app-shell--minimal .app-main:has(.app-workspace) {
+    background-color: var(--bg);
+    background-image:
+        linear-gradient(
+            to right,
+            color-mix(in srgb, var(--accent) 4%, var(--bg)) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            color-mix(in srgb, var(--accent) 4%, var(--bg)) 1px,
+            transparent 1px
+        );
+    background-size: 40px 40px;
+}
+.app-shell--minimal .app-main__content.app-workspace {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    align-items: start;
+    gap: clamp(40px, 5vw, 72px);
+    width: min(1200px, 100%);
+    margin-inline: auto;
+    padding: 48px 40px 64px;
+}
+.app-shell--minimal .section-navigation {
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+}
+.section-navigation__editorial {
+    margin: 0 0 30px;
+}
+.section-navigation__editorial img {
+    display: block;
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    filter: saturate(0.65);
+}
+.section-navigation__editorial span {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-soft);
+    font: 400 30px/1.2 var(--font-handwriting);
+}
+.app-shell--minimal .section-navigation nav {
+    flex-direction: column;
+    width: 100%;
+    gap: 5px;
+}
+.app-shell--minimal .section-navigation__item {
+    min-height: 38px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+}
+.app-shell--minimal .section-navigation__item--active {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--text);
+}
+.app-shell--minimal .app-workspace .settings-content-card {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.app-shell--minimal .settings-content-card__header {
+    margin-bottom: 32px;
+}
+.app-shell--minimal .settings-content-card__header h1 {
+    font: 600 24px/1.35 var(--font-family);
+    letter-spacing: -0.02em;
+}
+.app-shell--minimal .settings-content-card__header h1::after {
+    content: "";
+    display: block;
+    width: 46px;
+    height: 2px;
+    margin-top: 7px;
+    background: #5a8eff;
+}
+.app-shell--minimal .settings-content-card__header p {
+    margin-top: 12px;
+    color: var(--text-soft);
+    font-size: 0.8125rem;
+}
+.app-workspace .settings-general-content {
+    gap: 0;
+}
+.app-shell--minimal .app-workspace .settings-row {
+    min-height: 64px;
+    padding: 16px 0;
+    border: 0;
+    border-bottom: 1px solid var(--panel-border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+.app-workspace .settings-row h2 {
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+.app-workspace .settings-row p {
+    font-size: 0.8125rem;
+}
+.app-workspace .settings-row--account-delete {
+    margin-top: 16px;
+    border-bottom: 0;
+}
+.app-workspace .admin-summary > div {
+    border: 0;
+    border-bottom: 1px solid var(--panel-border);
+    border-radius: 0;
+    background: transparent;
+    padding: 12px 0;
+}
+.app-workspace .admin-table-region {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.app-workspace .admin-table th {
+    background: color-mix(in srgb, var(--text) 3%, var(--bg));
+}
+.app-shell--minimal .app-workspace .server-environment-panel.panel {
+    padding-inline: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
+@media (max-width: 900px) {
+    .app-shell--minimal .app-main__content.app-workspace {
+        grid-template-columns: 160px minmax(0, 1fr);
+        gap: 28px;
+        padding: 28px 24px 48px;
+    }
+    .section-navigation__editorial img {
+        height: 140px;
+    }
+}
+@media (max-width: 640px) {
+    .app-shell--minimal .app-main__content.app-workspace {
+        display: block;
+        padding: 16px 20px 36px;
+    }
+    .section-navigation__editorial {
+        display: none;
+    }
+    .app-shell--minimal .section-navigation {
+        margin-bottom: 28px;
+        overflow-x: auto;
+    }
+    .app-shell--minimal .section-navigation nav {
+        flex-direction: row;
+        width: max-content;
+    }
+    .app-shell--minimal .settings-content-card__header h1 {
+        font-size: 22px;
+    }
+    .app-workspace .settings-row {
+        gap: 12px;
+    }
+}
+@media (pointer: coarse) {
+    .ui-button.ui-button--canvas,
+    .ui-button.ui-button--canvas.ui-button--icon,
+    .ui-action {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ui-action,
+    .ui-button.ui-button--canvas,
+    .ui-button.ui-button--text,
+    .ui-button--canvas-card {
+        transition: none;
+    }
+    .ui-button--canvas-card:where(:not(:disabled)):hover {
+        transform: none;
+    }
+}
+.app-shell--minimal .settings-content-card__header h1 {
+    display: block;
+}
+.app-workspace .settings-oauth-provider-button.ui-button:disabled {
+    background: transparent;
+    color: var(--text);
+    border: 0;
+    padding-inline: 0;
+    opacity: 1;
+}
+.app-workspace .settings-row--account-delete .modal-button--danger {
+    color: var(--error-text);
+    background: transparent;
+    border-color: transparent;
+}
+/* Keep tool geometry independent of action state and camera zoom. */
+.explore-tools,
+.explore-zoom-tools {
+    --action-size: 40px;
+}
+.explore-tools .ui-button[aria-pressed="true"] {
+    background: transparent;
+    color: var(--accent);
+}
+@media (min-width: 641px) {
+    .app-shell--minimal .section-navigation {
+        position: sticky;
+        top: 48px;
+        align-self: start;
+    }
+    .section-navigation__editorial {
+        margin: 0 0 24px;
+    }
+    .section-navigation__editorial img {
+        height: 150px;
+    }
+}
+.app-shell--minimal .section-navigation__item {
+    position: relative;
+    isolation: isolate;
+    border-radius: 0;
+    background: transparent;
+    transition: color 160ms ease;
+}
+.app-workspace .billing-section {
+    padding-block: 24px;
+}
+.app-workspace .billing-section .section-action-header {
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+.app-workspace .billing-detail {
+    display: grid;
+    grid-template-columns: minmax(100px, 1fr) minmax(0, 2fr);
+    align-items: baseline;
+    gap: 20px;
+    padding-block: 14px;
+}
+.app-workspace .billing-detail p {
+    margin: 0;
+    text-align: right;
+}
+.app-shell--minimal .app-workspace .billing-records,
+.app-shell--minimal .app-workspace .billing-method-surface {
+    min-height: 128px;
+}
+@media (max-width: 1100px) and (min-width: 641px) {
+    .app-shell--minimal .app-main__content.app-workspace {
+        grid-template-columns: 180px minmax(0, 1fr);
+        gap: 32px;
+    }
+    .app-shell--minimal .section-navigation {
+        position: sticky;
+        top: 28px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .ui-action:hover,
+    .ui-button.ui-button--canvas:where(:not(:disabled)):hover,
+    .ui-button.ui-button--text:where(:not(:disabled)):hover {
+        transform: none;
+    }
+    .section-navigation__item::before {
+        transition: none;
+    }
+}
+/* Secondary fixed screens retain the same surface and typography without a local menu. */
+.app-shell--minimal .settings-content-card {
+    border-radius: 0;
+    background: transparent;
+}
+.app-shell--minimal .app-main__content:not(.app-workspace) .settings-content-card {
+    padding: 0;
+    margin: 32px auto;
+    width: min(54rem, calc(100% - 40px));
+}
+.explore-tools .ui-button[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+@media (max-width: 640px) {
+    .app-shell--minimal .settings-content-card__header h1 {
+        font-size: 22px;
+    }
+}
+/* Shared pencil highlight for local navigation and its Showcase reference. */
+.ui-action--pencil {
+    position: relative;
+    isolation: isolate;
+}
+.ui-action--pencil::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 -4px;
+    background: #5a8eff;
+    mask: url("/icons/pencil-highlight.svg") center / 100% 100% no-repeat;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 160ms ease;
+}
+.ui-action--pencil:not(:disabled):hover::before,
+.ui-action--pencil[aria-pressed="true"]::before,
+.ui-action--pencil[aria-current="page"]::before {
+    opacity: 0.36;
+}
+.app-shell--minimal .section-navigation__item:hover,
+.app-shell--minimal .section-navigation__item--active,
+.ui-button.ui-action--pencil:not(:disabled):hover {
+    background: transparent;
+    transform: none;
+    text-decoration: none;
+}
+/* Menus use the same restrained wash as canvas actions, without texture. */
+.profile-menu__item:not(:disabled):hover,
+.profile-menu__identity-button:hover,
+.profile-menu__account-link:hover,
+.ui-dropdown__item:not(:disabled):hover {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    text-decoration: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    .ui-action--pencil::before {
+        transition: none;
+    }
+}
+@media (max-height: 700px) and (min-width: 641px) {
+    .section-navigation__editorial {
+        display: none;
+    }
+}
+/* All standard button roles use one blue hover treatment. */
+.ui-button:not(:disabled):hover:not(.ui-button--canvas-card):not(.modal-button--danger):not(
+        .ui-action--pencil
+    ),
+.ui-dropdown__trigger:not(:disabled):hover,
+.profile-menu__trigger:not(:disabled):hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    color: var(--accent-hover);
+    border-color: transparent;
+    text-decoration: none;
+    transform: none;
+}
+/* Outlined text controls share the same surface as dropdown triggers. */
+.ui-button:not(.ui-button--text):not(.ui-button--canvas):not(.ui-button--canvas-card):not(
+        .modal-button--danger
+    ):not(.ui-action--pencil),
+.ui-dropdown__trigger {
+    --action-border: color-mix(in srgb, #5a8eff 45%, var(--panel-border));
+    border: 0.5px solid var(--action-border);
+    border-radius: var(--button-shape-radius, 8px);
+    background: color-mix(in srgb, #5a8eff 12%, var(--bg));
+    color: var(--text);
+    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--accent) 5%, transparent);
+}
+.ui-button:not(.ui-button--text):not(.ui-button--canvas):not(.ui-button--canvas-card):not(
+        .modal-button--danger
+    ):not(.ui-action--pencil)[aria-pressed="true"],
+.ui-button[aria-current="page"] {
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    border-color: var(--accent);
+}
+.ui-button:not(:disabled):hover:not(.ui-button--canvas-card):not(.modal-button--danger):not(
+        .ui-action--pencil
+    ),
+.ui-dropdown__trigger:not(:disabled):hover {
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    border-color: color-mix(in srgb, var(--accent) 60%, var(--panel-border));
+    color: var(--accent-hover);
+}
+/* Keycap buttons own their surface; a nested shortcut is only the key label. */
+.ui-button .ui-keyboard-shortcut {
+    background: transparent;
+    box-shadow: none;
+}
+.settings-shortcut-trigger.ui-button {
+    min-width: 48px;
+    padding: 4px 8px;
+}
+
+.ui-button--pill,
+.ui-button--pill-secondary {
+    --button-shape-radius: 999px;
 }

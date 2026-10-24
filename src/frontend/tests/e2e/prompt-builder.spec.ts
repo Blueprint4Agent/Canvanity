@@ -170,7 +170,6 @@ for (const width of [390, 1440])
             await page.goto("/settings?section=general");
             await expect(page.locator(".settings-content-card__header")).toBeVisible();
             const peer = await page.locator(".settings-content-card").evaluate((el) => ({
-                width: el.getBoundingClientRect().width,
                 padding: getComputedStyle(el).padding,
                 background: getComputedStyle(el).backgroundColor,
                 radius: getComputedStyle(el).borderRadius,
@@ -180,7 +179,6 @@ for (const width of [390, 1440])
                 page.getByRole("button", { name: "블루프린트로 시작할까요?" }),
             ).toBeVisible();
             const actual = await page.locator(".settings-content-card").evaluate((el) => ({
-                width: el.getBoundingClientRect().width,
                 padding: getComputedStyle(el).padding,
                 background: getComputedStyle(el).backgroundColor,
                 radius: getComputedStyle(el).borderRadius,

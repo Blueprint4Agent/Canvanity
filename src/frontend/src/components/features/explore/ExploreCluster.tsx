@@ -30,7 +30,7 @@ export const ExploreCluster = memo(function ExploreCluster({
                 {topic.posts.map((post, index) => (
                     <Button
                         key={post.id}
-                        appearance="text"
+                        appearance="canvas-card"
                         className={`explore-topic explore-topic--${index + 1}`}
                         onClick={() => onSelect(topic.id)}
                         aria-label={t("explore.openSample", {
