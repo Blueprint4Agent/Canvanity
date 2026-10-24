@@ -380,7 +380,9 @@
         },
         "toast": {
             "trigger": "Show toast",
-            "message": "Your changes have been saved."
+            "message": "Your changes have been saved.",
+            "errorTrigger": "Show error toast",
+            "neutralTrigger": "Show info toast"
         },
         "accountDeletion": {
             "trigger": "Preview account deletion verification",

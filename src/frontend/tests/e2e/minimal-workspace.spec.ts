@@ -127,3 +127,27 @@ test("capsule variants keep their shape and shortcut hover paints one surface", 
     await expect(shortcut).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     expect((await shortcut.boundingBox())!.height).toBe(before.height);
 });
+
+test("guest login and Showcase links reuse the button variants and keep navigation semantics", async ({
+    page,
+}) => {
+    await setup(page, null, "development");
+    await page.goto("/home");
+    await page.locator(".profile-menu__trigger").click();
+    const login = page.locator(".profile-menu__login");
+    await expect(login).toHaveClass(/ui-button--pill/);
+    await expect(login).toHaveAttribute("href", "/login");
+    const surface = await login.evaluate((el) => getComputedStyle(el).backgroundImage);
+    expect(surface).toContain("linear-gradient");
+    await login.click();
+    await expect(page).toHaveURL(/\/login$/);
+    await page.goto("/show-case");
+    await page.getByRole("searchbox").fill("ButtonLink");
+    const sample = page.locator('[data-component="ButtonLink"]');
+    await expect(sample.getByRole("link")).toHaveCount(2);
+    expect(
+        await sample
+            .locator(".ui-button--pill")
+            .evaluate((el) => getComputedStyle(el).backgroundImage),
+    ).toBe(surface);
+});

@@ -380,7 +380,9 @@
         },
         "toast": {
             "trigger": "토스트 띄우기",
-            "message": "변경사항을 저장했습니다."
+            "message": "변경사항을 저장했습니다.",
+            "errorTrigger": "실패 알림 보기",
+            "neutralTrigger": "안내 알림 보기"
         },
         "accountDeletion": {
             "trigger": "계정 삭제 인증 미리보기",

@@ -167,10 +167,10 @@ export function LoginPage({ embedded = false }: { embedded?: boolean }) {
             } catch {
                 // ignore storage errors in restricted browser contexts
             }
-            showToast(t("toast.loginSuccess"));
+            showToast(t("toast.loginSuccess"), { tone: "success" });
             navigate("/home", { replace: true });
         } catch (nextError) {
-            showToast(t("toast.loginError"));
+            showToast(t("toast.loginError"), { tone: "error" });
             const detail = extractApiDetail(nextError);
             const code = detail?.error;
             const details = detail?.details;
@@ -208,9 +208,9 @@ export function LoginPage({ embedded = false }: { embedded?: boolean }) {
         try {
             await resendVerificationEmail(email.trim());
             setResendMessage(t("auth.verificationResent"));
-            showToast(t("toast.emailSuccess"));
+            showToast(t("toast.emailSuccess"), { tone: "success" });
         } catch {
-            showToast(t("toast.emailError"));
+            showToast(t("toast.emailError"), { tone: "error" });
             setResendMessage(t("auth.errors.resendVerificationFallback"));
         } finally {
             setResending(false);
