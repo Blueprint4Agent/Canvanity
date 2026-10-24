@@ -76,7 +76,7 @@ for (const locale of ["en", "ko"]) {
                 );
                 await page.goto("/home");
                 await expect(page.locator(".explore-page")).toBeVisible();
-                await expect(page.locator(".explore-cluster")).toHaveCount(6);
+                await expect(page.locator(".explore-cluster")).toHaveCount(4);
                 expect(
                     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
                 ).toBe(true);

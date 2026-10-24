@@ -4,8 +4,15 @@ import {
     clampZoom,
     constrainCamera,
     validateSurface,
+    resistCanvasEdge,
 } from "../../../canvas/canvasRules";
 describe("finite shared canvas contract", () => {
+    it("keeps edge resistance small and bounded without changing logical camera bounds", () => {
+        expect(resistCanvasEdge(0)).toBe(0);
+        expect(resistCanvasEdge(100000)).toBeLessThan(10);
+        expect(resistCanvasEdge(-100000)).toBeGreaterThan(-10);
+        expect(resistCanvasEdge(-25)).toBe(-resistCanvasEdge(25));
+    });
     it.each(["ui", "document"] as const)("bounds %s at every camera entry point", (kind) => {
         const surface = validateSurface({ kind, bounds: { width: 1440, height: 1000 } });
         expect(

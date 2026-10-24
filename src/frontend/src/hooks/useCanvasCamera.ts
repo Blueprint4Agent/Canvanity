@@ -5,6 +5,7 @@ import {
     constrainCamera,
     validateSurface,
     CANVAS_RULES,
+    resistCanvasEdge,
     type CanvasSurface,
 } from "../canvas/canvasRules";
 
@@ -34,24 +35,24 @@ export function useCanvasCamera(
     const gesture = useRef<{ camera: Camera; points: Point[] } | null>(null);
     const [zoom, setZoom] = useState(1);
     const [dragging, setDragging] = useState(false);
-
-    useEffect(() => {
-        if (!panEnabled) {
-            for (const id of pointers.current.keys()) {
-                if (viewportRef.current?.hasPointerCapture(id))
-                    viewportRef.current.releasePointerCapture(id);
-            }
-            pointers.current.clear();
-            gesture.current = null;
-            setDragging(false);
-        }
-    }, [panEnabled]);
+    const edge = useRef<Point>({ x: 0, y: 0 });
+    const edgeTarget = useRef<Point>({ x: 0, y: 0 });
+    const edgeHeld = useRef(false);
+    const edgeTimer = useRef<number | undefined>(undefined);
 
     const paint = useCallback(
         (smooth = false) => {
             animate.current =
                 smooth && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            if (worldRef.current) worldRef.current.dataset.cameraMoving = String(animate.current);
+            if (worldRef.current)
+                worldRef.current.dataset.cameraMoving = String(
+                    Boolean(
+                        animate.current ||
+                        edge.current.x ||
+                        edge.current.y ||
+                        (edgeHeld.current && (edgeTarget.current.x || edgeTarget.current.y)),
+                    ),
+                );
             if (frame.current !== null) return;
             const draw = (time: number) => {
                 frame.current = null;
@@ -77,12 +78,30 @@ export function useCanvasCamera(
                     { width: viewport.clientWidth, height: viewport.clientHeight },
                 );
                 rendered.current = next;
+                const dt = Math.min(40, time - (lastFrame.current || time - 16));
+                const desired = edgeHeld.current ? edgeTarget.current : { x: 0, y: 0 };
+                const edgeProgress = window.matchMedia("(prefers-reduced-motion: reduce)").matches
+                    ? 1
+                    : 1 - Math.exp(-dt / CANVAS_RULES.edgeReturnMs);
+                const edgeAxis = (value: number, target: number) =>
+                    Math.abs(target - value) < 0.1
+                        ? target
+                        : value + (target - value) * edgeProgress;
+                edge.current = {
+                    x: edgeAxis(edge.current.x, desired.x),
+                    y: edgeAxis(edge.current.y, desired.y),
+                };
                 lastFrame.current = time;
-                world.style.transform = `translate3d(${next.x}px, ${next.y}px, 0) scale(${next.zoom})`;
+                const visual = { x: next.x + edge.current.x, y: next.y + edge.current.y };
+                world.dataset.edgeX = String(edge.current.x);
+                world.dataset.edgeY = String(edge.current.y);
+                world.dataset.logicalX = String(next.x);
+                world.dataset.logicalY = String(next.y);
+                world.style.transform = `translate3d(${visual.x}px, ${visual.y}px, 0) scale(${next.zoom})`;
                 world.style.width = `${WORLD.width}px`;
                 world.style.height = `${WORLD.height}px`;
                 viewport.style.backgroundSize = `${CANVAS_RULES.gridSize * next.zoom}px ${CANVAS_RULES.gridSize * next.zoom}px`;
-                viewport.style.backgroundPosition = `${next.x}px ${next.y}px`;
+                viewport.style.backgroundPosition = `${visual.x}px ${visual.y}px`;
                 const mapWindow = mapWindowRef.current;
                 if (mapWindow) {
                     mapWindow.hidden =
@@ -97,8 +116,13 @@ export function useCanvasCamera(
                     Math.abs(next.zoom - target.zoom) > 0.0001 ||
                     Math.abs(next.x - target.x) > 0.1 ||
                     Math.abs(next.y - target.y) > 0.1;
-                world.dataset.cameraMoving = String(animate.current && pending);
-                if (animate.current && pending) frame.current = requestAnimationFrame(draw);
+                const returning = Boolean(edge.current.x || edge.current.y);
+                const edgePending =
+                    Math.abs(edge.current.x - desired.x) > 0.1 ||
+                    Math.abs(edge.current.y - desired.y) > 0.1;
+                world.dataset.cameraMoving = String((animate.current && pending) || returning);
+                if ((animate.current && pending) || edgePending || (returning && !edgeHeld.current))
+                    frame.current = requestAnimationFrame(draw);
                 else {
                     animate.current = false;
                     lastFrame.current = 0;
@@ -108,10 +132,58 @@ export function useCanvasCamera(
         },
         [surface, WORLD.width, WORLD.height],
     );
+    const clearEdge = useCallback(() => {
+        if (edgeTimer.current !== undefined) clearTimeout(edgeTimer.current);
+        edge.current = { x: 0, y: 0 };
+        edgeTarget.current = { x: 0, y: 0 };
+        edgeHeld.current = false;
+    }, []);
+    const releaseEdge = useCallback(() => {
+        if (edgeTimer.current !== undefined) clearTimeout(edgeTimer.current);
+        edgeHeld.current = false;
+        paint();
+    }, [paint]);
+    const applyPan = useCallback(
+        (requested: Camera, accumulate = false) => {
+            const viewport = viewportRef.current;
+            if (!viewport) return;
+            const bounded = constrainCamera(requested, surface, {
+                width: viewport.clientWidth,
+                height: viewport.clientHeight,
+            });
+            const dx = requested.x - bounded.x,
+                dy = requested.y - bounded.y;
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) clearEdge();
+            else {
+                edgeTarget.current.x = dx
+                    ? resistCanvasEdge(dx + (accumulate ? edgeTarget.current.x * 1.5 : 0))
+                    : 0;
+                edgeTarget.current.y = dy
+                    ? resistCanvasEdge(dy + (accumulate ? edgeTarget.current.y * 1.5 : 0))
+                    : 0;
+                edgeHeld.current = Boolean(dx || dy);
+            }
+            camera.current = bounded;
+            paint();
+        },
+        [surface, paint, clearEdge],
+    );
+    useEffect(() => {
+        if (!panEnabled) {
+            for (const id of pointers.current.keys())
+                if (viewportRef.current?.hasPointerCapture(id))
+                    viewportRef.current.releasePointerCapture(id);
+            pointers.current.clear();
+            gesture.current = null;
+            setDragging(false);
+            releaseEdge();
+        }
+    }, [panEnabled, releaseEdge]);
     const focus = useCallback(
         (rect: { x: number; y: number; width: number; height: number }) => {
             const viewport = viewportRef.current;
             if (!viewport) return;
+            clearEdge();
             const next = clampZoom(
                 Math.min(
                     1.2,
@@ -127,11 +199,12 @@ export function useCanvasCamera(
             setZoom(next);
             paint(true);
         },
-        [paint],
+        [paint, clearEdge],
     );
     const fit = useCallback(() => {
         const viewport = viewportRef.current;
         if (!viewport) return;
+        clearEdge();
         const next = clampZoom(
             Math.min(
                 1,
@@ -146,11 +219,12 @@ export function useCanvasCamera(
         };
         setZoom(next);
         paint(true);
-    }, [paint]);
+    }, [paint, clearEdge]);
     const zoomAt = useCallback(
         (factor: number, point?: Point) => {
             const viewport = viewportRef.current;
             if (!viewport) return;
+            clearEdge();
             const origin = point ?? { x: viewport.clientWidth / 2, y: viewport.clientHeight / 2 };
             const previous = camera.current;
             const next = clampZoom(previous.zoom * factor);
@@ -162,18 +236,22 @@ export function useCanvasCamera(
             setZoom(next);
             paint(true);
         },
-        [paint],
+        [paint, clearEdge],
     );
     const move = useCallback(
         (x: number, y: number) => {
-            camera.current = {
-                ...camera.current,
-                x: camera.current.x + x,
-                y: camera.current.y + y,
-            };
-            paint();
+            applyPan(
+                {
+                    ...camera.current,
+                    x: camera.current.x + x,
+                    y: camera.current.y + y,
+                },
+                true,
+            );
+            if (edgeTimer.current !== undefined) clearTimeout(edgeTimer.current);
+            edgeTimer.current = window.setTimeout(releaseEdge, CANVAS_RULES.edgeReleaseDelay);
         },
-        [paint],
+        [applyPan, releaseEdge],
     );
     useEffect(() => {
         const viewport = viewportRef.current;
@@ -240,6 +318,7 @@ export function useCanvasCamera(
             if (frame.current !== null) cancelAnimationFrame(frame.current);
             frame.current = null;
             pointers.current.clear();
+            if (edgeTimer.current !== undefined) clearTimeout(edgeTimer.current);
         };
     }, [fit, focus, move, zoomAt, initialFocus, initialOverview]);
     const beginGesture = () => {
@@ -296,7 +375,7 @@ export function useCanvasCamera(
                 x: start.camera.x + current[0].x - start.points[0].x,
                 y: start.camera.y + current[0].y - start.points[0].y,
             };
-        paint();
+        applyPan(camera.current);
     };
     const onClickCapture = (event: MouseEvent<HTMLDivElement>) => {
         if (suppressClick.current) {
@@ -314,6 +393,7 @@ export function useCanvasCamera(
             gesture.current = null;
             setDragging(false);
             setZoom(camera.current.zoom);
+            releaseEdge();
         }
     };
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -341,6 +421,7 @@ export function useCanvasCamera(
         const rect = element.getBoundingClientRect();
         const viewport = viewportRef.current;
         if (!viewport) return;
+        clearEdge();
         const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
         camera.current = {
