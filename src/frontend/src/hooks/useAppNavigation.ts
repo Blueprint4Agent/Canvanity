@@ -26,7 +26,8 @@ export function useAppNavigation() {
     const { user } = useAuthContext();
     const { data: appConfig } = useAppConfig();
     const development = appConfig?.app_mode === "development";
-    const sidebarPath = profileSidebarPath(location);
+    const sidebarPath =
+        location.pathname === "/profile" ? "/profile" : profileSidebarPath(location);
     const isSettings = sidebarPath === "/settings";
     const [searchParams] = useSearchParams();
     const section = searchParams.has("billing_setup") ? "billing" : searchParams.get("section");

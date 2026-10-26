@@ -162,3 +162,154 @@ def test_password_code_transport_rejects_anonymous_api_keys_and_mail_failure(
     )
     assert client.post("/api/v1/auth/me/password/code", headers=headers).status_code == 503
     assert asyncio.run(Users.get_auth_user_by_id(user_id)).password_hash
+
+
+def test_handle_and_interests_persist_normalize_and_conflicts_are_atomic(integration_client):
+    """Scenario: profile identity survives reads/login and duplicate handles roll back all edits."""
+    client = integration_client
+    headers, _ = login(client)
+    other, _ = login(client, "other@example.com")
+    saved = client.patch(
+        "/api/v1/auth/me",
+        headers=headers,
+        json={"handle": " @Canvas_최혁 ", "interests": ["development", "ai", "development"]},
+    )
+    assert saved.status_code == 200
+    assert saved.json()["handle"] == "canvas_최혁"
+    assert saved.json()["interests"] == ["development", "ai"]
+    assert client.get("/api/v1/auth/me", headers=headers).json()["handle"] == "canvas_최혁"
+    again = client.post("/api/v1/auth/login", json=build_login_payload(email="profile@example.com"))
+    assert again.json()["user"]["interests"] == ["development", "ai"]
+    # Same owner may save its own handle; omitted identity fields survive unrelated edits.
+    assert (
+        client.patch("/api/v1/auth/me", headers=headers, json={"handle": "canvas_최혁"}).status_code
+        == 200
+    )
+    client.patch("/api/v1/auth/me", headers=headers, json={"name": "New Name"})
+    assert client.get("/api/v1/auth/me", headers=headers).json()["interests"] == [
+        "development",
+        "ai",
+    ]
+    conflict = client.patch(
+        "/api/v1/auth/me", headers=other, json={"handle": "CANVAS_최혁", "bio": "must roll back"}
+    )
+    assert conflict.status_code == 409
+    assert conflict.json()["detail"]["error"] == "HANDLE_ALREADY_EXISTS"
+    assert client.get("/api/v1/auth/me", headers=other).json()["bio"] is None
+    assert client.get("/api/v1/auth/me", headers=other).json()["interests"] == []
+    # Clearing releases the handle; multiple accounts may keep no handle.
+    cleared = client.patch(
+        "/api/v1/auth/me", headers=headers, json={"handle": None, "interests": []}
+    )
+    assert cleared.json()["handle"] is None and cleared.json()["interests"] == []
+    assert (
+        client.patch("/api/v1/auth/me", headers=other, json={"handle": "canvas_최혁"}).status_code
+        == 200
+    )
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        {"handle": "x"},
+        {"handle": "two words"},
+        {"handle": "x" * 25},
+        {"handle": "<script>"},
+        {"interests": ["x"] * 9},
+        {"interests": ["x" * 21]},
+        {"interests": ["   "]},
+        {"interests": [123]},
+        {"interests": None},
+    ],
+)
+def test_invalid_profile_identity_preserves_saved_values(integration_client, body):
+    """Scenario: invalid handles/tags return 422 without partially changing identity."""
+    headers, _ = login(integration_client)
+    integration_client.patch("/api/v1/auth/me", headers=headers, json={"handle": "safe_handle"})
+    assert (
+        integration_client.patch("/api/v1/auth/me", headers=headers, json=body).status_code == 422
+    )
+    assert (
+        integration_client.get("/api/v1/auth/me", headers=headers).json()["handle"] == "safe_handle"
+    )
+
+
+def test_official_catalog_is_public_but_only_admins_manage_and_members_select(integration_client):
+    """Scenario: official taxonomy is shared, stable and writable only by platform admins."""
+    from app.models.user import UserRole
+
+    client = integration_client
+    catalog = client.get("/api/v1/interests")
+    assert catalog.status_code == 200 and len(catalog.json()["items"]) == 40
+    assert catalog.json()["items"][0]["id"] == "daily"
+    assert {"pets", "fashion", "beauty", "home", "sports", "coffee", "camping"}.issubset(
+        {item["id"] for item in catalog.json()["items"]}
+    )
+    ai = next(item for item in catalog.json()["items"] if item["id"] == "ai")
+    assert "인공지능" in ai["aliases"]
+    admin, _ = login(client, "catalog-admin@example.com")
+    member, _ = login(client, "catalog-member@example.com")
+    asyncio.run(
+        Users.set_operator_role("catalog-admin@example.com", UserRole.ADMIN, operator="test")
+    )
+    # A status-only update must preserve aliases assigned before a specific category existed.
+    assert (
+        client.patch(
+            "/api/v1/interests/admin/sports", headers=admin, json={"active": False}
+        ).status_code
+        == 200
+    )
+    assert (
+        client.patch(
+            "/api/v1/interests/admin/sports", headers=admin, json={"active": True}
+        ).status_code
+        == 200
+    )
+    body = {"id": "robotics", "name_ko": "로봇공학", "name_en": "Robotics", "aliases": ["robots"]}
+    assert client.post("/api/v1/interests/admin", json=body).status_code == 401
+    assert client.post("/api/v1/interests/admin", headers=member, json=body).status_code == 403
+    assert client.post("/api/v1/interests/admin", headers=admin, json=body).status_code == 201
+    assert client.post("/api/v1/interests/admin", headers=admin, json=body).status_code == 409
+    assert (
+        client.patch(
+            "/api/v1/auth/me", headers=member, json={"interests": ["robotics", "ai"]}
+        ).status_code
+        == 200
+    )
+    assert client.get("/api/v1/auth/me", headers=member).json()["interests"] == ["robotics", "ai"]
+    assert (
+        client.patch(
+            "/api/v1/interests/admin/robotics", headers=member, json={"active": False}
+        ).status_code
+        == 403
+    )
+    assert (
+        client.patch(
+            "/api/v1/interests/admin/robotics", headers=admin, json={"active": False}
+        ).status_code
+        == 200
+    )
+    assert "robotics" not in [
+        item["id"] for item in client.get("/api/v1/interests").json()["items"]
+    ]
+    invalid = client.patch(
+        "/api/v1/auth/me", headers=member, json={"interests": ["robotics"], "bio": "must roll back"}
+    )
+    assert (
+        invalid.status_code == 422 and invalid.json()["detail"]["error"] == "INTEREST_NOT_AVAILABLE"
+    )
+    assert client.get("/api/v1/auth/me", headers=member).json()["bio"] is None
+    assert (
+        client.patch(
+            "/api/v1/auth/me", headers=member, json={"interests": ["new-user-topic"]}
+        ).status_code
+        == 422
+    )
+    admin_items = client.get("/api/v1/interests/admin", headers=admin).json()
+    assert next(item for item in admin_items if item["id"] == "robotics")["active"] is False
+    assert (
+        client.patch(
+            "/api/v1/interests/admin/missing", headers=admin, json={"active": False}
+        ).status_code
+        == 404
+    )

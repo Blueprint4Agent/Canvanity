@@ -230,11 +230,7 @@ export function SettingsPage() {
                                     iconOnly
                                     aria-label={t("settings.account.editProfile")}
                                     title={t("settings.account.editProfile")}
-                                    onClick={() =>
-                                        navigate("/profile", {
-                                            state: { profileSidebarPath: "/settings" },
-                                        })
-                                    }
+                                    onClick={() => navigate("/profile")}
                                 >
                                     <ChevronRight aria-hidden="true" />
                                 </Button>

@@ -737,6 +737,10 @@
                             "PROFILE_PHOTO_UNAVAILABLE",
                             "PROFILE_PHOTO_NOT_FOUND",
                             "PROFILE_PHOTO_CONFLICT",
+                            "INTEREST_ALREADY_EXISTS",
+                            "INTEREST_NOT_FOUND",
+                            "INTEREST_NOT_AVAILABLE",
+                            "HANDLE_ALREADY_EXISTS",
                             "PROFILE_UPDATE_FAILED",
                             "OAUTH_PROVIDER_NOT_ENABLED",
                             "OAUTH_PROVIDER_CONFIG_INVALID",
@@ -2302,6 +2306,193 @@
                 "title": "IntegrationCheck",
                 "type": "object"
             },
+            "InterestAdminResponse": {
+                "properties": {
+                    "active": {
+                        "title": "Active",
+                        "type": "boolean"
+                    },
+                    "aliases": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Aliases",
+                        "type": "array"
+                    },
+                    "id": {
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "name_en": {
+                        "title": "Name En",
+                        "type": "string"
+                    },
+                    "name_ko": {
+                        "title": "Name Ko",
+                        "type": "string"
+                    },
+                    "sort_order": {
+                        "default": 1000,
+                        "title": "Sort Order",
+                        "type": "integer"
+                    }
+                },
+                "required": ["id", "name_ko", "name_en", "active"],
+                "title": "InterestAdminResponse",
+                "type": "object"
+            },
+            "InterestCatalogResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/InterestResponse"
+                        },
+                        "title": "Items",
+                        "type": "array"
+                    }
+                },
+                "required": ["items"],
+                "title": "InterestCatalogResponse",
+                "type": "object"
+            },
+            "InterestCreateForm": {
+                "properties": {
+                    "aliases": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 20,
+                        "title": "Aliases",
+                        "type": "array"
+                    },
+                    "id": {
+                        "maxLength": 40,
+                        "minLength": 2,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "name_en": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "title": "Name En",
+                        "type": "string"
+                    },
+                    "name_ko": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "title": "Name Ko",
+                        "type": "string"
+                    },
+                    "sort_order": {
+                        "default": 1000,
+                        "maximum": 10000.0,
+                        "minimum": 0.0,
+                        "title": "Sort Order",
+                        "type": "integer"
+                    }
+                },
+                "required": ["id", "name_ko", "name_en"],
+                "title": "InterestCreateForm",
+                "type": "object"
+            },
+            "InterestResponse": {
+                "properties": {
+                    "aliases": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Aliases",
+                        "type": "array"
+                    },
+                    "id": {
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "name_en": {
+                        "title": "Name En",
+                        "type": "string"
+                    },
+                    "name_ko": {
+                        "title": "Name Ko",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "name_ko", "name_en"],
+                "title": "InterestResponse",
+                "type": "object"
+            },
+            "InterestUpdateForm": {
+                "properties": {
+                    "active": {
+                        "anyOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Active"
+                    },
+                    "aliases": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "type": "string"
+                                },
+                                "maxItems": 20,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Aliases"
+                    },
+                    "name_en": {
+                        "anyOf": [
+                            {
+                                "maxLength": 40,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name En"
+                    },
+                    "name_ko": {
+                        "anyOf": [
+                            {
+                                "maxLength": 40,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Name Ko"
+                    },
+                    "sort_order": {
+                        "anyOf": [
+                            {
+                                "maximum": 10000.0,
+                                "minimum": 0.0,
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Sort Order"
+                    }
+                },
+                "title": "InterestUpdateForm",
+                "type": "object"
+            },
             "InternalErrorResponse": {
                 "properties": {
                     "error": {
@@ -2692,6 +2883,36 @@
                         ],
                         "title": "Bio"
                     },
+                    "handle": {
+                        "anyOf": [
+                            {
+                                "maxLength": 24,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Unique lowercase @handle: 2-24 Latin/Korean letters, digits or underscores; null clears it.",
+                        "title": "Handle"
+                    },
+                    "interests": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "maxLength": 40,
+                                    "minLength": 1,
+                                    "type": "string"
+                                },
+                                "maxItems": 8,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Interests"
+                    },
                     "keyboard_shortcuts": {
                         "anyOf": [
                             {
@@ -2767,6 +2988,17 @@
                         "title": "Email",
                         "type": "string"
                     },
+                    "handle": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Handle"
+                    },
                     "has_password": {
                         "default": false,
                         "title": "Has Password",
@@ -2775,6 +3007,13 @@
                     "id": {
                         "title": "Id",
                         "type": "integer"
+                    },
+                    "interests": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Interests",
+                        "type": "array"
                     },
                     "is_verified": {
                         "title": "Is Verified",
@@ -4582,15 +4821,37 @@
                         },
                         "description": "Not Found"
                     },
-                    "422": {
+                    "409": {
                         "content": {
                             "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "HANDLE_ALREADY_EXISTS",
+                                        "message": "This profile handle is already in use."
+                                    }
+                                },
                                 "schema": {
-                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
                                 }
                             }
                         },
-                        "description": "Validation Error"
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "INTEREST_NOT_AVAILABLE",
+                                        "message": "Select an active official interest."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
                     },
                     "500": {
                         "content": {
@@ -11352,6 +11613,381 @@
                 ],
                 "summary": "Change Status",
                 "tags": ["Inquiries"]
+            }
+        },
+        "/api/v1/interests": {
+            "get": {
+                "operationId": "catalog_api_v1_interests_get",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InterestCatalogResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    }
+                },
+                "summary": "Catalog",
+                "tags": ["Interests"]
+            }
+        },
+        "/api/v1/interests/admin": {
+            "get": {
+                "operationId": "list_admin_api_v1_interests_admin_get",
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "items": {
+                                        "$ref": "#/components/schemas/InterestAdminResponse"
+                                    },
+                                    "title": "Response List Admin Api V1 Interests Admin Get",
+                                    "type": "array"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 List Admin Api V1 Interests Admin Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 List Admin Api V1 Interests Admin Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "USER_NOT_FOUND",
+                                        "message": "User not found."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {
+                        "APIKeyHeader": []
+                    }
+                ],
+                "summary": "List Admin",
+                "tags": ["Interests"]
+            },
+            "post": {
+                "operationId": "create_api_v1_interests_admin_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InterestCreateForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InterestAdminResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Create Api V1 Interests Admin Post"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Create Api V1 Interests Admin Post"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "USER_NOT_FOUND",
+                                        "message": "User not found."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "INTEREST_ALREADY_EXISTS",
+                                        "message": "An interest identifier or alias is already in use."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {
+                        "APIKeyHeader": []
+                    }
+                ],
+                "summary": "Create",
+                "tags": ["Interests"]
+            }
+        },
+        "/api/v1/interests/admin/{interest_id}": {
+            "patch": {
+                "operationId": "update_api_v1_interests_admin__interest_id__patch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "interest_id",
+                        "required": true,
+                        "schema": {
+                            "title": "Interest Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/InterestUpdateForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InterestAdminResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Update Api V1 Interests Admin  Interest Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Update Api V1 Interests Admin  Interest Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "INTEREST_ALREADY_EXISTS",
+                                        "message": "An interest identifier or alias is already in use."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {
+                        "APIKeyHeader": []
+                    }
+                ],
+                "summary": "Update",
+                "tags": ["Interests"]
             }
         },
         "/config": {

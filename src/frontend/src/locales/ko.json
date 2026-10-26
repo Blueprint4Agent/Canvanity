@@ -132,7 +132,11 @@
             "passwordChangeCodeInvalid": "인증번호가 올바르지 않거나 만료되었습니다. 잠시 후 새 인증번호를 요청해 주세요.",
             "passwordChangeCodeThrottled": "잠시 후 인증번호를 다시 요청해 주세요.",
             "passwordChangeCodeSendFailed": "인증번호를 발송하지 못했습니다. 잠시 후 다시 시도해 주세요.",
-            "passwordChangeFailed": "비밀번호를 변경하지 못했습니다. 새 인증번호를 요청한 후 다시 시도해 주세요."
+            "passwordChangeFailed": "비밀번호를 변경하지 못했습니다. 새 인증번호를 요청한 후 다시 시도해 주세요.",
+            "handleAlreadyExists": "이미 사용 중인 닉네임입니다. 다른 닉네임을 입력해 주세요.",
+            "interestNotAvailable": "공식 목록에서 사용 가능한 관심사를 선택해 주세요.",
+            "interestAlreadyExists": "이미 사용 중인 관심사 이름 또는 동의어입니다.",
+            "interestNotFound": "관심사를 찾을 수 없습니다."
         }
     },
     "cards": {
@@ -479,7 +483,25 @@
             "photoAdd": "사진 추가",
             "editName": "이름 수정",
             "editBio": "소개 수정",
-            "editLocation": "위치 수정"
+            "editLocation": "위치 수정",
+            "handle": "닉네임",
+            "editHandle": "닉네임 설정",
+            "emptyHandle": "@닉네임 설정",
+            "handleHelp": "한글·영문 소문자·숫자·밑줄 2~24자. 다른 사람과 중복될 수 없습니다.",
+            "interests": "관심사",
+            "editInterests": "관심사 편집",
+            "emptyInterests": "관심사를 추가해 보세요",
+            "addInterest": "추가",
+            "searchInterests": "관심사 검색",
+            "searchInterestsPlaceholder": "관심사를 검색해 보세요",
+            "interestSuggestions": "공식 관심사 목록",
+            "removeInterest": "{{interest}} 관심사 삭제",
+            "interestsFull": "관심사는 최대 8개까지 선택할 수 있습니다.",
+            "interestsPickerHelp": "공식 관심사 중 최대 8개를 선택하세요.",
+            "noInterestResults": "일치하는 관심사가 없습니다.",
+            "interestCatalogError": "관심사 목록을 불러오지 못했습니다.",
+            "interestCatalogLoading": "관심사 불러오는 중",
+            "interestRetry": "다시 시도"
         },
         "general": {
             "title": "일반",
@@ -1581,5 +1603,17 @@
         "openSample": "{{name}}의 캔버스: {{title}}",
         "likeCount": "좋아요 {{count}}개",
         "commentCount": "댓글 {{count}}개"
+    },
+    "community": {
+        "navigation": "커뮤니티 공간",
+        "mySubtitle": "A little space for who you are and what you love",
+        "boardSubtitle": "Follow your interests. Find a new canvas.",
+        "example": "예시 보드 · 주제를 선택해 Plaza에서 둘러보세요.",
+        "visit": "캔버스 둘러보기",
+        "space": "작은 소개, 나다운 캔버스",
+        "spaceDescription": "이름과 소개, 사진을 바꾸며 나만의 공간을 시작해 보세요.",
+        "identity": "내 프로필 정보",
+        "privateCanvas": "현재 내 계정에서만 확인할 수 있는 공간입니다.",
+        "backToSpace": "커뮤니티로 돌아가기"
     }
 }

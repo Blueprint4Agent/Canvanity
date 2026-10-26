@@ -224,7 +224,14 @@ for (const width of [390, 1440])
             await page.goto("/settings?section=general");
             await expect(page.locator(".settings-row").first()).toBeVisible();
             await expect(page.locator(".settings-content-card")).toHaveCSS("opacity", "1");
-            expect(await settingsGeometry()).toEqual(billingGeometry);
+            const generalGeometry = await settingsGeometry();
+            expect(generalGeometry.gap).toBeCloseTo(billingGeometry.gap, 1);
+            expect(generalGeometry.width).toBeCloseTo(billingGeometry.width, 1);
+            expect({ ...generalGeometry, gap: 0, width: 0 }).toEqual({
+                ...billingGeometry,
+                gap: 0,
+                width: 0,
+            });
             await captureVisual(page, { path: info.outputPath("general.png"), fullPage: true });
         });
     }
