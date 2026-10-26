@@ -1,0 +1,20 @@
+{
+    "name": "canvanity-editor-probe",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite --host 127.0.0.1 --port 5193 --strictPort",
+        "build": "vite build",
+        "check": "node check.mjs"
+    },
+    "dependencies": {
+        "@excalidraw/excalidraw": "0.18.1",
+        "react": "18.3.1",
+        "react-dom": "18.3.1"
+    },
+    "devDependencies": {
+        "@playwright/test": "1.59.1",
+        "vite": "6.4.3"
+    }
+}
