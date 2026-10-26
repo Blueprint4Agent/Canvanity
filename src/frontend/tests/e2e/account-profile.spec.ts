@@ -70,6 +70,16 @@ for (const width of [390, 1440])
             await expect(page.getByRole("heading", { name: "Profile User" })).toBeVisible();
             await expect(page.locator(".personal-profile__details")).toContainText("Pro");
             await expect(page.locator(".personal-profile__details")).toContainText("Seoul");
+            await expect(page.locator(".app-main")).toHaveCSS(
+                "background-image",
+                /linear-gradient/,
+            );
+            for (const trigger of await page
+                .locator(".profile-edit-trigger, .editable-avatar__trigger")
+                .all()) {
+                await expect(trigger).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+                await expect(trigger).toHaveCSS("background-image", "none");
+            }
             const edit = page.locator(".editable-avatar__edit");
             await page.getByRole("button", { name: "Choose photo" }).focus();
             await expect(edit).toHaveCSS("opacity", "1");
@@ -97,7 +107,9 @@ for (const width of [390, 1440])
                     const r = row.getBoundingClientRect();
                     const s = getComputedStyle(row);
                     return {
-                        gap: r.top - header.getBoundingClientRect().bottom,
+                        gap:
+                            Math.round((r.top - header.getBoundingClientRect().bottom) * 1000) /
+                            1000,
                         width: r.width,
                         padding: s.padding,
                         radius: s.borderRadius,
@@ -218,14 +230,14 @@ test("password modal requires emailed code, validates confirmation and clears on
     expect(saves).toBe(1);
 });
 
-test("disabled email blocks password and deletion but leaves profile navigation", async ({
+test("disabled email blocks password and deletion but keeps profile navigation", async ({
     page,
 }) => {
     await setup(page, false);
     await page.goto("/settings?section=account");
     await expect(page.getByRole("button", { name: "Change password" })).toBeDisabled();
     await expect(page.getByRole("button", { name: "Delete account", exact: true })).toBeDisabled();
-    await page.getByRole("button", { name: "Go to profile" }).click();
+    await page.getByRole("button", { name: "Go to profile", exact: true }).click();
     await expect(page).toHaveURL(/\/profile$/);
 });
 
@@ -235,8 +247,8 @@ test("profile bio enforces 100 characters, expands naturally and preserves sideb
     // Given: the expanded app sidebar and a short saved bio.
     await setup(page);
     await page.goto("/home");
-    await page.locator(".profile-menu__trigger").click();
-    await page.getByRole("link", { name: "Profile", exact: true }).click();
+    await page.getByRole("link", { name: "My Canvas", exact: true }).click();
+    await page.getByRole("link", { name: "Edit profile", exact: true }).click();
     await expect(page).toHaveURL(/\/profile$/);
     await expect(page.locator(".app-sidebar")).toHaveCount(0);
     const before = (await page.locator(".personal-profile__bio").boundingBox())!.height;
@@ -357,7 +369,7 @@ test("compact inline edits preserve metadata geometry and account names share th
     await form.getByRole("textbox", { name: "Name", exact: true }).fill("Account Name");
     await form.getByRole("button", { name: "Save", exact: true }).click();
     await expect(form).toHaveCount(0);
-    await page.getByRole("button", { name: "Go to profile" }).click();
+    await page.getByRole("button", { name: "Go to profile", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Account Name" })).toBeVisible();
 });
 
@@ -382,34 +394,25 @@ for (const width of [390, 1440])
         expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(height);
     });
 
-for (const via of ["account", "dropdown"])
-    test(`profile preserves Settings navigation via ${via} and reload`, async ({ page }) => {
-        await setup(page);
-        await page.goto("/settings?section=account");
-        await expect(page.getByRole("button", { name: "Go to profile" })).toBeVisible();
-        const nav = page.locator(".section-navigation");
-        const links = await nav
-            .locator("a")
-            .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href")));
-        if (via === "account") await page.getByRole("button", { name: "Go to profile" }).click();
-        else {
-            await page.locator(".profile-menu__trigger").click();
-            await page.getByRole("link", { name: "Profile", exact: true }).click();
-        }
-        await expect(page).toHaveURL(/\/profile$/);
-        expect(
-            await nav
-                .locator("a")
-                .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href"))),
-        ).toEqual(links);
-        await page.reload();
-        await expect(page.getByRole("heading", { name: "Profile User" })).toBeVisible();
-        expect(
-            await nav
-                .locator("a")
-                .evaluateAll((nodes) => nodes.map((node) => node.getAttribute("href"))),
-        ).toEqual(links);
-    });
+test("My Canvas and profile stay separate with account and dropdown profile links", async ({
+    page,
+}) => {
+    await setup(page);
+    await page.goto("/settings?section=account");
+    await expect(page.getByRole("button", { name: "Go to profile" })).toBeVisible();
+    await page.locator(".profile-menu__trigger").click();
+    await expect(page.locator('.profile-menu__dropdown a[href="/profile"]')).toHaveCount(1);
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Go to profile", exact: true }).click();
+    await expect(page.locator(".section-navigation")).toHaveCount(0);
+    await page.getByRole("link", { name: "My Canvas", exact: true }).click();
+    await page.getByRole("link", { name: "Edit profile", exact: true }).click();
+    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page.locator(".section-navigation")).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByRole("heading", { name: "Profile User" })).toBeVisible();
+    await expect(page.locator(".section-navigation")).toHaveCount(0);
+});
 
 test("code request errors stay beside the verification input above password fields", async ({
     page,
@@ -494,15 +497,15 @@ test("profile shortcut preserves navigation and does not fire while typing", asy
     await expect(page.locator(".profile-inline-form--name")).toBeVisible();
 });
 
-test("profile uses the peer entrance animation and respects reduced motion", async ({ page }) => {
+test("profile uses the shared entrance animation and respects reduced motion", async ({ page }) => {
     await setup(page);
     await page.emulateMedia({ reducedMotion: "no-preference" });
     await page.goto("/profile");
     const profile = page.locator(".personal-profile");
-    await expect(profile).toHaveCSS("animation-name", "rise");
-    await expect(profile).toHaveCSS("animation-duration", "0.26s");
+    await expect(profile).toHaveCSS("animation-name", "page-enter");
+    await expect(profile).toHaveCSS("animation-duration", "0.22s");
     await page.emulateMedia({ reducedMotion: "reduce" });
-    await expect(profile).toHaveCSS("animation-duration", "1e-05s");
+    await expect(profile).toHaveCSS("animation-name", "none");
 });
 
 test("showcase exposes transparent edit save and cancel icons", async ({ page }) => {
@@ -538,4 +541,139 @@ test("outside clicks discard inline profile drafts without saving", async ({ pag
     await page.locator(".personal-profile__privacy").click();
     await expect(page.locator(".profile-inline-form")).toHaveCount(0);
     expect(stats.writes).toBe(0);
+});
+
+test("handle and official interests save, reload and appear on My Canvas", async ({ page }) => {
+    const stats = await setup(page);
+    await page.goto("/profile");
+    await page.getByRole("button", { name: "Edit profile", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "Edit profile" });
+    await dialog.getByRole("textbox", { name: "Handle", exact: true }).fill("@Canvas_최혁");
+    for (const label of ["Development", "AI", "Writing"])
+        await dialog
+            .getByRole("group", { name: "Official interests" })
+            .getByRole("button", { name: label, exact: true })
+            .click();
+    await dialog.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(stats.writes).toBe(1);
+    await expect(page.locator(".personal-profile__handle")).toHaveText("@canvas_최혁");
+    await expect(page.locator(".personal-profile__hero .profile-interest-tag")).toHaveText([
+        "Development",
+        "AI",
+        "Writing",
+    ]);
+    await page.reload();
+    await page.getByRole("link", { name: "My Canvas", exact: true }).click();
+    await expect(page.locator(".my-canvas-identity")).toContainText("@canvas_최혁");
+    await expect(page.locator(".my-canvas-identity .profile-interest-tag")).toHaveText([
+        "Development",
+        "AI",
+        "Writing",
+    ]);
+    await page.getByRole("link", { name: "Edit profile", exact: true }).click();
+    await page.getByRole("button", { name: "Edit interests", exact: true }).click();
+    const picker = page.getByRole("dialog", { name: "Edit interests", exact: true });
+    for (const label of ["Development", "AI", "Writing"])
+        await picker.getByRole("button", { name: `Remove interest ${label}`, exact: true }).click();
+    await picker.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.locator(".personal-profile__hero .profile-interest-tag")).toHaveCount(0);
+});
+
+test("official interest search supports aliases and the eight-item limit without free creation", async ({
+    page,
+}) => {
+    await setup(page);
+    await page.goto("/profile");
+    await page.getByRole("button", { name: "Edit interests", exact: true }).click();
+    const picker = page.getByRole("dialog", { name: "Edit interests", exact: true });
+    const search = picker.getByRole("searchbox", { name: "Search interests", exact: true });
+    await search.fill("인공지능");
+    await expect(
+        picker.getByRole("group", { name: "Official interests" }).getByRole("button"),
+    ).toHaveCount(1);
+    await picker.getByRole("button", { name: "AI", exact: true }).click();
+    await search.fill("FastAPI-unlisted");
+    await expect(picker).toContainText("No matching interests");
+    await expect(picker.getByRole("button", { name: /create|suggest|add.*FastAPI/i })).toHaveCount(
+        0,
+    );
+    await search.fill("");
+    const choices = picker.getByRole("group", { name: "Official interests" });
+    for (const label of [
+        "Development",
+        "Design",
+        "UI & UX",
+        "Game development",
+        "Gaming",
+        "Photography",
+        "Travel",
+    ])
+        await choices.getByRole("button", { name: label, exact: true }).click();
+    await expect(picker).toContainText("8/8");
+    await expect(choices.getByRole("button", { name: "Music", exact: true })).toBeDisabled();
+    await choices.getByRole("button", { name: "Travel", exact: true }).click();
+    await expect(choices.getByRole("button", { name: "Music", exact: true })).toBeEnabled();
+    await picker.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.locator(".personal-profile__hero .profile-interest-tag")).toHaveCount(7);
+    await page.getByRole("button", { name: "Remove interest AI", exact: true }).click();
+    await expect(page.locator(".personal-profile__hero .profile-interest-tag")).toHaveCount(6);
+});
+
+test("inline handle keeps failed drafts and interests use a cancellable search modal", async ({
+    page,
+}) => {
+    await setup(page);
+    await page.goto("/profile");
+    await page.getByRole("button", { name: "Set handle", exact: true }).click();
+    const form = page.locator(".profile-inline-form--handle");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await form.getByRole("textbox", { name: "Handle", exact: true }).fill("inline_user");
+    await form.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Edit interests", exact: true }).click();
+    const picker = page.getByRole("dialog", { name: "Edit interests", exact: true });
+    await picker.getByRole("button", { name: "AI", exact: true }).click();
+    await picker.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(page.locator(".personal-profile__hero .profile-interest-tag")).toHaveCount(0);
+    await page.getByRole("button", { name: "Set handle", exact: true }).click();
+    await form.getByRole("textbox", { name: "Handle", exact: true }).fill("taken_handle");
+    await page.route("**/api/v1/auth/me", (route) =>
+        route.request().method() === "PATCH"
+            ? route.fulfill({
+                  status: 409,
+                  json: { detail: { error: "HANDLE_ALREADY_EXISTS", message: "Already in use" } },
+              })
+            : route.fallback(),
+    );
+    await form.getByRole("button", { name: "Save", exact: true }).click();
+    await expect(page.getByRole("alert")).toContainText("That handle is already in use");
+    await expect(form.getByRole("textbox", { name: "Handle", exact: true })).toHaveValue(
+        "taken_handle",
+    );
+    await page.keyboard.press("Escape");
+    await expect(page.locator(".personal-profile__handle")).toHaveText("@inline_user");
+});
+
+test("Korean picker shows balanced official topics, resolves lifestyle aliases and stores IDs", async ({
+    page,
+}) => {
+    await setup(page);
+    await page.addInitScript(() => localStorage.setItem("b4a_language", "ko"));
+    await page.goto("/profile");
+    await page.getByRole("button", { name: "관심사 편집", exact: true }).click();
+    const picker = page.getByRole("dialog", { name: "관심사 편집", exact: true });
+    const options = picker.getByRole("group", { name: "공식 관심사 목록" });
+    await expect(options.getByRole("button")).toHaveCount(40);
+    await expect(options.getByRole("button").first()).toHaveText("일상");
+    await expect(picker).not.toContainText("settings.profile.");
+    await picker.getByRole("searchbox", { name: "관심사 검색", exact: true }).fill("강아지");
+    await options.getByRole("button", { name: "반려동물", exact: true }).click();
+    const write = page.waitForRequest(
+        (request) => request.url().endsWith("/api/v1/auth/me") && request.method() === "PATCH",
+    );
+    await picker.getByRole("button", { name: "저장", exact: true }).click();
+    expect((await write).postDataJSON().interests).toEqual(["pets"]);
+    await expect(page.locator(".personal-profile__hero .profile-interest-tag")).toHaveText(
+        "반려동물",
+    );
 });

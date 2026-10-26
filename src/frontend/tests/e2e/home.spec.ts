@@ -244,7 +244,7 @@ test("Space temporarily pans, release and blur restore clicks without native tex
 test("community feed stays composed with author comment and like metadata", async ({ page }) => {
     await setup(page, null);
     await page.goto("/home");
-    await expect(page.locator("#home-project-title")).toHaveText("Canvanity");
+    await expect(page.locator("#home-project-title")).toHaveText("Plaza");
     await expect(page.locator(".explore-cluster")).toHaveCount(4);
     await expect(page.locator(".explore-post-meta")).toHaveCount(7);
     await expect(

@@ -603,33 +603,32 @@ test("keyboard cards customize, dismiss on blur and persist unrestricted shortcu
         /Mac/.test(navigator.userAgent) ? "Meta" : "Control",
     );
     const rows = page.locator(".settings-row");
-    await rows.first().getByRole("button", { name: "Toggle menu", exact: true }).click();
-    await page.getByRole("textbox", { name: "Toggle menu", exact: true }).press(`${modifier}+,`);
+    await expect(page.getByRole("button", { name: "Toggle menu", exact: true })).toHaveCount(0);
+    const profile = page.getByRole("button", { name: "Open profile", exact: true });
+    await profile.click();
+    await page.getByRole("textbox", { name: "Open profile", exact: true }).press(`${modifier}+,`);
     await expect(page.locator(".ui-toast-card")).toContainText("already uses");
     await expect(rows.locator("[role=alert]")).toHaveCount(0);
     await page.getByRole("heading", { name: "Keyboard", exact: true }).click();
-    await expect(page.getByRole("textbox", { name: "Toggle menu", exact: true })).toHaveCount(0);
-    await rows.first().getByRole("button", { name: "Toggle menu", exact: true }).click();
-    await page.getByRole("textbox", { name: "Toggle menu", exact: true }).press("b");
-    await expect(page.getByRole("textbox", { name: "Toggle menu", exact: true })).toHaveCount(0);
-    expect(account.keyboard_shortcuts?.toggleSidebar).toEqual(["b"]);
+    await expect(page.getByRole("textbox", { name: "Open profile", exact: true })).toHaveCount(0);
+    await profile.click();
+    await page.getByRole("textbox", { name: "Open profile", exact: true }).press("p");
+    await expect(page.getByRole("textbox", { name: "Open profile", exact: true })).toHaveCount(0);
     expect(
-        await page.evaluate(() => localStorage.getItem("b4react.keyboard-shortcuts.v1")),
-    ).toBeNull();
+        (account.keyboard_shortcuts as unknown as { openProfile: string[] })?.openProfile,
+    ).toEqual(["p"]);
     await page.reload();
-    await expect(rows.first().locator("kbd")).toContainText("B");
-    await page.keyboard.press("b");
-    await expect(page.locator(".profile-menu__dropdown")).toBeVisible();
-    await page.keyboard.press("Escape");
+    await expect(profile.locator("kbd")).toContainText("P");
+    await page.keyboard.press("p");
+    await expect(page).toHaveURL(/\/profile$/);
+    await expect(page.locator(".profile-menu__dropdown")).toHaveCount(0);
+    await page.goto("/settings?section=keyboard");
     await page.getByRole("button", { name: "Restore defaults" }).click();
     await expect.poll(() => account.keyboard_shortcuts).toBeNull();
     await page.reload();
-    await expect(page.locator(".profile-menu__trigger")).toHaveAttribute(
-        "aria-keyshortcuts",
-        `${modifier}+B`,
-    );
+    await expect(page.locator(".profile-menu__trigger")).not.toHaveAttribute("aria-keyshortcuts");
     await page.keyboard.press(`${modifier}+b`);
-    await expect(page.locator(".profile-menu__dropdown")).toBeVisible();
+    await expect(page.locator(".profile-menu__dropdown")).toHaveCount(0);
 });
 
 for (const width of [320, 390, 1440])

@@ -13,3 +13,7 @@
 - API 상태·실시간 복구·UI 구성 루프를 따르고, 데스크톱 복구는 해당 타깃에서만 적용한다.
 - make check, make test, make build 등 로컬 도구를 유지한다. 최종 범위와 통합 검증은 루트 make verify-plan, make verify가 소유한다.
 - 캔버스 화면/브랜드/네이티브 패키지는 현재 기본 초기화에서 보류했다. PROJECT_BRIEF.md의 범위를 따른다.
+
+## 화면 전환 기본 규칙
+
+설정·관리자·프로필·Plaza·My Canvas·Board와 새 페이지는 공통 AppLayout의 콘텐츠 진입 효과를 사용한다. 상태 초기화를 위한 강제 재마운트는 금지하며 모션 줄이기 설정에서는 생략한다. 캔버스의 카메라와 공통 도구는 움직이지 않고 내부 콘텐츠만 전환한다. 상세 표면·호버·미니맵 캐시 규칙은 notes/page-families.md를 따른다.

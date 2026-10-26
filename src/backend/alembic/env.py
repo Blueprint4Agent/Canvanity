@@ -16,6 +16,7 @@ from app.models import (
     billing,  # noqa: F401
     inbox,  # noqa: F401
     inquiry,  # noqa: F401
+    interest,  # noqa: F401
     notification,  # noqa: F401
     user,  # noqa: F401
 )

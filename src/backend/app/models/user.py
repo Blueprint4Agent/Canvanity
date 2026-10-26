@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated
@@ -24,6 +25,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 from app.core.config.settings import SETTINGS
 from app.core.db.session import Base, get_db
 from app.core.error import AuthErrorCode, AuthException
+from app.models.interest import Interest, UserInterest
 from app.models.pagination import PageResponse
 from app.models.profile_location import LOCATION_CODES
 
@@ -59,6 +61,18 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(50), nullable=False)
     role: Mapped[str] = mapped_column(String(20), default=UserRole.USER.value, nullable=False)
     profile_image_url: Mapped[str | None] = mapped_column(Text, nullable=True)
+    handle: Mapped[str | None] = mapped_column(String(24), unique=True, index=True, nullable=True)
+    _legacy_interests: Mapped[list[str]] = mapped_column(
+        "interests", JSON, default=list, server_default=text("'[]'"), nullable=False
+    )
+    interest_links: Mapped[list[UserInterest]] = relationship(
+        cascade="all, delete-orphan", lazy="selectin", order_by=UserInterest.position
+    )
+
+    @property
+    def interests(self) -> list[str]:
+        return [link.interest.slug for link in self.interest_links if link.interest.active]
+
     bio: Mapped[str | None] = mapped_column(String(100), nullable=True)
     location: Mapped[str | None] = mapped_column(String(100), nullable=True)
     profile_photo: Mapped[dict | None] = mapped_column(JSON, nullable=True)
@@ -194,6 +208,40 @@ class KeyboardShortcuts(BaseModel):
 
 
 class UpdateProfileForm(BaseModel):
+    handle: str | None = Field(
+        default=None,
+        max_length=24,
+        description="Unique lowercase @handle: 2-24 Latin/Korean letters, digits or underscores; null clears it.",
+    )
+    interests: list[Annotated[str, Field(min_length=1, max_length=40)]] | None = Field(
+        default=None, max_length=8
+    )
+
+    @field_validator("handle", mode="before")
+    @classmethod
+    def normalize_handle(cls, value: object) -> object:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        value = value.strip().removeprefix("@").lower()
+        if not value:
+            return None
+        if not re.fullmatch(r"[a-z0-9가-힣_]{2,24}", value):
+            raise ValueError("Use 2-24 Latin/Korean letters, digits or underscores.")
+        return value
+
+    @field_validator("interests", mode="before")
+    @classmethod
+    def normalize_interests(cls, value: object) -> object:
+        if value is None:
+            raise ValueError("interests cannot be null; use an empty list to clear.")
+        if not isinstance(value, list) or len(value) > 8:
+            return value
+        if not all(isinstance(item, str) for item in value):
+            return value
+        return list(dict.fromkeys(item.strip() for item in value))
+
     bio: str | None = Field(default=None, max_length=100)
     location: str | None = Field(
         default=None,
@@ -238,6 +286,8 @@ class UpdateProfileForm(BaseModel):
             and "keyboard_shortcuts" not in self.model_fields_set
             and "bio" not in self.model_fields_set
             and "location" not in self.model_fields_set
+            and "handle" not in self.model_fields_set
+            and "interests" not in self.model_fields_set
         ):
             raise ValueError("At least one field must be provided.")
         if has_name and self.name is None:
@@ -246,6 +296,8 @@ class UpdateProfileForm(BaseModel):
 
 
 class UserResponse(BaseModel):
+    handle: str | None = None
+    interests: list[str] = Field(default_factory=list)
     bio: str | None = None
     location: str | None = None
     has_password: bool = False
@@ -367,6 +419,8 @@ class APIError(BaseModel):
 
 
 class AuthUserDTO(BaseModel):
+    handle: str | None = None
+    interests: list[str] = Field(default_factory=list)
     bio: str | None = None
     location: str | None = None
     id: int
@@ -390,6 +444,8 @@ class AuthUserDTO(BaseModel):
             profile_image_url=self.profile_image_url,
             keyboard_shortcuts=self.keyboard_shortcuts,
             bio=self.bio,
+            handle=self.handle,
+            interests=self.interests,
             location=self.location,
             has_password=bool(self.password_hash),
             oauth_providers=self.oauth_providers,
@@ -512,6 +568,8 @@ class UserRepository:
             profile_image_url=user.profile_image_url,
             keyboard_shortcuts=user.keyboard_shortcuts,
             bio=user.bio,
+            handle=user.handle,
+            interests=user.interests,
             location=user.location,
             oauth_providers=_extract_connected_oauth_providers(user.auth_identities),
             is_active=user.is_active,
@@ -562,6 +620,8 @@ class UserRepository:
             profile_image_url=user.profile_image_url,
             keyboard_shortcuts=user.keyboard_shortcuts,
             bio=user.bio,
+            handle=user.handle,
+            interests=user.interests,
             location=user.location,
             oauth_providers=_extract_connected_oauth_providers(user.auth_identities),
             is_active=user.is_active,
@@ -675,6 +735,10 @@ class UserRepository:
         location: str | None = None,
         update_bio: bool = False,
         update_location: bool = False,
+        handle: str | None = None,
+        interests: list[str] | None = None,
+        update_handle: bool = False,
+        update_interests: bool = False,
     ) -> UserResponse | None:
         async with get_db() as db:
             result = await db.execute(
@@ -684,6 +748,25 @@ class UserRepository:
             if user is None:
                 return None
 
+            if update_handle:
+                user.handle = handle
+            if update_interests:
+                selected = list(dict.fromkeys(interests or []))
+                available = (
+                    await db.scalars(
+                        select(Interest).where(
+                            Interest.slug.in_(selected), Interest.active.is_(True)
+                        )
+                    )
+                ).all()
+                by_slug = {item.slug: item for item in available}
+                if len(by_slug) != len(selected):
+                    raise AuthException(code=AuthErrorCode.INTEREST_NOT_AVAILABLE)
+                user.interest_links = [
+                    UserInterest(interest_id=by_slug[slug].id, position=index)
+                    for index, slug in enumerate(selected)
+                ]
+                user._legacy_interests = selected
             if update_bio:
                 user.bio = bio
             if update_location:
@@ -697,7 +780,17 @@ class UserRepository:
                     keyboard_shortcuts.model_dump() if keyboard_shortcuts else None
                 )
             user.updated_at = datetime.now(UTC)
-            await db.commit()
+            try:
+                await db.commit()
+            except IntegrityError:
+                await db.rollback()
+                if update_handle and handle is not None:
+                    owner = await db.scalar(
+                        select(User.id).where(User.handle == handle, User.id != user_id)
+                    )
+                    if owner is not None:
+                        raise AuthException(code=AuthErrorCode.HANDLE_ALREADY_EXISTS) from None
+                raise
         return await self.get_user_response_by_id(user_id)
 
     async def update_user_role(self, user_id: int, role: UserRole) -> UserResponse | None:
