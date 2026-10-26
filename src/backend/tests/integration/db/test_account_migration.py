@@ -107,3 +107,35 @@ def test_photo_migration_preserves_legacy_and_clears_managed_urls_on_downgrade(
     command.upgrade(config, "head")
     with sqlite3.connect(path) as db:
         assert db.execute("SELECT profile_photo FROM users").fetchone() == (None,)
+
+
+@pytest.mark.primary_data
+def test_profile_identity_migration_preserves_accounts_and_enforces_unique_handles(
+    tmp_path, monkeypatch
+):
+    """Scenario: existing users get empty tags and optional unique handles without data loss."""
+    path = tmp_path / "profile-identity.db"
+    url = f"sqlite+aiosqlite:///{path}"
+    monkeypatch.setattr(SETTINGS, "DATABASE_URL", url)
+    config = _build_alembic_config(url)
+    command.upgrade(config, "0020_inbox_deletion")
+    with sqlite3.connect(path) as db:
+        db.execute(
+            "INSERT INTO users (email,name,is_active,is_verified,role,created_at,updated_at) VALUES ('one@example.com','One',1,1,'user',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"
+        )
+        db.execute(
+            "INSERT INTO users (email,name,is_active,is_verified,role,created_at,updated_at) VALUES ('two@example.com','Two',1,1,'user',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)"
+        )
+    command.upgrade(config, "head")
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT handle, interests FROM users ORDER BY id").fetchall() == [
+            (None, "[]"),
+            (None, "[]"),
+        ]
+        db.execute("UPDATE users SET handle='one' WHERE email='one@example.com'")
+        with pytest.raises(sqlite3.IntegrityError):
+            db.execute("UPDATE users SET handle='one' WHERE email='two@example.com'")
+    command.downgrade(config, "0020_inbox_deletion")
+    with sqlite3.connect(path) as db:
+        assert db.execute("SELECT name FROM users ORDER BY id").fetchall() == [("One",), ("Two",)]
+    command.upgrade(config, "head")

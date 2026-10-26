@@ -967,6 +967,58 @@ export interface paths {
         patch: operations["change_status_api_v1_inquiries__inquiry_id__status_patch"];
         trace?: never;
     };
+    "/api/v1/interests": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Catalog */
+        get: operations["catalog_api_v1_interests_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interests/admin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Admin */
+        get: operations["list_admin_api_v1_interests_admin_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_interests_admin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/interests/admin/{interest_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update */
+        patch: operations["update_api_v1_interests_admin__interest_id__patch"];
+        trace?: never;
+    };
     "/config": {
         parameters: {
             query?: never;
@@ -1383,6 +1435,10 @@ export interface components {
                 | "PROFILE_PHOTO_UNAVAILABLE"
                 | "PROFILE_PHOTO_NOT_FOUND"
                 | "PROFILE_PHOTO_CONFLICT"
+                | "INTEREST_ALREADY_EXISTS"
+                | "INTEREST_NOT_FOUND"
+                | "INTEREST_NOT_AVAILABLE"
+                | "HANDLE_ALREADY_EXISTS"
                 | "PROFILE_UPDATE_FAILED"
                 | "OAUTH_PROVIDER_NOT_ENABLED"
                 | "OAUTH_PROVIDER_CONFIG_INVALID"
@@ -2112,6 +2168,69 @@ export interface components {
              */
             status: "ok" | "failed" | "timeout" | "disabled";
         };
+        /** InterestAdminResponse */
+        InterestAdminResponse: {
+            /** Active */
+            active: boolean;
+            /** Aliases */
+            aliases?: string[];
+            /** Id */
+            id: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ko */
+            name_ko: string;
+            /**
+             * Sort Order
+             * @default 1000
+             */
+            sort_order: number;
+        };
+        /** InterestCatalogResponse */
+        InterestCatalogResponse: {
+            /** Items */
+            items: components["schemas"]["InterestResponse"][];
+        };
+        /** InterestCreateForm */
+        InterestCreateForm: {
+            /** Aliases */
+            aliases?: string[];
+            /** Id */
+            id: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ko */
+            name_ko: string;
+            /**
+             * Sort Order
+             * @default 1000
+             */
+            sort_order: number;
+        };
+        /** InterestResponse */
+        InterestResponse: {
+            /** Aliases */
+            aliases?: string[];
+            /** Id */
+            id: string;
+            /** Name En */
+            name_en: string;
+            /** Name Ko */
+            name_ko: string;
+        };
+        /** InterestUpdateForm */
+        InterestUpdateForm: {
+            /** Active */
+            active?: boolean | null;
+            /** Aliases */
+            aliases?: string[] | null;
+            /** Name En */
+            name_en?: string | null;
+            /** Name Ko */
+            name_ko?: string | null;
+            /** Sort Order */
+            sort_order?: number | null;
+        };
         /** InternalErrorResponse */
         InternalErrorResponse: {
             /**
@@ -2295,6 +2414,13 @@ export interface components {
         UpdateProfileForm: {
             /** Bio */
             bio?: string | null;
+            /**
+             * Handle
+             * @description Unique lowercase @handle: 2-24 Latin/Korean letters, digits or underscores; null clears it.
+             */
+            handle?: string | null;
+            /** Interests */
+            interests?: string[] | null;
             keyboard_shortcuts?: components["schemas"]["KeyboardShortcuts"] | null;
             /**
              * Location
@@ -2321,6 +2447,8 @@ export interface components {
             created_at: string;
             /** Email */
             email: string;
+            /** Handle */
+            handle?: string | null;
             /**
              * Has Password
              * @default false
@@ -2328,6 +2456,8 @@ export interface components {
             has_password: boolean;
             /** Id */
             id: number;
+            /** Interests */
+            interests?: string[];
             /** Is Verified */
             is_verified: boolean;
             keyboard_shortcuts?: components["schemas"]["KeyboardShortcuts"] | null;
@@ -3614,13 +3744,38 @@ export interface operations {
                     "application/json": components["schemas"]["AuthErrorResponse"];
                 };
             };
-            /** @description Validation Error */
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "HANDLE_ALREADY_EXISTS",
+                     *         "message": "This profile handle is already in use."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
             422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "INTEREST_NOT_AVAILABLE",
+                     *         "message": "Select an active official interest."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
                 };
             };
             /** @description Internal Server Error */
@@ -8940,6 +9095,293 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["InquiryErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+        };
+    };
+    catalog_api_v1_interests_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestCatalogResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+        };
+    };
+    list_admin_api_v1_interests_admin_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestAdminResponse"][];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "USER_NOT_FOUND",
+                     *         "message": "User not found."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+        };
+    };
+    create_api_v1_interests_admin_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterestCreateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestAdminResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "USER_NOT_FOUND",
+                     *         "message": "User not found."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "INTEREST_ALREADY_EXISTS",
+                     *         "message": "An interest identifier or alias is already in use."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+        };
+    };
+    update_api_v1_interests_admin__interest_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                interest_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InterestUpdateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterestAdminResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "INTEREST_ALREADY_EXISTS",
+                     *         "message": "An interest identifier or alias is already in use."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
                 };
             };
             /** @description Validation Error */

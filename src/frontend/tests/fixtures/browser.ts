@@ -1,3 +1,4 @@
+import { interestCatalog } from "./interests";
 import { test as base, expect } from "@playwright/test";
 
 // Mocked browser suites must never reach a developer's configured backend.
@@ -14,6 +15,9 @@ export const test = base.extend<{ languagePreference: "en" | "ko" | null }>({
             if (url.origin !== new URL(baseURL!).origin) return route.abort("blockedbyclient");
             return route.continue();
         });
+        await context.route("**/api/v1/interests", (route) =>
+            route.fulfill({ json: interestCatalog }),
+        );
         // Sidebar billing is incidental in non-billing suites; page routes override this.
         await context.route("**/api/v1/billing/subscription", (route) =>
             route.fulfill({

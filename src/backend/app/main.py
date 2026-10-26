@@ -46,7 +46,17 @@ from app.core.observability.startup_display import (
 from app.core.observability.tracing import setup_tracing
 from app.core.openapi import register_openapi_contracts
 from app.models.user import UserResponse
-from app.routers.v1 import admin, api_key, auth, billing, billing_webhook, events, inbox, inquiry
+from app.routers.v1 import (
+    admin,
+    api_key,
+    auth,
+    billing,
+    billing_webhook,
+    events,
+    inbox,
+    inquiry,
+    interest,
+)
 from app.services.admin import DEMO_SNAPSHOTS
 from app.services.billing import BillingService
 from app.services.bootstrap import BootstrapService
@@ -272,6 +282,7 @@ def create_app() -> FastAPI:
     setup_metrics(app)
     setup_tracing(app)
 
+    app.include_router(interest.router, prefix="/api/v1/interests", tags=["Interests"])
     app.include_router(inbox.router, prefix="/api/v1/inbox", tags=["Inbox"])
     app.include_router(inquiry.router, prefix="/api/v1/inquiries", tags=["Inquiries"])
     app.include_router(admin.router, prefix="/api/v1/admin", tags=["Admin"])

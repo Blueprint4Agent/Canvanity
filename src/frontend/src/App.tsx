@@ -1,3 +1,5 @@
+import { InterestCatalogProvider } from "./hooks/api/interests/useInterestCatalog";
+import { CanvasSnapshotCacheProvider } from "./hooks/useCanvasSnapshotCache";
 import { AppLayoutProvider } from "./hooks/useAppLayout";
 import { InboxProvider, useInboxContext } from "./hooks/api/inbox/InboxProvider";
 import { useSubscription } from "./hooks/api/billing/useSubscription";
@@ -65,6 +67,14 @@ const SettingsPage = lazy(() =>
     import("./pages/settings/SettingsPage").then((module) => ({ default: module.SettingsPage })),
 );
 
+const MyCanvasPage = lazy(() =>
+    import("./pages/canvas/MyCanvasPage").then((module) => ({ default: module.MyCanvasPage })),
+);
+
+const BoardPage = lazy(() =>
+    import("./pages/board/BoardPage").then((module) => ({ default: module.BoardPage })),
+);
+
 const ProfilePage = lazy(() =>
     import("./pages/profile/ProfilePage").then((module) => ({ default: module.ProfilePage })),
 );
@@ -97,9 +107,13 @@ function AppShell({ children }: { children: ReactNode }) {
     const billing = useSubscription(user?.id);
     const tier = !billing.error && billing.subscription ? tierFor(billing.subscription.plan) : null;
     return (
-        <InboxProvider>
-            <InboxShell tier={tier}>{children}</InboxShell>
-        </InboxProvider>
+        <InterestCatalogProvider>
+            <CanvasSnapshotCacheProvider owner={user?.id ?? "guest"}>
+                <InboxProvider>
+                    <InboxShell tier={tier}>{children}</InboxShell>
+                </InboxProvider>
+            </CanvasSnapshotCacheProvider>
+        </InterestCatalogProvider>
     );
 }
 
@@ -258,6 +272,8 @@ function AppContent() {
                 <Route path="/admin/inquiries" element={<AdminInquiriesPage />} />
                 <Route path="/notifications" element={<InboxPage />} />
                 <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/my-canvas" element={<MyCanvasPage />} />
+                <Route path="/board" element={<BoardPage />} />
                 <Route path="/dashboard" element={<Navigate to={homePath} replace />} />
                 <Route
                     path="/show-case"

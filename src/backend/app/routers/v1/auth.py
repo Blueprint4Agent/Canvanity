@@ -332,7 +332,11 @@ async def admin_users(
     "/me",
     response_model=UserResponse,
     responses=current_user_error_responses(
-        auth_error_responses(AuthErrorCode.PROFILE_UPDATE_FAILED),
+        auth_error_responses(
+            AuthErrorCode.PROFILE_UPDATE_FAILED,
+            AuthErrorCode.HANDLE_ALREADY_EXISTS,
+            AuthErrorCode.INTEREST_NOT_AVAILABLE,
+        ),
     ),
 )
 async def update_me(

@@ -1,8 +1,13 @@
+import { useInterestCatalog } from "../../hooks/api/interests/useInterestCatalog";
+import {
+    ProfileInterestsField,
+    ProfileInterestTags,
+} from "../../components/features/profile/ProfileInterestsField";
 import { ProfileInlineForm } from "../../components/features/profile/ProfileInlineForm";
 import { ProfileLocationFields } from "../../components/features/profile/ProfileLocationFields";
 import { profileLocationLabel, profileLocationOptions } from "../../utils/profileLocation";
 import { useId, useMemo } from "react";
-import { CalendarDays, MapPin, Sparkles } from "lucide-react";
+import { CalendarDays, MapPin, Sparkles, Plus, Tag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router-dom";
 import {
@@ -26,6 +31,7 @@ export function ProfilePage() {
     const { t, i18n } = useTranslation();
     const { user, loading, profileImageUrl } = useAuthContext();
     const editor = useProfileEditor();
+    const catalog = useInterestCatalog();
     const plan = useCurrentPlan(user?.id);
     const formId = useId();
     const language = i18n.resolvedLanguage ?? "en";
@@ -82,6 +88,7 @@ export function ProfilePage() {
                 ) : (
                     <h1 aria-label={user.name}>
                         <Button
+                            appearance="canvas"
                             className="profile-edit-trigger"
                             title={t("settings.profile.editName")}
                             onClick={() => editor.startInline("name")}
@@ -90,6 +97,42 @@ export function ProfilePage() {
                             {user.name}
                         </Button>
                     </h1>
+                )}
+                {editor.editing === "handle" ? (
+                    <ProfileInlineForm
+                        className="profile-inline-form--handle"
+                        busy={editor.busy}
+                        invalid={!editor.handleValid}
+                        onSave={editor.saveInline}
+                        onCancel={editor.cancelInline}
+                    >
+                        <InputField
+                            label=""
+                            aria-label={t("settings.profile.handle")}
+                            value={editor.handle}
+                            onValueChange={editor.setHandle}
+                            maxLength={24}
+                            autoFocus
+                            disabled={editor.busy}
+                            autoCapitalize="none"
+                            spellCheck={false}
+                            aria-invalid={!editor.handleValid}
+                            aria-describedby={`${formId}-inline-handle-help`}
+                        />
+                        <p className="sr-only" id={`${formId}-inline-handle-help`}>
+                            {t("settings.profile.handleHelp")}
+                        </p>
+                    </ProfileInlineForm>
+                ) : (
+                    <Button
+                        appearance="canvas"
+                        className="profile-edit-trigger personal-profile__handle"
+                        onClick={() => editor.startInline("handle")}
+                        disabled={editor.busy}
+                        aria-label={t("settings.profile.editHandle")}
+                    >
+                        {user.handle ? `@${user.handle}` : t("settings.profile.emptyHandle")}
+                    </Button>
                 )}
                 {user.role === "admin" || user.role === "manager" ? (
                     <StatusBadge tone="active">
@@ -126,6 +169,7 @@ export function ProfilePage() {
                 ) : (
                     <div className={`personal-profile__bio${user.bio ? "" : " muted"}`}>
                         <Button
+                            appearance="canvas"
                             className="profile-edit-trigger"
                             title={t("settings.profile.editBio")}
                             onClick={() => editor.startInline("bio")}
@@ -135,8 +179,35 @@ export function ProfilePage() {
                         </Button>
                     </div>
                 )}
+                <div
+                    className="personal-profile__interests"
+                    aria-label={t("settings.profile.interests")}
+                >
+                    <span className="personal-profile__interests-label">
+                        <Tag size={18} aria-hidden="true" />
+                        {t("settings.profile.interests")}
+                    </span>
+                    <div className="profile-interests">
+                        <ProfileInterestTags
+                            interests={user.interests ?? []}
+                            catalog={catalog.items}
+                            onRemove={editor.removeInterest}
+                            busy={editor.busy}
+                        />
+                        <Button
+                            appearance="canvas"
+                            className="profile-interests__edit"
+                            onClick={editor.showInterests}
+                            disabled={editor.busy}
+                            aria-label={t("settings.profile.editInterests")}
+                        >
+                            <Plus size={16} aria-hidden="true" />
+                            {t("settings.profile.addInterest")}
+                        </Button>
+                    </div>
+                </div>
             </header>
-            {!editor.open && editor.error ? (
+            {!editor.open && !editor.interestsOpen && editor.error ? (
                 <InlineMessage tone="error">{editor.error}</InlineMessage>
             ) : null}
             <dl className="personal-profile__details">
@@ -147,6 +218,7 @@ export function ProfilePage() {
                     </dt>
                     <dd className="profile-location-anchor">
                         <Button
+                            appearance="canvas"
                             className="profile-edit-trigger"
                             title={t("settings.profile.editLocation")}
                             onClick={() => editor.startInline("location")}
@@ -199,6 +271,41 @@ export function ProfilePage() {
             ) : null}
             <p className="personal-profile__privacy muted">{t("settings.profile.private")}</p>
             <Modal
+                open={editor.interestsOpen}
+                onClose={editor.closeInterests}
+                title={t("settings.profile.editInterests")}
+                size="compact"
+                keyboardDismissible
+                footer={
+                    <>
+                        <ModalButton
+                            variant="cancel"
+                            onClick={editor.closeInterests}
+                            disabled={editor.busy}
+                        >
+                            {t("settings.account.cancel")}
+                        </ModalButton>
+                        <ModalButton
+                            onClick={editor.saveInterests}
+                            loading={editor.busy}
+                            disabled={!editor.interestsValid || catalog.loading || catalog.error}
+                        >
+                            {t("settings.profile.save")}
+                        </ModalButton>
+                    </>
+                }
+            >
+                {editor.interestsOpen ? (
+                    <ProfileInterestsField
+                        interests={editor.interests}
+                        catalog={catalog}
+                        onChange={editor.setInterests}
+                        busy={editor.busy}
+                    />
+                ) : null}
+                {editor.error ? <InlineMessage tone="error">{editor.error}</InlineMessage> : null}
+            </Modal>
+            <Modal
                 open={editor.open}
                 onClose={editor.close}
                 title={t("settings.profile.edit")}
@@ -213,7 +320,12 @@ export function ProfilePage() {
                             type="submit"
                             form={formId}
                             loading={editor.busy}
-                            disabled={editor.name.trim().length < 2 || !locationValid}
+                            disabled={
+                                editor.name.trim().length < 2 ||
+                                !locationValid ||
+                                !editor.handleValid ||
+                                !editor.interestsValid
+                            }
                         >
                             {t("settings.profile.save")}
                         </ModalButton>
@@ -225,7 +337,8 @@ export function ProfilePage() {
                     className="form"
                     onSubmit={(event) => {
                         event.preventDefault();
-                        if (locationValid) editor.save();
+                        if (locationValid && editor.handleValid && editor.interestsValid)
+                            editor.save();
                     }}
                 >
                     <div className="profile-editor-photo">
@@ -250,6 +363,30 @@ export function ProfilePage() {
                         maxLength={50}
                         required
                         disabled={editor.busy}
+                    />
+                    <div className="profile-handle-field">
+                        <InputField
+                            label={t("settings.profile.handle")}
+                            value={editor.handle}
+                            onValueChange={editor.setHandle}
+                            maxLength={24}
+                            disabled={editor.busy}
+                            autoCapitalize="none"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            aria-describedby={`${formId}-handle-help`}
+                            aria-invalid={!editor.handleValid}
+                            placeholder="choihyuk"
+                        />
+                        <p id={`${formId}-handle-help`} className="muted">
+                            {t("settings.profile.handleHelp")}
+                        </p>
+                    </div>
+                    <ProfileInterestsField
+                        interests={editor.interests}
+                        catalog={catalog}
+                        onChange={editor.setInterests}
+                        busy={editor.busy}
                     />
                     <div className="profile-bio-field">
                         <TextareaField

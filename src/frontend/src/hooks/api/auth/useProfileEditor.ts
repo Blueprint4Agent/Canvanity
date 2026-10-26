@@ -10,9 +10,14 @@ export function useProfileEditor() {
     const { t } = useTranslation();
     const toast = useToast();
     const [open, setOpen] = useState(false);
-    const [editing, setEditing] = useState<"name" | "bio" | "location" | null>(null);
+    const [editing, setEditing] = useState<"name" | "bio" | "location" | "handle" | null>(null);
     const [name, setName] = useState("");
     const [bio, setBio] = useState("");
+    const [handle, setHandle] = useState("");
+    const [interests, setInterests] = useState<string[]>([]);
+    const [interestsOpen, setInterestsOpen] = useState(false);
+    const handleValid = !handle.trim() || /^[a-z0-9가-힣_]{2,24}$/.test(handle.trim());
+    const interestsValid = interests.length <= 8;
     const [location, setLocation] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
@@ -24,6 +29,9 @@ export function useProfileEditor() {
         setEditing(null);
         setName("");
         setBio("");
+        setHandle("");
+        setInterests([]);
+        setInterestsOpen(false);
         setLocation("");
         setError("");
         setBusy(false);
@@ -32,6 +40,17 @@ export function useProfileEditor() {
             ++epoch.current;
         };
     }, [user?.id]);
+    useEffect(() => {
+        if (!editing) return;
+        const cancelOnEscape = (event: KeyboardEvent) => {
+            if (event.key !== "Escape" || event.defaultPrevented || pending.current) return;
+            event.preventDefault();
+            setEditing(null);
+            setError("");
+        };
+        window.addEventListener("keydown", cancelOnEscape);
+        return () => window.removeEventListener("keydown", cancelOnEscape);
+    }, [editing]);
     const perform = async (action: () => Promise<void>, close = false) => {
         if (pending.current || !user) return;
         const current = epoch.current;
@@ -44,6 +63,7 @@ export function useProfileEditor() {
             toast(t("toast.profileSuccess"), { tone: "success" });
             if (close) {
                 setOpen(false);
+                setInterestsOpen(false);
                 setEditing(null);
             }
         } catch (failure) {
@@ -61,10 +81,12 @@ export function useProfileEditor() {
     return {
         open,
         editing,
-        startInline: (field: "name" | "bio" | "location") => {
+        startInline: (field: "name" | "bio" | "location" | "handle") => {
             if (pending.current) return;
             setName(user?.name ?? "");
             setBio(user?.bio ?? "");
+            setHandle(user?.handle ?? "");
+            setInterests(user?.interests ?? []);
             setLocation(user?.location ?? "");
             setError("");
             setEditing(field);
@@ -76,17 +98,31 @@ export function useProfileEditor() {
             }
         },
         saveInline: () => {
-            if (!editing || (editing === "name" && name.trim().length < 2)) return;
+            if (
+                !editing ||
+                (editing === "name" && name.trim().length < 2) ||
+                (editing === "handle" && !handleValid)
+            )
+                return;
             const value =
                 editing === "name"
                     ? name.trim()
                     : editing === "bio"
                       ? bio.trim() || null
-                      : location || null;
+                      : editing === "handle"
+                        ? handle.trim() || null
+                        : location || null;
             void perform(() => updateProfile({ [editing]: value }), true);
         },
         name,
         bio,
+        handle,
+        interests,
+        handleValid,
+        interestsValid,
+        setHandle: (value: string) => setHandle(value.replace(/^@/, "").toLowerCase()),
+        setInterests,
+        interestsOpen,
         location,
         busy,
         error,
@@ -97,6 +133,8 @@ export function useProfileEditor() {
             setEditing(null);
             setName(user?.name ?? "");
             setBio(user?.bio ?? "");
+            setHandle(user?.handle ?? "");
+            setInterests(user?.interests ?? []);
             setLocation(user?.location ?? "");
             setError("");
             setOpen(true);
@@ -108,15 +146,41 @@ export function useProfileEditor() {
             }
         },
         save: () => {
-            if (name.trim().length >= 2)
+            if (name.trim().length >= 2 && handleValid && interestsValid)
                 void perform(
                     () =>
                         updateProfile({
                             name: name.trim(),
                             bio: bio.trim() || null,
+                            handle: handle.trim() || null,
+                            interests,
                             location: location.trim() || null,
                         }),
                     true,
+                );
+        },
+        showInterests: () => {
+            if (pending.current) return;
+            setEditing(null);
+            setInterests(user?.interests ?? []);
+            setError("");
+            setInterestsOpen(true);
+        },
+        closeInterests: () => {
+            if (!pending.current) {
+                setInterestsOpen(false);
+                setError("");
+            }
+        },
+        saveInterests: () => {
+            if (interestsValid) void perform(() => updateProfile({ interests }), true);
+        },
+        removeInterest: (interest: string) => {
+            if (!pending.current)
+                void perform(() =>
+                    updateProfile({
+                        interests: (user?.interests ?? []).filter((value) => value !== interest),
+                    }),
                 );
         },
         removePhoto: () => void perform(deletePhoto),

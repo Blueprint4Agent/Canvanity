@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { BookOpen, Coffee } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { BookOpen, Coffee, Compass, Palette, PanelsTopLeft } from "lucide-react";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuthContext } from "../../hooks/useAuth";
 import { useAppConfig } from "../../hooks/useFeatures";
@@ -13,10 +13,17 @@ import { ProfileDropdown } from "./ProfileDropdown";
 import { ConnectivityStatus } from "./ConnectivityStatus";
 
 type MinimalHeaderProps = {
+    showCommunityNavigation?: boolean;
+    communityReturnPath?: string;
     subscriptionTier?: SubscriptionTier | null;
     inboxUnread?: number | null;
 };
-export function MinimalHeader({ subscriptionTier, inboxUnread }: MinimalHeaderProps) {
+export function MinimalHeader({
+    subscriptionTier,
+    inboxUnread,
+    showCommunityNavigation = true,
+    communityReturnPath = "/home",
+}: MinimalHeaderProps) {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const { user, profileImageUrl, logout } = useAuthContext();
@@ -50,9 +57,26 @@ export function MinimalHeader({ subscriptionTier, inboxUnread }: MinimalHeaderPr
     const blocked = isDesktop && status !== "online";
     return (
         <header className="app-header app-header--minimal" aria-label={t("nav.brand")}>
-            <Link to="/home" className="minimal-header__brand" aria-label={t("nav.home")}>
+            <Link
+                to={communityReturnPath}
+                className="minimal-header__brand"
+                aria-label={t("community.backToSpace")}
+            >
                 <BrandBanner />
             </Link>
+            {showCommunityNavigation ? (
+                <nav className="community-navigation" aria-label={t("community.navigation")}>
+                    <NavLink to="/home">
+                        <Compass size={16} aria-hidden="true" /> Plaza
+                    </NavLink>
+                    <NavLink to={user ? "/my-canvas" : "/login?next=%2Fmy-canvas"}>
+                        <Palette size={16} aria-hidden="true" /> My Canvas
+                    </NavLink>
+                    <NavLink to="/board">
+                        <PanelsTopLeft size={16} aria-hidden="true" /> Board
+                    </NavLink>
+                </nav>
+            ) : null}
             <div className="minimal-header__actions">
                 <ConnectivityStatus placement="navbar" />
                 {resources.map(({ href, label, icon: Icon }) => (
