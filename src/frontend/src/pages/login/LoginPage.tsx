@@ -168,7 +168,14 @@ export function LoginPage({ embedded = false }: { embedded?: boolean }) {
                 // ignore storage errors in restricted browser contexts
             }
             showToast(t("toast.loginSuccess"), { tone: "success" });
-            navigate("/home", { replace: true });
+            navigate(
+                ["/profile", "/my-canvas"].includes(
+                    new URLSearchParams(location.search).get("next") ?? "",
+                )
+                    ? new URLSearchParams(location.search).get("next")!
+                    : "/home",
+                { replace: true },
+            );
         } catch (nextError) {
             showToast(t("toast.loginError"), { tone: "error" });
             const detail = extractApiDetail(nextError);

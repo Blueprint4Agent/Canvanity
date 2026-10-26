@@ -132,7 +132,11 @@
             "passwordChangeCodeInvalid": "The code is invalid, expired or locked. Request a new code after the cooldown.",
             "passwordChangeCodeThrottled": "Please wait before requesting another code.",
             "passwordChangeCodeSendFailed": "Unable to send the verification code. Please try again later.",
-            "passwordChangeFailed": "Unable to change the password. Request a new code and try again."
+            "passwordChangeFailed": "Unable to change the password. Request a new code and try again.",
+            "handleAlreadyExists": "That handle is already in use. Please choose another.",
+            "interestNotAvailable": "Choose an available official interest.",
+            "interestAlreadyExists": "That interest identifier or alias is already in use.",
+            "interestNotFound": "Interest not found."
         }
     },
     "cards": {
@@ -479,7 +483,25 @@
             "photoAdd": "Add photo",
             "editName": "Edit name",
             "editBio": "Edit bio",
-            "editLocation": "Edit location"
+            "editLocation": "Edit location",
+            "handle": "Handle",
+            "editHandle": "Set handle",
+            "emptyHandle": "@set_your_handle",
+            "handleHelp": "2–24 lowercase Latin/Korean letters, digits or underscores. Must be unique.",
+            "interests": "Interests",
+            "editInterests": "Edit interests",
+            "emptyInterests": "Add your interests",
+            "addInterest": "Add",
+            "searchInterests": "Search interests",
+            "searchInterestsPlaceholder": "Find an interest",
+            "interestSuggestions": "Official interests",
+            "removeInterest": "Remove interest {{interest}}",
+            "interestsFull": "You can choose up to 8 interests.",
+            "interestsPickerHelp": "Choose up to 8 official interests.",
+            "noInterestResults": "No matching interests.",
+            "interestCatalogError": "Could not load interests.",
+            "interestCatalogLoading": "Loading interests",
+            "interestRetry": "Try again"
         },
         "general": {
             "title": "General",
@@ -1581,5 +1603,17 @@
         "openSample": "Canvas by {{name}}: {{title}}",
         "likeCount": "{{count}} likes",
         "commentCount": "{{count}} comments"
+    },
+    "community": {
+        "navigation": "Community spaces",
+        "mySubtitle": "A little space for who you are and what you love",
+        "boardSubtitle": "Follow your interests. Find a new canvas.",
+        "example": "Example boards · Pick a topic to explore in Plaza.",
+        "visit": "Explore canvases",
+        "space": "A little introduction. A canvas of your own.",
+        "spaceDescription": "Make yourself at home. Start with your name, bio and photo.",
+        "identity": "My profile information",
+        "privateCanvas": "This space is currently visible only to your account.",
+        "backToSpace": "Back to community"
     }
 }

@@ -142,6 +142,22 @@ class AuthErrorCode(Enum):
         "Profile image changed; refresh and try again.",
         status.HTTP_409_CONFLICT,
     )
+    INTEREST_ALREADY_EXISTS = ServiceErrorCode(
+        "INTEREST_ALREADY_EXISTS",
+        "An interest identifier or alias is already in use.",
+        status.HTTP_409_CONFLICT,
+    )
+    INTEREST_NOT_FOUND = ServiceErrorCode(
+        "INTEREST_NOT_FOUND", "Interest not found.", status.HTTP_404_NOT_FOUND
+    )
+    INTEREST_NOT_AVAILABLE = ServiceErrorCode(
+        "INTEREST_NOT_AVAILABLE",
+        "Select an active official interest.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+    HANDLE_ALREADY_EXISTS = ServiceErrorCode(
+        "HANDLE_ALREADY_EXISTS", "This profile handle is already in use.", status.HTTP_409_CONFLICT
+    )
     PROFILE_UPDATE_FAILED = ServiceErrorCode(
         "PROFILE_UPDATE_FAILED",
         "Failed to update profile.",

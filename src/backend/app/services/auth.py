@@ -807,6 +807,10 @@ class AuthService:
             update_keyboard_shortcuts="keyboard_shortcuts" in form.model_fields_set,
             bio=form.bio,
             location=form.location,
+            handle=form.handle,
+            interests=form.interests,
+            update_handle="handle" in form.model_fields_set,
+            update_interests="interests" in form.model_fields_set,
             update_bio="bio" in form.model_fields_set,
             update_location="location" in form.model_fields_set,
         )

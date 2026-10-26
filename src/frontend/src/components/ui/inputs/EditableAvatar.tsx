@@ -22,6 +22,7 @@ export function EditableAvatar({
     return (
         <div className="editable-avatar">
             <Button
+                appearance="canvas"
                 type="button"
                 className="editable-avatar__trigger"
                 aria-label={label}

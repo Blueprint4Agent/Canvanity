@@ -45,15 +45,11 @@ UI 수정 전에 같은 유형의 기존 화면을 찾고 셸·본문 폭·제�
 
 결제 오류와 재시도는 해당 settings-row 카드 내부에 배치합니다. 로딩·오류 상태에서도 결제 카드의 최소 높이를 유지하고 관리자 목록 로딩은 테이블 영역 내부 Spinner로 표시합니다.
 
-## Personal profile
+## 개인 캔버스와 보드
 
-`src/pages/profile/ProfilePage.tsx` is the canonical personal-profile family inside
-the persistent AppShell. Use the existing 50rem content width and design tokens,
-a centered identity hero, rounded editable avatar and three-part metadata strip.
-At mobile widths the strip stacks into compact rows. This is intentionally distinct
-from settings forms, matching the user-supplied profile reference without importing
-its colors, fabricated statistics or showcase data. Edit/profile/password dialogs use
-the existing Modal family. Account remains General-style settings rows.
+상단 캡슐 메뉴 Plaza(`/home`), My Canvas(`/my-canvas`), Board(`/board`)가 커뮤니티의 이동을 소유한다. 설정·관리자에서는 이 메뉴를 렌더링하지 않는다. 브랜드는 세션에 기억한 마지막 커뮤니티 경로(검색 상태 포함)로 돌아간다. 세 공간은 동일한 초기 카메라와 제목 좌표를 사용한다. 드롭다운과 계정 설정의 프로필 링크는 독립 `/profile` 편집 화면으로 이동한다. 계정 드롭다운은 클릭으로 열며 메뉴 열기 단축키와 안내는 제공하지 않는다. 기존 단축키 저장 API 필드는 호환성을 위해 유지한다.
+
+CommunityCanvas는 탐색 화면의 격자·카메라·버튼·단축키를 재사용한다. 모든 화면에서 CanvasControls의 좌측 선택·이동 도구와 줌·미니맵을 동일한 위치/동작으로 사용한다. 미니맵은 해당 화면의 실제 DOM 스냅샷이며 언어·테마·프로필 내용 변경 시 갱신한다. My Canvas는 인증 상태의 이름·이메일·사진·소개를 읽고 `/profile` 편집 화면에 연결한다. 프로필 화면은 기존 독립 계열로 유지하며 격자 배경·투명한 편집 트리거와 기존 편집 훅/모달을 사용한다. 공개 공유 기능은 없다. Board는 예시 주제 카드에서 Plaza의 해당 주제로 이동한다. 새 게시물/보드 저장을 구현한 것으로 표시하지 않는다.
 
 ## 정적 공개 소개
 
@@ -103,3 +99,21 @@ Button의 canvas 변형은 투명 액션과 은은한 호버, canvas-card는 사
 블루 버튼의 최종 표면은 부드러운 블루 그라데이션과 흰색 글자다. 로그인 메뉴도 ButtonLink를 통해 같은 변형을 사용한다. 접힌 종이형 토스트는 상태를 명시적으로 받아 중립/성공/오류 아이콘을 구분하며, 상태를 생략한 기존 호출을 성공으로 오인하지 않는다.
 
 사용자가 지정한 연한 블루와 흰색 글자를 최종 팔레트로 유지한다. 해당 채움형 버튼의 색상 회귀 검사는 2.5 대비를 하한으로 사용하며 WCAG AA 충족으로 설명하지 않는다. 일반 본문/투명 액션/토스트의 기존 4.5 기준은 유지한다. 드롭다운 화살표도 버튼 글자색을 상속한다.
+
+## 페이지 전환과 호버 기본 규칙
+
+새 페이지는 AppLayout의 콘텐츠 전환 규칙을 기본으로 따른다. 설정·관리자·프로필·커뮤니티 화면에서 220ms 페이드와 7px 이동을 사용한다. URL 변경 시 DOM을 재마운트하지 않으며 입력/API 상태를 보존한다. 캔버스는 내부 콘텐츠만 움직이고 카메라·선택·이동·미니맵 도구는 고정한다. 새로 마운트되는 지연 로딩 콘텐츠도 같은 진입 효과를 사용한다. 모션 줄이기는 전환과 확대를 생략한다.
+
+큰 제목 아래 짧은 소개 문구는 현재 한국어 UI에서도 영어를 사용한다.
+
+상단 메뉴는 필기체와 lucide 아이콘을 사용하며 호버에서 1.06배 확대만 부드럽게 전환하고 배경은 선택된 메뉴에만 표시한다. 레이아웃 크기를 변경하지 않는다. Plaza/My Canvas/Board의 큰 제목도 같은 필기체와 좌표 배치를 사용한다.
+
+미니맵 대기는 공용 Spinner를 사용한다. 스냅샷은 계정별 AppShell Provider 메모리에 최대 8개만 재사용하며 언어·테마·실제 내용 변경 시 갱신한다. 로그아웃·계정 변경 시 캐시만 교체하고 페이지를 재마운트하지 않는다. 교체된 캐시 소유자와 다른 스냅샷은 즉시 숨긴다. 폰트 임베딩은 앱 수명 동안 재사용하고 DOM 복제 작업은 직렬화한다. 줌/팬이나 프로필 입력 초안은 재촬영하지 않는다.
+
+## 프로필 정체성과 관심사
+
+프로필은 사진·이름·@닉네임·소개·관심사·메타데이터 순서다. 이름·닉네임·소개·위치는 기존 인라인 편집을 사용한다. 닉네임은 한글·영문 소문자·숫자·밑줄 2~24자이며 DB 고유 인덱스로 중복을 방지한다. 비워서 해제할 수 있다. 편집 가능한 항목은 패딩과 은은한 확대를 사용하며 연필 아이콘은 표시하지 않는다.
+
+관심사는 라벨·삭제 가능한 칩·`+ 추가`로 표시한다. 추가 시 검색·선택 모달을 열고 전체 프로필 편집 모달에서도 같은 `ProfileInterestsField`를 사용한다. 공식 관심사만 최대 8개 선택하며 쉼표 자유 입력·신규 생성·제안을 제공하지 않는다. 공식 사전은 API에서 한 번 받아 페이지가 소유하고 기능 컴포넌트에 props로 전달한다. 한글/영문 이름과 동의어로 검색하고 고정 ID를 저장한다. 로딩·오류·재시도·검색 결과 없음·선택 한도를 명시한다. 저장 오류는 선택 초안을 유지한다.
+
+My Canvas는 같은 인증 데이터와 공식 사전의 표시 이름을 사용한다. 프로필 사진·닉네임·관심사 변경은 미니맵의 내용 버전을 갱신한다. 초기 공식 관심사 40개와 관리자 운영·향후 Board/Canvas 자유 태그 경계는 [관심사와 태그 정책](interest-policy.md)을 따른다.
