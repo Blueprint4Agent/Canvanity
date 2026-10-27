@@ -1,5 +1,3 @@
-from sqlalchemy.exc import IntegrityError
-
 from app.core.error import AuthErrorCode, AuthException
 from app.models.interest import (
     InterestAdminResponse,
@@ -18,16 +16,10 @@ class InterestService:
         return await self.repository.list_active()
 
     async def create(self, form: InterestCreateForm) -> InterestAdminResponse:
-        try:
-            return await self.repository.create(form)
-        except IntegrityError:
-            raise AuthException(code=AuthErrorCode.INTEREST_ALREADY_EXISTS) from None
+        return await self.repository.create(form)
 
     async def update(self, slug: str, form: InterestUpdateForm) -> InterestAdminResponse:
-        try:
-            item = await self.repository.update(slug, form)
-        except IntegrityError:
-            raise AuthException(code=AuthErrorCode.INTEREST_ALREADY_EXISTS) from None
+        item = await self.repository.update(slug, form)
         if item is None:
             raise AuthException(code=AuthErrorCode.INTEREST_NOT_FOUND)
         return item

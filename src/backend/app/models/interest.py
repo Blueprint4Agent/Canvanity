@@ -1,8 +1,10 @@
 from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import Boolean, ForeignKey, Integer, String, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, mapped_column, relationship, selectinload
 
 from app.core.db.session import Base, get_db
+from app.core.error import AuthErrorCode, AuthException
 
 
 class Interest(Base):
@@ -128,67 +130,81 @@ class InterestRepository:
             )
 
     async def create(self, form: InterestCreateForm) -> InterestAdminResponse:
-        async with get_db() as db:
-            item = Interest(
-                slug=form.id,
-                name_ko=form.name_ko,
-                name_en=form.name_en,
-                active=True,
-                sort_order=form.sort_order,
-            )
-            terms = list(
-                dict.fromkeys(
-                    [form.id, form.name_ko.casefold(), form.name_en.casefold(), *form.aliases]
+        try:
+            async with get_db() as db:
+                item = Interest(
+                    slug=form.id,
+                    name_ko=form.name_ko,
+                    name_en=form.name_en,
+                    active=True,
+                    sort_order=form.sort_order,
                 )
-            )
-            item.aliases = [InterestAlias(alias=term) for term in terms]
-            db.add(item)
-            await db.commit()
-            return InterestAdminResponse(
-                id=item.slug,
-                name_ko=item.name_ko,
-                name_en=item.name_en,
-                active=item.active,
-                sort_order=item.sort_order,
-                aliases=terms,
-            )
+                terms = list(
+                    dict.fromkeys(
+                        [form.id, form.name_ko.casefold(), form.name_en.casefold(), *form.aliases]
+                    )
+                )
+                item.aliases = [InterestAlias(alias=term) for term in terms]
+                db.add(item)
+                await db.commit()
+                return InterestAdminResponse(
+                    id=item.slug,
+                    name_ko=item.name_ko,
+                    name_en=item.name_en,
+                    active=item.active,
+                    sort_order=item.sort_order,
+                    aliases=terms,
+                )
+        except IntegrityError as error:
+            raise AuthException(code=AuthErrorCode.INTEREST_ALREADY_EXISTS) from error
 
     async def update(self, slug: str, form: InterestUpdateForm) -> InterestAdminResponse | None:
-        async with get_db() as db:
-            item = await db.scalar(
-                select(Interest)
-                .where(Interest.slug == slug)
-                .options(selectinload(Interest.aliases))
-            )
-            if item is None:
-                return None
-            for field in ("name_ko", "name_en", "active", "sort_order"):
-                if field in form.model_fields_set:
-                    setattr(item, field, getattr(form, field))
-            terms = list(
-                dict.fromkeys(
-                    [
-                        *([item.name_ko.casefold()] if "name_ko" in form.model_fields_set else []),
-                        *([item.name_en.casefold()] if "name_en" in form.model_fields_set else []),
-                        *(
-                            form.aliases
-                            if form.aliases is not None
-                            else [alias.alias for alias in item.aliases]
-                        ),
-                    ]
+        try:
+            async with get_db() as db:
+                item = await db.scalar(
+                    select(Interest)
+                    .where(Interest.slug == slug)
+                    .options(selectinload(Interest.aliases))
                 )
-            )
-            existing = {alias.alias: alias for alias in item.aliases}
-            item.aliases = [existing.get(term) or InterestAlias(alias=term) for term in terms]
-            await db.commit()
-            return InterestAdminResponse(
-                id=item.slug,
-                name_ko=item.name_ko,
-                name_en=item.name_en,
-                active=item.active,
-                sort_order=item.sort_order,
-                aliases=terms,
-            )
+                if item is None:
+                    return None
+                for field in ("name_ko", "name_en", "active", "sort_order"):
+                    if field in form.model_fields_set:
+                        setattr(item, field, getattr(form, field))
+                terms = list(
+                    dict.fromkeys(
+                        [
+                            *(
+                                [item.name_ko.casefold()]
+                                if "name_ko" in form.model_fields_set
+                                else []
+                            ),
+                            *(
+                                [item.name_en.casefold()]
+                                if "name_en" in form.model_fields_set
+                                else []
+                            ),
+                            *(
+                                form.aliases
+                                if form.aliases is not None
+                                else [alias.alias for alias in item.aliases]
+                            ),
+                        ]
+                    )
+                )
+                existing = {alias.alias: alias for alias in item.aliases}
+                item.aliases = [existing.get(term) or InterestAlias(alias=term) for term in terms]
+                await db.commit()
+                return InterestAdminResponse(
+                    id=item.slug,
+                    name_ko=item.name_ko,
+                    name_en=item.name_en,
+                    active=item.active,
+                    sort_order=item.sort_order,
+                    aliases=terms,
+                )
+        except IntegrityError as error:
+            raise AuthException(code=AuthErrorCode.INTEREST_ALREADY_EXISTS) from error
 
     async def list_admin(self) -> list[InterestAdminResponse]:
         async with get_db() as db:
