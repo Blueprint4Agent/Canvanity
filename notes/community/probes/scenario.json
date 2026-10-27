@@ -5,32 +5,32 @@
         { "key": "beta", "visibility": "private", "join_policy": "invite" }
     ],
     "grades": [
-        { "key": "sprout", "name": "새싹", "rank": 0, "is_default": true },
-        { "key": "regular", "name": "일반", "rank": 10, "is_default": false },
-        { "key": "excellent", "name": "우수", "rank": 20, "is_default": false }
+        { "key": "newcomer", "name": "뉴커머", "rank": 0, "is_default": true },
+        { "key": "pinner", "name": "피너", "rank": 10, "is_default": false },
+        { "key": "curator", "name": "큐레이터", "rank": 20, "is_default": false }
     ],
     "members": [
-        { "key": "owner", "role": "owner", "grade": "sprout", "status": "active" },
-        { "key": "admin", "role": "admin", "grade": "sprout", "status": "active" },
-        { "key": "moderator", "role": "moderator", "grade": "sprout", "status": "active" },
-        { "key": "newcomer", "role": "member", "grade": "sprout", "status": "active" },
-        { "key": "author", "role": "member", "grade": "regular", "status": "active" },
-        { "key": "banned", "role": "member", "grade": "excellent", "status": "banned" }
+        { "key": "owner", "role": "owner", "grade": "newcomer", "status": "active" },
+        { "key": "admin", "role": "admin", "grade": "newcomer", "status": "active" },
+        { "key": "moderator", "role": "moderator", "grade": "newcomer", "status": "active" },
+        { "key": "newcomer", "role": "member", "grade": "newcomer", "status": "active" },
+        { "key": "author", "role": "member", "grade": "pinner", "status": "active" },
+        { "key": "banned", "role": "member", "grade": "curator", "status": "banned" }
     ],
     "shelves": [
         {
             "key": "general",
             "purpose": "general",
             "read": "public",
-            "create_canvas": "regular",
-            "create_comment": "sprout"
+            "create_canvas": "pinner",
+            "create_comment": "newcomer"
         },
         {
             "key": "questions",
             "purpose": "general",
-            "read": "sprout",
-            "create_canvas": "regular",
-            "create_comment": "regular"
+            "read": "newcomer",
+            "create_canvas": "pinner",
+            "create_comment": "pinner"
         },
         {
             "key": "notice",
@@ -45,11 +45,11 @@
         { "key": "published", "shelf": "questions", "author": "author", "status": "published" }
     ],
     "acceptance_flow": [
-        "새싹 신규 가입 후 질문 Shelf 읽기 허용, 글쓰기/댓글 거부",
-        "운영자 수동 일반 승급 후 글쓰기/댓글 허용",
+        "뉴커머 신규 가입 후 질문 Shelf 읽기 허용, 글쓰기/댓글 거부",
+        "운영자 수동 피너 승급 후 글쓰기/댓글 허용",
         "다른 Board의 등급/Shelf 참조 거부",
         "게시 후 초안 수정해도 타인은 이전 공개본 열람",
-        "새싹 강등 후 열린 편집기 저장 거부",
+        "뉴커머 강등 후 열린 편집기 저장 거부",
         "차단 후 목록/본문/에셋/검색 거부"
     ]
 }

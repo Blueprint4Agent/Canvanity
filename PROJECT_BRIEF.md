@@ -62,4 +62,8 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 
 ## Board·Shelf·Canvas 아키텍처 후속 작업
 
-2026-10-26: [커뮤니티 아키텍처](notes/community/README.md)에 Board=커뮤니티, Shelf=운영 분류, Canvas=게시글 메타데이터/JSONB 본문을 정의한다. 운영 역할과 Board별 회원 등급(새싹 등), 멤버 상태, Shelf별 액션 정책을 분리한다. 기본 등급 관리·수동 승급/강등·읽기/글쓰기/댓글 권한은 MVP 필수다. 자동 승급은 후속 활동 집계와 연결한다. 1단계는 설계·격리 PostgreSQL/편집 엔진 기술 검증이며 제품 Board/Shelf/Canvas API·운영 마이그레이션 적용은 다음 단계다. 실제 결과와 미검증 범위는 worklog/0273-community-domain-architecture.md와 연결 문서를 따른다.
+2026-10-26: [커뮤니티 아키텍처](notes/community/README.md)에 Board=커뮤니티, Shelf=운영 분류, Canvas=게시글 메타데이터/JSONB 본문을 정의한다. 운영 역할과 Board별 회원 등급(Newcomer/뉴커머 → Pinner/피너 → Curator/큐레이터), 멤버 상태, Shelf별 액션 정책을 분리한다. 기본 등급 관리·수동 승급/강등·읽기/글쓰기/댓글 권한은 MVP 필수다. 자동 승급은 후속 활동 집계와 연결한다. 1단계는 설계·격리 PostgreSQL/편집 엔진 기술 검증이며 제품 Board/Shelf/Canvas API·운영 마이그레이션 적용은 다음 단계다. 실제 결과와 미검증 범위는 worklog/0273-community-domain-architecture.md와 연결 문서를 따른다.
+
+## 사용자 Board 개설 구현
+
+사용자 요청으로 회원/운영 권한 관리 화면에 앞서 [Board 개설 흐름](notes/community/board-creation.md)을 구현한다. 실제 목록→개설 모달→기본 홈을 연결하고 생성 트랜잭션에서 Owner·뉴커머/피너/큐레이터·공지/자유 Shelf·기본 정책/홈을 준비한다. 공개/비공개 조회와 빈 Board 되돌리기를 제공하며 게시글·가입/초대·등급/운영진/Shelf 편집은 다음 범위다. 기존 초기화의 미구현 기록은 당시 상태이며 현재 범위/검증 결과는 worklog/0275-board-membership-shelves.md를 따른다.

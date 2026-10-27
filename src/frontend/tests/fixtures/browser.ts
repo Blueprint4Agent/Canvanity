@@ -18,6 +18,9 @@ export const test = base.extend<{ languagePreference: "en" | "ko" | null }>({
         await context.route("**/api/v1/interests", (route) =>
             route.fulfill({ json: interestCatalog }),
         );
+        await context.route("**/api/v1/boards?*", (route) =>
+            route.fulfill({ json: { items: [], next_cursor: null } }),
+        );
         // Sidebar billing is incidental in non-billing suites; page routes override this.
         await context.route("**/api/v1/billing/subscription", (route) =>
             route.fulfill({

@@ -671,3 +671,7 @@ Canvanity는 minimal 셸만 노출한다. 이전 app_layout/개발 미리보기 
 ButtonLink는 로그인처럼 이동하는 버튼의 공용 컴포넌트다. Button과 같은 클래스 생성 규칙과 스타일을 사용하되 실제 링크 의미와 라우터 탐색을 유지한다. 캡슐/둥근 사각형을 보존한 부드러운 블루 그라데이션과 흰색 글자를 Showcase의 ButtonLink·Button 변형에서 함께 비교한다.
 
 ToastCard의 tone은 neutral/success/error다. useToast의 두 번째 인자 { tone }은 선택 사항이며 기존 호출은 neutral이다. 결과를 아는 호출자만 성공/실패를 명시하고 문구를 파싱해 성공을 추측하지 않는다. 프로필 저장과 로그인 결과는 실제 성공/실패 분기에서 상태를 전달한다. ToastPreview는 세 상태를 API 없이 비교한다.
+
+## Board 개설 흐름
+
+`/board`의 실제 목록·공용 개설 모달과 `/b/{slug}` 기본 홈은 useBoards/useBoardActions → 생성 타입 기반 boardsApi를 사용한다. 계정별 조회 key·요청 취소로 이전 계정 응답을 숨기고 실패한 개설 입력을 유지한다. [개설 범위와 상태](../../notes/community/board-creation.md), notes/page-families.md를 따른다.

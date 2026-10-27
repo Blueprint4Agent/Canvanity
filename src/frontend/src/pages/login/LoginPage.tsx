@@ -169,7 +169,7 @@ export function LoginPage({ embedded = false }: { embedded?: boolean }) {
             }
             showToast(t("toast.loginSuccess"), { tone: "success" });
             navigate(
-                ["/profile", "/my-canvas"].includes(
+                ["/profile", "/my-canvas", "/board"].includes(
                     new URLSearchParams(location.search).get("next") ?? "",
                 )
                     ? new URLSearchParams(location.search).get("next")!

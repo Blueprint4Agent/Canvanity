@@ -129,6 +129,7 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         (method, path.replace("cs_test_fixture", "{session_id}"))
         for method, path, _ in SESSION_ONLY
     }
+    expected |= {("POST", "/api/v1/boards"), ("DELETE", "/api/v1/boards/{board_id}")}
     assert actual == expected
 
 
@@ -235,3 +236,33 @@ def test_billing_api_key_guards(integration_client, credentials, method, path, b
     operation = client.app.openapi()["paths"][template][method.lower()]
     assert operation["security"] == [{"OAuth2PasswordBearer": []}, {"APIKeyHeader": []}]
     assert "403" in operation["responses"]
+
+
+def test_board_mutations_require_session_and_private_reads_do_not_accept_api_keys(
+    integration_client, credentials
+):
+    bearer, key, _ = credentials
+    client = integration_client
+    payload = {
+        "name": "Private board",
+        "slug": "session-private",
+        "visibility": "private",
+        "join_policy": "invite",
+    }
+    assert client.post("/api/v1/boards", json=payload, headers=key).status_code == 401
+    created = client.post("/api/v1/boards", json=payload, headers=bearer)
+    assert created.status_code == 201
+    path = f"/api/v1/boards/{created.json()['id']}"
+    assert client.get(path, headers=key).status_code == 404
+    assert client.get(path, headers=bearer).status_code == 200
+    assert (
+        client.request(
+            "DELETE",
+            path,
+            json={"expected_revision": 0, "confirm_slug": payload["slug"]},
+            headers=key,
+        ).status_code
+        == 401
+    )
+    schema = client.app.openapi()
+    assert {} in schema["paths"]["/api/v1/boards"]["get"]["security"]
