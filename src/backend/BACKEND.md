@@ -775,3 +775,8 @@ DI를 사용합니다. `OBJECT_STORAGE_PROVIDER=local|s3|r2|supabase`로 선택�
 ## Board 개설
 
 `board` 도메인의 생성·공개/비공개 조회·빈 Board 삭제는 [Board 개설 흐름](../../notes/community/board-creation.md)을 따른다. 0024 migration과 단일 서비스 트랜잭션이 Owner·기본 등급/정책·Shelf·홈을 초기화한다. 기존 계정 삭제는 소유 Board가 있으면 BOARD_OWNERSHIP_REQUIRED를 반환한다. 멤버 관리·게시글·에셋 정리는 후속이다.
+
+
+## Board 데이터 접근 계층
+
+DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/models/board.py` 안의 `BoardRepository`와 `BoardTransaction`이 담당한다. 별도 Repository 파일을 만들지 않는다. `BoardService`는 Repository와 `BoardPermissionService`를 FastAPI 생성자 DI로 주입받아 현재 권한·상태·한도 판단과 응답 구성을 수행한다. 변경 권한은 모델 트랜잭션의 잠금을 유지하는 동안 검사한다. Board 서비스의 직접 DB import는 아키텍처 검사에서 거부한다.

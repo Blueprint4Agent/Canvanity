@@ -22,9 +22,11 @@ from app.models.board import (
     BoardLayout,
     BoardMember,
     BoardMemberGrade,
+    BoardRepository,
 )
 from app.models.user import User
 from app.services.board import BoardService
+from app.services.board_permission import BoardPermissionService
 
 pytestmark = [
     pytest.mark.primary_data,
@@ -62,7 +64,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
             async with AsyncSession(engine, expire_on_commit=False) as db:
                 yield db
 
-        monkeypatch.setattr("app.services.board.get_db", test_db)
+        monkeypatch.setattr("app.models.board.get_db", test_db)
         try:
             async with admin.begin() as connection:
                 await connection.execute(text(f'CREATE SCHEMA "{schema}"'))
@@ -79,7 +81,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
                 db.add(user)
                 await db.commit()
                 user_id = user.id
-            service = BoardService()
+            service = BoardService(BoardPermissionService(), BoardRepository())
             form = BoardCreateForm(name="PG 보드", slug="same-address", interest_ids=["ai"])
             results = await asyncio.gather(
                 service.create(user_id, form), service.create(user_id, form), return_exceptions=True

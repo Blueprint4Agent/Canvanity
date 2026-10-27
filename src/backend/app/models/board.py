@@ -1,5 +1,8 @@
 """Community aggregate and transport schemas; no HTTP or provider dependencies."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
@@ -18,12 +21,23 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     Uuid,
+    and_,
+    delete,
+    exists,
+    func,
+    or_,
+    select,
     text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.db.session import Base
+from app.core.db.session import Base, get_db
+from app.core.error.board_exception import BoardErrorCode, BoardException
+from app.models.interest import Interest
+from app.models.user import User
 
 DocumentJSON = JSON().with_variant(JSONB(), "postgresql")
 BoardVisibility = Literal["public", "private"]
@@ -338,3 +352,350 @@ class BoardHomeResponse(BaseModel):
     shelves: list[ShelfSummary]
     layout: dict
     layout_revision: int
+
+
+ACTIONS: tuple[BoardAction, ...] = ("read_canvas", "create_canvas", "create_comment", "react")
+
+
+@dataclass
+class BoardHomeData:
+    board: Board
+    member: BoardMember | None
+    grades: list[BoardMemberGrade]
+    policies: dict[str, BoardPolicy]
+    overrides: dict[tuple[UUID, str], ShelfPolicy]
+    shelves: list[Shelf]
+    interests: list[str]
+    layout: BoardLayout | None
+
+
+class BoardTransaction:
+    """Session remains private; callers use domain persistence operations."""
+
+    def __init__(self, db: AsyncSession):
+        self._db = db
+
+    async def lock_creator(self, user_id: int) -> bool:
+        return (
+            await self._db.scalar(
+                select(User.id)
+                .where(User.id == user_id, User.is_active.is_(True))
+                .with_for_update()
+            )
+            is not None
+        )
+
+    async def owned_count(self, user_id: int) -> int:
+        return await self._db.scalar(
+            select(func.count()).select_from(Board).where(Board.owner_id == user_id)
+        )
+
+    async def slug_exists(self, slug: str) -> bool:
+        return await self._db.scalar(select(Board.id).where(Board.slug == slug)) is not None
+
+    async def active_interests(self, slugs: list[str]) -> dict[str, Interest]:
+        rows = (
+            await self._db.scalars(
+                select(Interest).where(Interest.slug.in_(slugs), Interest.active.is_(True))
+            )
+        ).all()
+        return {row.slug: row for row in rows}
+
+    async def create_board(self, user_id: int, form: BoardCreateForm) -> Board:
+        board = Board(
+            owner_id=user_id,
+            name=form.name,
+            slug=form.slug,
+            description=form.description,
+            visibility=form.visibility,
+            join_policy=form.join_policy,
+        )
+        self._db.add(board)
+        await self._db.flush()
+        return board
+
+    async def locked_board(self, board_id: UUID) -> Board | None:
+        return await self._db.scalar(select(Board).where(Board.id == board_id).with_for_update())
+
+    async def member(self, board_id: UUID, user_id: int) -> BoardMember | None:
+        return await self._db.get(BoardMember, (board_id, user_id))
+
+    async def member_count(self, board_id: UUID) -> int:
+        return await self._db.scalar(
+            select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
+        )
+
+    async def delete_board(self, board: Board) -> None:
+        for model in (
+            ShelfPolicy,
+            BoardPolicy,
+            BoardMemberAudit,
+            BoardInterest,
+            BoardLayout,
+            BoardMember,
+            Shelf,
+            BoardMemberGrade,
+        ):
+            await self._db.execute(delete(model).where(model.board_id == board.id))
+        await self._db.delete(board)
+
+    async def initialize(self, board: Board, user_id: int, interest_ids: list[int]) -> None:
+        db = self._db
+        grades = [
+            BoardMemberGrade(board_id=board.id, name=name, rank=rank, is_default=rank == 0)
+            for name, rank in (("뉴커머", 0), ("피너", 10), ("큐레이터", 20))
+        ]
+        db.add_all(grades)
+        await db.flush()
+        db.add(
+            BoardMember(
+                board_id=board.id,
+                user_id=user_id,
+                role="owner",
+                status="active",
+                grade_id=grades[0].id,
+            )
+        )
+        for action in ACTIONS:
+            public_read = action == "read_canvas" and board.visibility == "public"
+            db.add(
+                BoardPolicy(
+                    board_id=board.id,
+                    action=action,
+                    audience="public" if public_read else "members",
+                    min_grade_id=None
+                    if public_read
+                    else grades[1 if action == "create_canvas" else 0].id,
+                    staff_only=False,
+                    staff_bypass=True,
+                )
+            )
+        db.add_all(
+            [
+                BoardInterest(board_id=board.id, interest_id=interest, position=index)
+                for index, interest in enumerate(interest_ids)
+            ]
+        )
+        shelves = [
+            Shelf(
+                board_id=board.id,
+                name="공지사항",
+                slug="notice",
+                purpose="notice",
+                sort_order=0,
+                icon="megaphone",
+                is_default=False,
+            ),
+            Shelf(
+                board_id=board.id,
+                name="자유 이야기",
+                slug="general",
+                purpose="general",
+                sort_order=1,
+                is_default=True,
+            ),
+        ]
+        db.add_all(shelves)
+        await db.flush()
+        for action in ("create_canvas", "create_comment"):
+            db.add(
+                ShelfPolicy(
+                    board_id=board.id,
+                    shelf_id=shelves[0].id,
+                    action=action,
+                    audience="members",
+                    min_grade_id=None,
+                    staff_only=True,
+                    staff_bypass=False,
+                )
+            )
+        db.add(
+            BoardLayout(
+                board_id=board.id,
+                document={
+                    "schema_version": 1,
+                    "widgets": [
+                        {
+                            "id": "board-intro",
+                            "type": "board_intro",
+                            "position": {"x": 100, "y": 100},
+                            "size": {"width": 600, "height": 240},
+                        },
+                        {
+                            "id": "shelves",
+                            "type": "shelf_navigation",
+                            "position": {"x": 100, "y": 420},
+                            "size": {"width": 600, "height": 300},
+                        },
+                        {
+                            "id": "latest",
+                            "type": "canvas_collection",
+                            "source": {"board_id": str(board.id), "sort": "latest", "limit": 6},
+                            "position": {"x": 850, "y": 100},
+                            "size": {"width": 850, "height": 650},
+                        },
+                    ],
+                },
+            )
+        )
+        db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=user_id,
+                target_user_id=user_id,
+                action="board_created",
+                changes={"role": "owner", "grade_id": str(grades[0].id)},
+            )
+        )
+        await db.flush()
+
+
+class BoardRepository:
+    @asynccontextmanager
+    async def transaction(
+        self, *, write: bool = True, create_slug: str | None = None, deleting: bool = False
+    ) -> AsyncIterator[BoardTransaction]:
+        try:
+            async with get_db() as db:
+                if write and db.bind.dialect.name == "sqlite":
+                    await db.execute(text("BEGIN IMMEDIATE"))
+                yield BoardTransaction(db)
+                if write:
+                    await db.commit()
+        except IntegrityError as error:
+            if deleting:
+                raise BoardException(BoardErrorCode.NOT_EMPTY) from error
+            if create_slug is not None:
+                async with self.transaction(write=False) as tx:
+                    if await tx.slug_exists(create_slug):
+                        raise BoardException(BoardErrorCode.SLUG_TAKEN) from error
+            raise BoardException(BoardErrorCode.UNAVAILABLE) from error
+        except SQLAlchemyError as error:
+            if not write:
+                raise
+            raise BoardException(BoardErrorCode.UNAVAILABLE) from error
+
+    async def list_visible(
+        self,
+        user_id: int | None,
+        *,
+        limit: int,
+        q: str,
+        interest_id: str | None,
+        mine: bool,
+        before: tuple[datetime, UUID] | None,
+    ) -> tuple[list[Board], dict[UUID, list[str]]]:
+        clause = Board.visibility == "public"
+        if user_id is not None:
+            active_member = exists().where(
+                BoardMember.board_id == Board.id,
+                BoardMember.user_id == user_id,
+                BoardMember.status == "active",
+            )
+            blocked_member = exists().where(
+                BoardMember.board_id == Board.id,
+                BoardMember.user_id == user_id,
+                BoardMember.status.in_(["banned", "suspended"]),
+            )
+            clause = and_(or_(clause, active_member), ~blocked_member)
+        query = select(Board).where(Board.status.in_(["active", "archived"]), clause)
+        if mine:
+            query = query.where(Board.owner_id == user_id)
+        if q:
+            query = query.where(Board.name.contains(q, autoescape=True))
+        if interest_id:
+            query = query.where(
+                exists().where(
+                    BoardInterest.board_id == Board.id,
+                    BoardInterest.interest_id == Interest.id,
+                    Interest.slug == interest_id,
+                    Interest.active.is_(True),
+                )
+            )
+        if before is not None:
+            created, last_id = before
+            query = query.where(
+                or_(
+                    Board.created_at < created,
+                    and_(Board.created_at == created, Board.id < last_id),
+                )
+            )
+        async with self.transaction(write=False) as tx:
+            db = tx._db
+            boards = list(
+                (
+                    await db.scalars(
+                        query.order_by(Board.created_at.desc(), Board.id.desc()).limit(limit + 1)
+                    )
+                ).all()
+            )
+            selected = boards[:limit]
+            interests = {board.id: [] for board in selected}
+            for board_id, slug in (
+                await db.execute(
+                    select(BoardInterest.board_id, Interest.slug)
+                    .join(Interest, Interest.id == BoardInterest.interest_id)
+                    .where(BoardInterest.board_id.in_(interests), Interest.active.is_(True))
+                    .order_by(BoardInterest.position)
+                )
+            ).all():
+                interests[board_id].append(slug)
+            return boards, interests
+
+    async def home_data(
+        self, user_id: int | None, *, board_id: UUID | None = None, slug: str | None = None
+    ) -> BoardHomeData | None:
+        async with self.transaction(write=False) as tx:
+            db = tx._db
+            board = await db.scalar(
+                select(Board).where(
+                    Board.id == board_id if board_id is not None else Board.slug == slug
+                )
+            )
+            if board is None:
+                return None
+            member = await tx.member(board.id, user_id) if user_id is not None else None
+            grades = list(
+                (
+                    await db.scalars(
+                        select(BoardMemberGrade)
+                        .where(BoardMemberGrade.board_id == board.id)
+                        .order_by(BoardMemberGrade.rank)
+                    )
+                ).all()
+            )
+            policies = {
+                p.action: p
+                for p in (
+                    await db.scalars(select(BoardPolicy).where(BoardPolicy.board_id == board.id))
+                ).all()
+            }
+            overrides = {
+                (p.shelf_id, p.action): p
+                for p in (
+                    await db.scalars(select(ShelfPolicy).where(ShelfPolicy.board_id == board.id))
+                ).all()
+            }
+            shelves = list(
+                (
+                    await db.scalars(
+                        select(Shelf)
+                        .where(Shelf.board_id == board.id, Shelf.is_visible.is_(True))
+                        .order_by(Shelf.sort_order, Shelf.id)
+                    )
+                ).all()
+            )
+            interests = list(
+                (
+                    await db.scalars(
+                        select(Interest.slug)
+                        .join(BoardInterest, BoardInterest.interest_id == Interest.id)
+                        .where(BoardInterest.board_id == board.id, Interest.active.is_(True))
+                        .order_by(BoardInterest.position)
+                    )
+                ).all()
+            )
+            layout = await db.get(BoardLayout, board.id)
+            return BoardHomeData(
+                board, member, grades, policies, overrides, shelves, interests, layout
+            )

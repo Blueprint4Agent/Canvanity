@@ -15,11 +15,11 @@ from app.models.board import (
     BoardMemberAudit,
     BoardMemberGrade,
     BoardPolicy,
+    BoardTransaction,
     Shelf,
     ShelfPolicy,
 )
 from app.models.user import User, Users
-from app.services.board import BoardService
 from tests.fixtures.payload_data import build_login_payload, build_signup_payload
 
 pytestmark = pytest.mark.primary_data
@@ -100,7 +100,7 @@ def test_duplicate_invalid_catalog_and_failure_roll_back(integration_client):
     async def failing_initializer(*args):
         raise SQLAlchemyError("controlled initialization failure")
 
-    with patch.object(BoardService, "_initialize", failing_initializer):
+    with patch.object(BoardTransaction, "initialize", failing_initializer):
         failed = client.post(
             "/api/v1/boards", json={**PAYLOAD, "slug": "rolled-back"}, headers=headers
         )
