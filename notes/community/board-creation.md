@@ -73,3 +73,18 @@ CANVANITY_TEST_POSTGRES=1 TRACING_ENABLED=false uv run pytest tests/integration/
 ## Board 데이터 접근 계층
 
 DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/models/board.py` 안의 `BoardRepository`와 `BoardTransaction`이 담당한다. 별도 Repository 파일을 만들지 않는다. `BoardService`는 Repository와 `BoardPermissionService`를 FastAPI 생성자 DI로 주입받아 현재 권한·상태·한도 판단과 응답 구성을 수행한다. 변경 권한은 모델 트랜잭션의 잠금을 유지하는 동안 검사한다. Board 서비스의 직접 DB import는 아키텍처 검사에서 거부한다.
+
+
+## 공개 Board 가입·탈퇴 API
+
+
+개설 이후의 첫 참여 흐름으로 `POST /api/v1/boards/{board_id}/join`과 `DELETE /api/v1/boards/{board_id}/membership`을 추가한다. 두 API는 Bearer 세션만 허용한다. 이번 단계는 API/계약만 제공하며 가입·탈퇴 UI는 보류한다.
+
+- public/open의 active Board 가입은 현재 `is_default` 등급과 `member/active` 상태를 부여한다. 요청자가 역할이나 등급을 지정할 수 없다. 이미 active 회원이면 변경·감사 중복 없이 현재 멤버십을 반환한다.
+- private/invite의 새 가입은 거부하며 기존 사용자 초대는 다음 관리 작업이다. archived Board는 새 가입을 거부하고 suspended Board는 조회·가입·탈퇴를 거부한다.
+- Owner 탈퇴는 `409 BOARD_OWNER_CANNOT_LEAVE`다. 소유권 이전이나 보드 정리 경로를 사용해야 한다. 일반 active 회원은 탈퇴할 수 있으며 재가입 시 현재 기본 등급을 받는다. suspended/banned/pending 상태를 탈퇴·재가입으로 지울 수 없다.
+- 가입/탈퇴는 Board 행 잠금 아래 현재 상태를 확인하고 멤버십·revision·감사 기록을 하나의 트랜잭션으로 저장한다. 탈퇴는 기존 콘텐츠의 자동 삭제를 의미하지 않으며 게시글 구현 시 작성자 참조 정책을 별도로 연결한다.
+
+`BoardPermissionService`가 현재 Board/멤버 상태·역할·등급·정책을 평가한다. FastAPI가 이 평가기를 `BoardService`와 `BoardMembershipService`의 생성자에 주입한다. 라우터는 서비스를 주입받고, 서비스에는 `models/board.py`의 `BoardRepository`를 주입한다. 쿼리·세션·행 잠금·추가/삭제·commit/롤백은 같은 모델 파일의 Repository와 BoardTransaction이 담당한다. 서비스는 DB 세션을 직접 사용하지 않으며 잠금 문맥 안에서 현재 권한과 한도를 판단한다. 등급은 운영 역할이 아니며 앱 전역 관리자는 Board 운영진으로 자동 승격하지 않는다. 후속 Shelf/Canvas 서비스는 같은 평가기를 주입받아 사용한다.
+
+후속 운영 순서는 회원 목록·등급/역할·제재 관리와 기존 계정 초대, Board 정보 수정, 소유권 위임·보관/종료다. 이메일/링크 초대·자동 승급·임의 운영 역할 편집은 이 구현에 포함하지 않는다.

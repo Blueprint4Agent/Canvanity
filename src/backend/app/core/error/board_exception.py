@@ -45,6 +45,12 @@ class BoardErrorCode(Enum):
         status.HTTP_409_CONFLICT,
     )
 
+    OWNER_CANNOT_LEAVE = ServiceErrorCode(
+        "BOARD_OWNER_CANNOT_LEAVE",
+        "보드 소유자는 소유권을 이전하거나 보드를 정리한 뒤 탈퇴할 수 있습니다.",
+        status.HTTP_409_CONFLICT,
+    )
+
     UNAVAILABLE = ServiceErrorCode(
         "BOARD_UNAVAILABLE", "보드 작업을 완료하지 못했습니다.", status.HTTP_503_SERVICE_UNAVAILABLE
     )

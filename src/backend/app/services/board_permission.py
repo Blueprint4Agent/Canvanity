@@ -1,4 +1,4 @@
-"""Board role, grade and status evaluation without database access."""
+"""Current Board context policy evaluation, independent from app-wide account roles."""
 
 from uuid import UUID
 
@@ -11,6 +11,8 @@ STAFF = {"owner", "admin", "moderator"}
 class BoardPermissionService:
     @staticmethod
     def check_read(board: Board, member: BoardMember | None) -> None:
+        if board.status == "suspended" or (member is not None and member.board_id != board.id):
+            raise BoardException(BoardErrorCode.NOT_FOUND)
         if member and member.status in {"suspended", "banned"}:
             raise BoardException(BoardErrorCode.NOT_FOUND)
         if board.visibility == "private" and (member is None or member.status != "active"):
@@ -24,7 +26,11 @@ class BoardPermissionService:
         grades: dict[UUID, BoardMemberGrade],
         action: str,
     ) -> bool:
+        if board.status == "suspended" or (member and member.status in {"suspended", "banned"}):
+            return False
         if policy is None or (action != "read_canvas" and board.status != "active"):
+            return False
+        if policy.board_id != board.id or (member is not None and member.board_id != board.id):
             return False
         if policy.audience == "public" and action == "read_canvas" and board.visibility == "public":
             return True
@@ -37,4 +43,10 @@ class BoardPermissionService:
             return True
         own = grades.get(member.grade_id)
         minimum = grades.get(policy.min_grade_id)
-        return own is not None and minimum is not None and own.rank >= minimum.rank
+        return (
+            own is not None
+            and minimum is not None
+            and own.board_id == board.id
+            and minimum.board_id == board.id
+            and own.rank >= minimum.rank
+        )

@@ -832,6 +832,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Join Board */
+        post: operations["join_board_api_v1_boards__board_id__join_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{board_id}/membership": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Leave Board */
+        delete: operations["leave_board_api_v1_boards__board_id__membership_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/stream": {
         parameters: {
             query?: never;
@@ -1960,6 +1994,7 @@ export interface components {
                 | "BOARD_REVISION_CONFLICT"
                 | "BOARD_DELETE_CONFIRMATION"
                 | "BOARD_NOT_EMPTY"
+                | "BOARD_OWNER_CANNOT_LEAVE"
                 | "BOARD_UNAVAILABLE";
             /** Message */
             message: string;
@@ -8868,6 +8903,203 @@ export interface operations {
                     "application/json":
                         | components["schemas"]["AuthErrorResponse"]
                         | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    join_board_api_v1_boards__board_id__join_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MembershipSummary"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    leave_board_api_v1_boards__board_id__membership_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_OWNER_CANNOT_LEAVE",
+                     *         "message": "보드 소유자는 소유권을 이전하거나 보드를 정리한 뒤 탈퇴할 수 있습니다."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
                 };
             };
             /** @description Validation Error */
