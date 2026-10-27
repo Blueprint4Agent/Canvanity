@@ -1,0 +1,701 @@
+"""Community aggregate and transport schemas; no HTTP or provider dependencies."""
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Literal
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    Uuid,
+    and_,
+    delete,
+    exists,
+    func,
+    or_,
+    select,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.core.db.session import Base, get_db
+from app.core.error.board_exception import BoardErrorCode, BoardException
+from app.models.interest import Interest
+from app.models.user import User
+
+DocumentJSON = JSON().with_variant(JSONB(), "postgresql")
+BoardVisibility = Literal["public", "private"]
+BoardJoinPolicy = Literal["open", "invite"]
+BoardAction = Literal["read_canvas", "create_canvas", "create_comment", "react"]
+BoardMemberRole = Literal["owner", "admin", "moderator", "member"]
+BoardMemberStatus = Literal["active", "pending", "suspended", "banned"]
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
+class Board(Base):
+    __tablename__ = "boards"
+    __table_args__ = (
+        CheckConstraint("visibility IN ('public','private')", name="ck_boards_visibility"),
+        CheckConstraint("join_policy IN ('open','invite')", name="ck_boards_join_policy"),
+        CheckConstraint(
+            "visibility != 'private' OR join_policy = 'invite'", name="ck_boards_private_join"
+        ),
+        CheckConstraint("status IN ('active','suspended','archived')", name="ck_boards_status"),
+        CheckConstraint("revision >= 0", name="ck_boards_revision"),
+        Index("ix_boards_created_id", "created_at", "id"),
+        Index("ix_boards_owner", "owner_id"),
+    )
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    slug: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(80))
+    description: Mapped[str] = mapped_column(Text, default="", server_default="")
+    rules: Mapped[str] = mapped_column(Text, default="", server_default="")
+    visibility: Mapped[str] = mapped_column(String(10))
+    join_policy: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(12), default="active", server_default="active")
+    revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class BoardMemberGrade(Base):
+    __tablename__ = "board_member_grades"
+    __table_args__ = (
+        UniqueConstraint("board_id", "id", name="uq_board_grade_board_id"),
+        UniqueConstraint("board_id", "name", name="uq_board_grade_name"),
+        UniqueConstraint("board_id", "rank", name="uq_board_grade_rank"),
+        CheckConstraint("rank >= 0", name="ck_board_grade_rank"),
+        Index(
+            "uq_board_grade_default",
+            "board_id",
+            unique=True,
+            sqlite_where=text("is_default = 1"),
+            postgresql_where=text("is_default"),
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    board_id: Mapped[UUID] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(30))
+    rank: Mapped[int] = mapped_column(Integer)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+
+
+class BoardMember(Base):
+    __tablename__ = "board_members"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["board_id", "grade_id"],
+            ["board_member_grades.board_id", "board_member_grades.id"],
+            name="fk_board_member_grade",
+        ),
+        CheckConstraint(
+            "role IN ('owner','admin','moderator','member')", name="ck_board_member_role"
+        ),
+        CheckConstraint(
+            "status IN ('active','pending','suspended','banned')", name="ck_board_member_status"
+        ),
+        Index(
+            "uq_board_member_owner",
+            "board_id",
+            unique=True,
+            sqlite_where=text("role = 'owner'"),
+            postgresql_where=text("role = 'owner'"),
+        ),
+    )
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("boards.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    grade_id: Mapped[UUID] = mapped_column(Uuid)
+    role: Mapped[str] = mapped_column(String(12))
+    status: Mapped[str] = mapped_column(String(12))
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class BoardInterest(Base):
+    __tablename__ = "board_interests"
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("boards.id", ondelete="CASCADE"), primary_key=True
+    )
+    interest_id: Mapped[int] = mapped_column(
+        ForeignKey("interests.id", ondelete="RESTRICT"), primary_key=True
+    )
+    position: Mapped[int] = mapped_column(Integer)
+
+
+class BoardPolicy(Base):
+    __tablename__ = "board_policies"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["board_id", "min_grade_id"],
+            ["board_member_grades.board_id", "board_member_grades.id"],
+            name="fk_board_policy_grade",
+        ),
+        CheckConstraint(
+            "action IN ('read_canvas','create_canvas','create_comment','react')",
+            name="ck_board_policy_action",
+        ),
+        CheckConstraint("audience IN ('public','members')", name="ck_board_policy_audience"),
+        CheckConstraint(
+            "(audience = 'public' AND action = 'read_canvas' AND min_grade_id IS NULL AND NOT staff_only) OR (audience = 'members' AND ((staff_only AND min_grade_id IS NULL) OR (NOT staff_only AND min_grade_id IS NOT NULL)))",
+            name="ck_board_policy_shape",
+        ),
+    )
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("boards.id", ondelete="CASCADE"), primary_key=True
+    )
+    action: Mapped[str] = mapped_column(String(20), primary_key=True)
+    audience: Mapped[str] = mapped_column(String(10))
+    min_grade_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    staff_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    staff_bypass: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
+
+
+class Shelf(Base):
+    __tablename__ = "shelves"
+    __table_args__ = (
+        UniqueConstraint("board_id", "id", name="uq_shelf_board_id"),
+        UniqueConstraint("board_id", "slug", name="uq_shelf_slug"),
+        CheckConstraint("purpose IN ('general','notice')", name="ck_shelf_purpose"),
+        CheckConstraint("classification = 'manual'", name="ck_shelf_classification"),
+        CheckConstraint("sort_order >= 0", name="ck_shelf_sort_order"),
+        Index(
+            "uq_shelf_default",
+            "board_id",
+            unique=True,
+            sqlite_where=text("is_default = 1"),
+            postgresql_where=text("is_default"),
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    board_id: Mapped[UUID] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(80))
+    slug: Mapped[str] = mapped_column(String(64))
+    description: Mapped[str] = mapped_column(String(2000), default="", server_default="")
+    icon: Mapped[str] = mapped_column(
+        String(40), default="messages-square", server_default="messages-square"
+    )
+    sort_order: Mapped[int] = mapped_column(Integer)
+    purpose: Mapped[str] = mapped_column(String(10))
+    classification: Mapped[str] = mapped_column(
+        String(10), default="manual", server_default="manual"
+    )
+    is_visible: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class ShelfPolicy(Base):
+    __tablename__ = "shelf_policies"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["board_id", "shelf_id"],
+            ["shelves.board_id", "shelves.id"],
+            ondelete="CASCADE",
+            name="fk_shelf_policy_shelf",
+        ),
+        ForeignKeyConstraint(
+            ["board_id", "min_grade_id"],
+            ["board_member_grades.board_id", "board_member_grades.id"],
+            name="fk_shelf_policy_grade",
+        ),
+        CheckConstraint(
+            "action IN ('read_canvas','create_canvas','create_comment','react')",
+            name="ck_shelf_policy_action",
+        ),
+        CheckConstraint("audience IN ('public','members')", name="ck_shelf_policy_audience"),
+        CheckConstraint(
+            "(audience = 'public' AND action = 'read_canvas' AND min_grade_id IS NULL AND NOT staff_only) OR (audience = 'members' AND ((staff_only AND min_grade_id IS NULL) OR (NOT staff_only AND min_grade_id IS NOT NULL)))",
+            name="ck_shelf_policy_shape",
+        ),
+    )
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("boards.id", ondelete="CASCADE"), primary_key=True
+    )
+    shelf_id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    action: Mapped[str] = mapped_column(String(20), primary_key=True)
+    audience: Mapped[str] = mapped_column(String(10))
+    min_grade_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    staff_only: Mapped[bool] = mapped_column(Boolean, default=False, server_default=text("false"))
+    staff_bypass: Mapped[bool] = mapped_column(Boolean, default=True, server_default=text("true"))
+
+
+class BoardLayout(Base):
+    __tablename__ = "board_layouts"
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("boards.id", ondelete="CASCADE"), primary_key=True
+    )
+    document: Mapped[dict] = mapped_column(DocumentJSON)
+    revision: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+
+
+class BoardMemberAudit(Base):
+    __tablename__ = "board_member_audit"
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    board_id: Mapped[UUID] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"))
+    actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    target_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    action: Mapped[str] = mapped_column(String(40))
+    changes: Mapped[dict] = mapped_column(DocumentJSON)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class BoardCreateForm(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    name: str = Field(min_length=1, max_length=80)
+    slug: str = Field(min_length=3, max_length=64, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    description: str = Field(default="", max_length=2000)
+    interest_ids: list[str] = Field(default_factory=list, max_length=3)
+    visibility: BoardVisibility = "public"
+    join_policy: BoardJoinPolicy = "open"
+
+    @field_validator("slug")
+    @classmethod
+    def reserved_slug(cls, value: str) -> str:
+        if value in {"new", "settings", "admin", "by-slug"}:
+            raise ValueError("Reserved board address.")
+        return value
+
+    @field_validator("interest_ids")
+    @classmethod
+    def unique_interests(cls, value: list[str]) -> list[str]:
+        if len(set(value)) != len(value) or any(not item or len(item) > 40 for item in value):
+            raise ValueError("Select up to three distinct official interests.")
+        return value
+
+    @model_validator(mode="after")
+    def private_join(self):
+        if self.visibility == "private" and self.join_policy != "invite":
+            raise ValueError("Private boards require invite membership.")
+        return self
+
+
+class BoardDeleteForm(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_revision: int = Field(ge=0)
+    confirm_slug: str = Field(min_length=3, max_length=64)
+
+
+class BoardSummary(BaseModel):
+    id: UUID
+    owner_id: int
+    slug: str
+    name: str
+    description: str
+    visibility: BoardVisibility
+    join_policy: BoardJoinPolicy
+    status: Literal["active", "archived", "suspended"]
+    revision: int
+    interest_ids: list[str]
+    created_at: datetime
+
+
+class BoardPageResponse(BaseModel):
+    items: list[BoardSummary]
+    next_cursor: str | None = None
+
+
+class GradeSummary(BaseModel):
+    id: UUID
+    name: str
+    rank: int
+    is_default: bool
+
+
+class MembershipSummary(BaseModel):
+    role: BoardMemberRole
+    status: BoardMemberStatus
+    grade_id: UUID
+    grade_name: str
+
+
+class ShelfSummary(BaseModel):
+    id: UUID
+    slug: str
+    name: str
+    description: str
+    icon: str
+    purpose: Literal["general", "notice"]
+    classification: Literal["manual"]
+    sort_order: int
+    is_default: bool
+    capabilities: dict[BoardAction, bool]
+
+
+class BoardHomeResponse(BaseModel):
+    board: BoardSummary
+    rules: str
+    membership: MembershipSummary | None
+    grades: list[GradeSummary]
+    shelves: list[ShelfSummary]
+    layout: dict
+    layout_revision: int
+
+
+ACTIONS: tuple[BoardAction, ...] = ("read_canvas", "create_canvas", "create_comment", "react")
+
+
+@dataclass
+class BoardHomeData:
+    board: Board
+    member: BoardMember | None
+    grades: list[BoardMemberGrade]
+    policies: dict[str, BoardPolicy]
+    overrides: dict[tuple[UUID, str], ShelfPolicy]
+    shelves: list[Shelf]
+    interests: list[str]
+    layout: BoardLayout | None
+
+
+class BoardTransaction:
+    """Session remains private; callers use domain persistence operations."""
+
+    def __init__(self, db: AsyncSession):
+        self._db = db
+
+    async def lock_creator(self, user_id: int) -> bool:
+        return (
+            await self._db.scalar(
+                select(User.id)
+                .where(User.id == user_id, User.is_active.is_(True))
+                .with_for_update()
+            )
+            is not None
+        )
+
+    async def owned_count(self, user_id: int) -> int:
+        return await self._db.scalar(
+            select(func.count()).select_from(Board).where(Board.owner_id == user_id)
+        )
+
+    async def slug_exists(self, slug: str) -> bool:
+        return await self._db.scalar(select(Board.id).where(Board.slug == slug)) is not None
+
+    async def active_interests(self, slugs: list[str]) -> dict[str, Interest]:
+        rows = (
+            await self._db.scalars(
+                select(Interest).where(Interest.slug.in_(slugs), Interest.active.is_(True))
+            )
+        ).all()
+        return {row.slug: row for row in rows}
+
+    async def create_board(self, user_id: int, form: BoardCreateForm) -> Board:
+        board = Board(
+            owner_id=user_id,
+            name=form.name,
+            slug=form.slug,
+            description=form.description,
+            visibility=form.visibility,
+            join_policy=form.join_policy,
+        )
+        self._db.add(board)
+        await self._db.flush()
+        return board
+
+    async def locked_board(self, board_id: UUID) -> Board | None:
+        return await self._db.scalar(select(Board).where(Board.id == board_id).with_for_update())
+
+    async def member(self, board_id: UUID, user_id: int) -> BoardMember | None:
+        return await self._db.get(BoardMember, (board_id, user_id))
+
+    async def member_count(self, board_id: UUID) -> int:
+        return await self._db.scalar(
+            select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
+        )
+
+    async def delete_board(self, board: Board) -> None:
+        for model in (
+            ShelfPolicy,
+            BoardPolicy,
+            BoardMemberAudit,
+            BoardInterest,
+            BoardLayout,
+            BoardMember,
+            Shelf,
+            BoardMemberGrade,
+        ):
+            await self._db.execute(delete(model).where(model.board_id == board.id))
+        await self._db.delete(board)
+
+    async def initialize(self, board: Board, user_id: int, interest_ids: list[int]) -> None:
+        db = self._db
+        grades = [
+            BoardMemberGrade(board_id=board.id, name=name, rank=rank, is_default=rank == 0)
+            for name, rank in (("뉴커머", 0), ("피너", 10), ("큐레이터", 20))
+        ]
+        db.add_all(grades)
+        await db.flush()
+        db.add(
+            BoardMember(
+                board_id=board.id,
+                user_id=user_id,
+                role="owner",
+                status="active",
+                grade_id=grades[0].id,
+            )
+        )
+        for action in ACTIONS:
+            public_read = action == "read_canvas" and board.visibility == "public"
+            db.add(
+                BoardPolicy(
+                    board_id=board.id,
+                    action=action,
+                    audience="public" if public_read else "members",
+                    min_grade_id=None
+                    if public_read
+                    else grades[1 if action == "create_canvas" else 0].id,
+                    staff_only=False,
+                    staff_bypass=True,
+                )
+            )
+        db.add_all(
+            [
+                BoardInterest(board_id=board.id, interest_id=interest, position=index)
+                for index, interest in enumerate(interest_ids)
+            ]
+        )
+        shelves = [
+            Shelf(
+                board_id=board.id,
+                name="공지사항",
+                slug="notice",
+                purpose="notice",
+                sort_order=0,
+                icon="megaphone",
+                is_default=False,
+            ),
+            Shelf(
+                board_id=board.id,
+                name="자유 이야기",
+                slug="general",
+                purpose="general",
+                sort_order=1,
+                is_default=True,
+            ),
+        ]
+        db.add_all(shelves)
+        await db.flush()
+        for action in ("create_canvas", "create_comment"):
+            db.add(
+                ShelfPolicy(
+                    board_id=board.id,
+                    shelf_id=shelves[0].id,
+                    action=action,
+                    audience="members",
+                    min_grade_id=None,
+                    staff_only=True,
+                    staff_bypass=False,
+                )
+            )
+        db.add(
+            BoardLayout(
+                board_id=board.id,
+                document={
+                    "schema_version": 1,
+                    "widgets": [
+                        {
+                            "id": "board-intro",
+                            "type": "board_intro",
+                            "position": {"x": 100, "y": 100},
+                            "size": {"width": 600, "height": 240},
+                        },
+                        {
+                            "id": "shelves",
+                            "type": "shelf_navigation",
+                            "position": {"x": 100, "y": 420},
+                            "size": {"width": 600, "height": 300},
+                        },
+                        {
+                            "id": "latest",
+                            "type": "canvas_collection",
+                            "source": {"board_id": str(board.id), "sort": "latest", "limit": 6},
+                            "position": {"x": 850, "y": 100},
+                            "size": {"width": 850, "height": 650},
+                        },
+                    ],
+                },
+            )
+        )
+        db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=user_id,
+                target_user_id=user_id,
+                action="board_created",
+                changes={"role": "owner", "grade_id": str(grades[0].id)},
+            )
+        )
+        await db.flush()
+
+
+class BoardRepository:
+    @asynccontextmanager
+    async def transaction(
+        self, *, write: bool = True, create_slug: str | None = None, deleting: bool = False
+    ) -> AsyncIterator[BoardTransaction]:
+        try:
+            async with get_db() as db:
+                if write and db.bind.dialect.name == "sqlite":
+                    await db.execute(text("BEGIN IMMEDIATE"))
+                yield BoardTransaction(db)
+                if write:
+                    await db.commit()
+        except IntegrityError as error:
+            if deleting:
+                raise BoardException(BoardErrorCode.NOT_EMPTY) from error
+            if create_slug is not None:
+                async with self.transaction(write=False) as tx:
+                    if await tx.slug_exists(create_slug):
+                        raise BoardException(BoardErrorCode.SLUG_TAKEN) from error
+            raise BoardException(BoardErrorCode.UNAVAILABLE) from error
+        except SQLAlchemyError as error:
+            if not write:
+                raise
+            raise BoardException(BoardErrorCode.UNAVAILABLE) from error
+
+    async def list_visible(
+        self,
+        user_id: int | None,
+        *,
+        limit: int,
+        q: str,
+        interest_id: str | None,
+        mine: bool,
+        before: tuple[datetime, UUID] | None,
+    ) -> tuple[list[Board], dict[UUID, list[str]]]:
+        clause = Board.visibility == "public"
+        if user_id is not None:
+            active_member = exists().where(
+                BoardMember.board_id == Board.id,
+                BoardMember.user_id == user_id,
+                BoardMember.status == "active",
+            )
+            blocked_member = exists().where(
+                BoardMember.board_id == Board.id,
+                BoardMember.user_id == user_id,
+                BoardMember.status.in_(["banned", "suspended"]),
+            )
+            clause = and_(or_(clause, active_member), ~blocked_member)
+        query = select(Board).where(Board.status.in_(["active", "archived"]), clause)
+        if mine:
+            query = query.where(Board.owner_id == user_id)
+        if q:
+            query = query.where(Board.name.contains(q, autoescape=True))
+        if interest_id:
+            query = query.where(
+                exists().where(
+                    BoardInterest.board_id == Board.id,
+                    BoardInterest.interest_id == Interest.id,
+                    Interest.slug == interest_id,
+                    Interest.active.is_(True),
+                )
+            )
+        if before is not None:
+            created, last_id = before
+            query = query.where(
+                or_(
+                    Board.created_at < created,
+                    and_(Board.created_at == created, Board.id < last_id),
+                )
+            )
+        async with self.transaction(write=False) as tx:
+            db = tx._db
+            boards = list(
+                (
+                    await db.scalars(
+                        query.order_by(Board.created_at.desc(), Board.id.desc()).limit(limit + 1)
+                    )
+                ).all()
+            )
+            selected = boards[:limit]
+            interests = {board.id: [] for board in selected}
+            for board_id, slug in (
+                await db.execute(
+                    select(BoardInterest.board_id, Interest.slug)
+                    .join(Interest, Interest.id == BoardInterest.interest_id)
+                    .where(BoardInterest.board_id.in_(interests), Interest.active.is_(True))
+                    .order_by(BoardInterest.position)
+                )
+            ).all():
+                interests[board_id].append(slug)
+            return boards, interests
+
+    async def home_data(
+        self, user_id: int | None, *, board_id: UUID | None = None, slug: str | None = None
+    ) -> BoardHomeData | None:
+        async with self.transaction(write=False) as tx:
+            db = tx._db
+            board = await db.scalar(
+                select(Board).where(
+                    Board.id == board_id if board_id is not None else Board.slug == slug
+                )
+            )
+            if board is None:
+                return None
+            member = await tx.member(board.id, user_id) if user_id is not None else None
+            grades = list(
+                (
+                    await db.scalars(
+                        select(BoardMemberGrade)
+                        .where(BoardMemberGrade.board_id == board.id)
+                        .order_by(BoardMemberGrade.rank)
+                    )
+                ).all()
+            )
+            policies = {
+                p.action: p
+                for p in (
+                    await db.scalars(select(BoardPolicy).where(BoardPolicy.board_id == board.id))
+                ).all()
+            }
+            overrides = {
+                (p.shelf_id, p.action): p
+                for p in (
+                    await db.scalars(select(ShelfPolicy).where(ShelfPolicy.board_id == board.id))
+                ).all()
+            }
+            shelves = list(
+                (
+                    await db.scalars(
+                        select(Shelf)
+                        .where(Shelf.board_id == board.id, Shelf.is_visible.is_(True))
+                        .order_by(Shelf.sort_order, Shelf.id)
+                    )
+                ).all()
+            )
+            interests = list(
+                (
+                    await db.scalars(
+                        select(Interest.slug)
+                        .join(BoardInterest, BoardInterest.interest_id == Interest.id)
+                        .where(BoardInterest.board_id == board.id, Interest.active.is_(True))
+                        .order_by(BoardInterest.position)
+                    )
+                ).all()
+            )
+            layout = await db.get(BoardLayout, board.id)
+            return BoardHomeData(
+                board, member, grades, policies, overrides, shelves, interests, layout
+            )

@@ -524,6 +524,7 @@ async def request_deletion_code(
         AuthErrorCode.ACCOUNT_DELETE_CODE_INVALID,
         AuthErrorCode.ACCOUNT_DELETE_CONFIRMATION_REQUIRED,
         AuthErrorCode.LAST_ADMIN_REQUIRED,
+        AuthErrorCode.BOARD_OWNERSHIP_REQUIRED,
     ),
     description="Permanently deletes the current account, credentials, OAuth identities and API keys. Requires bearer authentication, matching email confirmation and a single-use emailed code. Clears refresh cookies; all sessions stop authenticating.",
 )

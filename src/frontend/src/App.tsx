@@ -71,6 +71,10 @@ const MyCanvasPage = lazy(() =>
     import("./pages/canvas/MyCanvasPage").then((module) => ({ default: module.MyCanvasPage })),
 );
 
+const BoardHomePage = lazy(() =>
+    import("./pages/board/BoardHomePage").then((module) => ({ default: module.BoardHomePage })),
+);
+
 const BoardPage = lazy(() =>
     import("./pages/board/BoardPage").then((module) => ({ default: module.BoardPage })),
 );
@@ -274,6 +278,7 @@ function AppContent() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/my-canvas" element={<MyCanvasPage />} />
                 <Route path="/board" element={<BoardPage />} />
+                <Route path="/b/:slug" element={<BoardHomePage />} />
                 <Route path="/dashboard" element={<Navigate to={homePath} replace />} />
                 <Route
                     path="/show-case"
