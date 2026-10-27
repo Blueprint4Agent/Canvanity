@@ -771,3 +771,7 @@ DI를 사용합니다. `OBJECT_STORAGE_PROVIDER=local|s3|r2|supabase`로 선택�
 로컬 자동 fallback은 없으며 [수명주기·실패 정책](../../notes/object-storage.md)을 따릅니다.
 
 생명주기 메일은 기존 MailQueueService와 암호화 outbox를 사용합니다. [발송·운영 복구](../../notes/lifecycle-mail.md)를 참고하세요. 앱 역할에 타인 메일 HTTP 접근을 부여하지 않습니다. Stripe가 원본이며 구독 조회는 서명 웹훅·Beat로 갱신한 DB 상태를 사용합니다. [93번 점검](../../notes/billing-audit-93.md)에 검증 근거를 기록했습니다.
+
+## Board 개설
+
+`board` 도메인의 생성·공개/비공개 조회·빈 Board 삭제는 [Board 개설 흐름](../../notes/community/board-creation.md)을 따른다. 0024 migration과 단일 서비스 트랜잭션이 Owner·기본 등급/정책·Shelf·홈을 초기화한다. 기존 계정 삭제는 소유 Board가 있으면 BOARD_OWNERSHIP_REQUIRED를 반환한다. 멤버 관리·게시글·에셋 정리는 후속이다.

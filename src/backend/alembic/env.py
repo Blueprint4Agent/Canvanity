@@ -14,6 +14,7 @@ from app.core.db.session import Base
 from app.models import (
     api_key,  # noqa: F401
     billing,  # noqa: F401
+    board,  # noqa: F401
     inbox,  # noqa: F401
     inquiry,  # noqa: F401
     interest,  # noqa: F401
@@ -75,5 +76,7 @@ async def run_migrations_online() -> None:
 
 if context.is_offline_mode():
     run_migrations_offline()
+elif config.attributes.get("connection") is not None:
+    do_run_migrations(config.attributes["connection"])
 else:
     asyncio.run(run_migrations_online())
