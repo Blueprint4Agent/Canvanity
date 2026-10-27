@@ -94,6 +94,7 @@ def main() -> int:
     errors = []
     for path, (module, tree, refs) in files.items():
         router = within(module, "app.routers")
+        board_service = within(module, "app.services") and module.rsplit(".", 1)[-1].startswith("board")
         lower = any(
             within(module, f"app.{layer}")
             for layer in ("core", "models", "services", "utils")
@@ -104,6 +105,8 @@ def main() -> int:
                 within(target, prefix) for prefix in ("app.routers", "app.main")
             ):
                 reason = "lower layers must not depend on routers or app.main"
+            if board_service and any(within(target, prefix) for prefix in DB_MODULES):
+                reason = "Board services must delegate database work to model repositories"
             if router and any(within(target, prefix) for prefix in DB_MODULES):
                 reason = "routers must delegate database work to services"
             if (

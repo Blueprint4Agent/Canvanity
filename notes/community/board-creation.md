@@ -68,3 +68,8 @@ CANVANITY_TEST_POSTGRES=1 TRACING_ENABLED=false uv run pytest tests/integration/
 마이그레이션 연결 주입은 [Alembic 공식 connection sharing 방식](https://alembic.sqlalchemy.org/en/latest/cookbook.html#sharing-a-connection-across-one-or-more-programmatic-migration-commands)을 따른다. 보통 런타임은 기존 엔진 생성 흐름을 유지하며 테스트만 고유 schema 연결을 주입한다.
 
 검증 결과와 로컬 화면 증거는 worklog/0275-board-membership-shelves.md를 따른다.
+
+
+## Board 데이터 접근 계층
+
+DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/models/board.py` 안의 `BoardRepository`와 `BoardTransaction`이 담당한다. 별도 Repository 파일을 만들지 않는다. `BoardService`는 Repository와 `BoardPermissionService`를 FastAPI 생성자 DI로 주입받아 현재 권한·상태·한도 판단과 응답 구성을 수행한다. 변경 권한은 모델 트랜잭션의 잠금을 유지하는 동안 검사한다. Board 서비스의 직접 DB import는 아키텍처 검사에서 거부한다.

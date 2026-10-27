@@ -61,3 +61,22 @@ class GenericSchemaBoundaryTests(unittest.TestCase):
                     ),
                     1,
                 )
+
+
+class BoardPersistenceBoundaryTests(unittest.TestCase):
+    def check_service(self, source):
+        with TemporaryDirectory() as directory:
+            root = Path(directory)
+            app = root / "src/backend/app"
+            (app / "services").mkdir(parents=True)
+            (app / "services/board_membership.py").write_text(source)
+            with patch.object(checker, "ROOT", root), patch.object(checker, "APP", app), redirect_stdout(StringIO()), redirect_stderr(StringIO()):
+                return checker.main()
+
+    def test_board_services_reject_direct_database_dependencies(self):
+        for source in ("from app.core.db.session import get_db", "from sqlalchemy import select", "import asyncpg", "from sqlalchemy.ext.asyncio import AsyncSession"):
+            with self.subTest(source=source):
+                self.assertEqual(self.check_service(source), 1)
+
+    def test_board_services_accept_model_repository_and_permission_dependencies(self):
+        self.assertEqual(self.check_service("from app.models.board import BoardRepository\nfrom app.services.board_permission import BoardPermissionService\n"), 0)
