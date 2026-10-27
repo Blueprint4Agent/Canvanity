@@ -37,3 +37,6 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 ## 구현 진행 추적
 
 현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. 현재 작업은 [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)이며 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
+
+
+현재 회원 운영 API는 [#31](https://github.com/Blueprint4Agent/Canvanity/issues/31)과 [구현 계약](member-administration.md)에서 추적한다. 회원 목록·수동 역할/등급·제재·감사 조회가 대상이며 UI는 제외한다. 다음은 [#32 등급 정의 관리](https://github.com/Blueprint4Agent/Canvanity/issues/32)다.

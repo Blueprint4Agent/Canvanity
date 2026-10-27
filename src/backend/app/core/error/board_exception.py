@@ -51,6 +51,25 @@ class BoardErrorCode(Enum):
         status.HTTP_409_CONFLICT,
     )
 
+    MEMBER_NOT_FOUND = ServiceErrorCode(
+        "BOARD_MEMBER_NOT_FOUND", "보드 회원을 찾을 수 없습니다.", status.HTTP_404_NOT_FOUND
+    )
+    INVALID_GRADE = ServiceErrorCode(
+        "BOARD_INVALID_GRADE",
+        "같은 보드의 회원 등급을 선택해 주세요.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+    INVALID_MEMBER_CHANGE = ServiceErrorCode(
+        "BOARD_INVALID_MEMBER_CHANGE",
+        "운영 역할을 부여하려면 최종 회원 상태가 활성이어야 합니다.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+    INVALID_AUDIT_WINDOW = ServiceErrorCode(
+        "BOARD_INVALID_AUDIT_WINDOW",
+        "시간대가 있는 시작·종료 시각과 최대 180일 기간을 지정해 주세요.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+
     UNAVAILABLE = ServiceErrorCode(
         "BOARD_UNAVAILABLE", "보드 작업을 완료하지 못했습니다.", status.HTTP_503_SERVICE_UNAVAILABLE
     )

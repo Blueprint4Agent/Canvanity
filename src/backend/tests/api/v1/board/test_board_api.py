@@ -47,3 +47,19 @@ def test_creation_validates_public_contract_before_service(changes, sample_user)
     )
     assert response.status_code == 422
     service.create.assert_not_called()
+
+
+def test_member_patch_schema_matches_omission_and_null_rules():
+    from app.models.board import BoardMemberPatchForm
+
+    schema = BoardMemberPatchForm.model_json_schema()
+    assert set(schema["required"]) == {"expected_revision", "reason"}
+    variants = schema["allOf"][0]["anyOf"]
+    assert [item["required"] for item in variants] == [
+        [name] for name in ("role", "status", "grade_id")
+    ]
+    assert all(item["properties"][item["required"][0]]["type"] == "string" for item in variants)
+    for name in ("role", "status", "grade_id"):
+        property_schema = schema["properties"][name]
+        assert property_schema["type"] == "string"
+        assert "default" not in property_schema and "anyOf" not in property_schema

@@ -8,6 +8,7 @@ from typing import Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic.json_schema import SkipJsonSchema
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -38,6 +39,8 @@ from app.core.db.session import Base, get_db
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.interest import Interest
 from app.models.user import User
+
+MAX_BOARD_USER_ID = 2**31 - 1
 
 DocumentJSON = JSON().with_variant(JSONB(), "postgresql")
 BoardVisibility = Literal["public", "private"]
@@ -114,6 +117,7 @@ class BoardMember(Base):
         CheckConstraint(
             "status IN ('active','pending','suspended','banned')", name="ck_board_member_status"
         ),
+        Index("ix_board_members_page", "board_id", "joined_at", "user_id"),
         Index(
             "uq_board_member_owner",
             "board_id",
@@ -253,6 +257,7 @@ class BoardLayout(Base):
 
 class BoardMemberAudit(Base):
     __tablename__ = "board_member_audit"
+    __table_args__ = (Index("ix_board_member_audit_page", "board_id", "created_at", "id"),)
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     board_id: Mapped[UUID] = mapped_column(ForeignKey("boards.id", ondelete="CASCADE"))
     actor_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
@@ -352,6 +357,117 @@ class BoardHomeResponse(BaseModel):
     shelves: list[ShelfSummary]
     layout: dict
     layout_revision: int
+
+
+def _member_patch_schema(schema: dict) -> None:
+    # Omission preserves a field; explicit null is invalid in the request contract.
+    changes = ("role", "status", "grade_id")
+    for field in changes:
+        schema["properties"][field].pop("default", None)
+    schema["allOf"] = [
+        {
+            "anyOf": [
+                {
+                    "type": "object",
+                    "properties": {field: schema["properties"][field]},
+                    "required": [field],
+                }
+                for field in changes
+            ]
+        }
+    ]
+
+
+class BoardMemberPatchForm(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid", str_strip_whitespace=True, json_schema_extra=_member_patch_schema
+    )
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=500)
+    role: Literal["admin", "moderator", "member"] | SkipJsonSchema[None] = None
+    status: Literal["active", "suspended", "banned"] | SkipJsonSchema[None] = None
+    grade_id: UUID | SkipJsonSchema[None] = None
+
+    @model_validator(mode="after")
+    def validate_changes(self):
+        fields = self.model_fields_set & {"role", "status", "grade_id"}
+        if not fields or any(getattr(self, field) is None for field in fields):
+            raise ValueError("Provide at least one non-null member change.")
+        return self
+
+
+class BoardMembersQuery(BaseModel):
+    limit: int = Field(default=20, ge=1, le=100)
+    cursor: str | None = Field(default=None, max_length=2048)
+    q: str = Field(default="", max_length=200)
+    role: BoardMemberRole | None = None
+    status: BoardMemberStatus | None = None
+
+
+class BoardAuditQuery(BaseModel):
+    since: datetime
+    until: datetime
+    limit: int = Field(default=20, ge=1, le=100)
+    cursor: str | None = Field(default=None, max_length=2048)
+    target_user_id: int | None = Field(default=None, gt=0, le=MAX_BOARD_USER_ID)
+
+
+class BoardMemberPublic(BaseModel):
+    user_id: int
+    name: str
+    handle: str | None
+
+
+class BoardMemberDetail(BoardMemberPublic):
+    role: BoardMemberRole
+    status: BoardMemberStatus
+    grade_id: UUID
+    grade_name: str
+    grade_rank: int
+    joined_at: datetime
+
+
+class BoardMemberListResponse(BaseModel):
+    scope: Literal["management", "moderation"]
+    items: list[BoardMemberDetail | BoardMemberPublic]
+    next_cursor: str | None = None
+    board_revision: int
+
+
+class BoardMemberUpdateResponse(BaseModel):
+    member: BoardMemberDetail
+    board_revision: int
+
+
+class BoardAuditState(BaseModel):
+    role: BoardMemberRole | None = None
+    status: BoardMemberStatus | None = None
+    grade_id: UUID | None = None
+
+
+class BoardMemberAuditResponse(BaseModel):
+    id: UUID
+    actor_user_id: int | None
+    target_user_id: int | None
+    action: str
+    before: BoardAuditState | None = None
+    after: BoardAuditState | None = None
+    reason: str | None = None
+    created_at: datetime
+
+
+class BoardAuditPageResponse(BaseModel):
+    items: list[BoardMemberAuditResponse]
+    next_cursor: str | None = None
+    board_revision: int
+
+
+@dataclass
+class BoardMemberData:
+    member: BoardMember
+    grade: BoardMemberGrade
+    name: str
+    handle: str | None
 
 
 ACTIONS: tuple[BoardAction, ...] = ("read_canvas", "create_canvas", "create_comment", "react")
@@ -487,6 +603,126 @@ class BoardTransaction:
         ):
             await self._db.execute(delete(model).where(model.board_id == board.id))
         await self._db.delete(board)
+
+    async def read_board(self, board_id: UUID) -> Board | None:
+        return await self._db.get(Board, board_id)
+
+    @staticmethod
+    def _member_statement(board_id: UUID):
+        return (
+            select(BoardMember, BoardMemberGrade, User.name, User.handle)
+            .join(
+                BoardMemberGrade,
+                and_(
+                    BoardMemberGrade.id == BoardMember.grade_id,
+                    BoardMemberGrade.board_id == BoardMember.board_id,
+                ),
+            )
+            .join(User, User.id == BoardMember.user_id)
+            .where(BoardMember.board_id == board_id)
+        )
+
+    async def member_details(self, board_id: UUID, user_id: int) -> BoardMemberData | None:
+        row = (
+            await self._db.execute(
+                self._member_statement(board_id).where(BoardMember.user_id == user_id)
+            )
+        ).one_or_none()
+        return BoardMemberData(*row) if row is not None else None
+
+    async def list_members(
+        self,
+        board_id: UUID,
+        query: BoardMembersQuery,
+        *,
+        moderation_only: bool,
+        before: tuple[datetime, int] | None,
+    ) -> list[BoardMemberData]:
+        statement = self._member_statement(board_id)
+        if moderation_only:
+            statement = statement.where(
+                BoardMember.role == "member", BoardMember.status == "active"
+            )
+        if query.role is not None:
+            statement = statement.where(BoardMember.role == query.role)
+        if query.status is not None:
+            statement = statement.where(BoardMember.status == query.status)
+        if query.q.strip():
+            statement = statement.where(
+                or_(
+                    User.name.icontains(query.q.strip(), autoescape=True),
+                    User.handle.icontains(query.q.strip(), autoescape=True),
+                )
+            )
+        if before:
+            timestamp, user_id = before
+            statement = statement.where(
+                or_(
+                    BoardMember.joined_at < timestamp,
+                    and_(BoardMember.joined_at == timestamp, BoardMember.user_id < user_id),
+                )
+            )
+        statement = statement.order_by(
+            BoardMember.joined_at.desc(), BoardMember.user_id.desc()
+        ).limit(query.limit + 1)
+        return [BoardMemberData(*row) for row in (await self._db.execute(statement)).all()]
+
+    @staticmethod
+    def _member_state(member: BoardMember) -> dict:
+        return {"role": member.role, "status": member.status, "grade_id": str(member.grade_id)}
+
+    async def update_member(
+        self, board: Board, member: BoardMember, actor_user_id: int, form: BoardMemberPatchForm
+    ) -> BoardMemberData:
+        previous = self._member_state(member)
+        for field in ("role", "status", "grade_id"):
+            if field in form.model_fields_set:
+                setattr(member, field, getattr(form, field))
+        current = self._member_state(member)
+        if previous != current:
+            self._db.add(
+                BoardMemberAudit(
+                    board_id=board.id,
+                    actor_user_id=actor_user_id,
+                    target_user_id=member.user_id,
+                    action="member_updated",
+                    changes={"before": previous, "after": current, "reason": form.reason},
+                )
+            )
+            self._touch(board)
+            await self._db.flush()
+        result = await self.member_details(board.id, member.user_id)
+        if result is None:
+            raise BoardException(BoardErrorCode.MEMBER_NOT_FOUND)
+        return result
+
+    async def list_member_audit(
+        self, board_id: UUID, query: BoardAuditQuery, *, before: tuple[datetime, UUID] | None
+    ) -> list[BoardMemberAudit]:
+        statement = select(BoardMemberAudit).where(
+            BoardMemberAudit.board_id == board_id,
+            BoardMemberAudit.created_at >= query.since,
+            BoardMemberAudit.created_at <= query.until,
+        )
+        if query.target_user_id is not None:
+            statement = statement.where(BoardMemberAudit.target_user_id == query.target_user_id)
+        if before:
+            timestamp, audit_id = before
+            statement = statement.where(
+                or_(
+                    BoardMemberAudit.created_at < timestamp,
+                    and_(BoardMemberAudit.created_at == timestamp, BoardMemberAudit.id < audit_id),
+                )
+            )
+        return list(
+            (
+                await self._db.scalars(
+                    statement.order_by(
+                        BoardMemberAudit.created_at.desc(), BoardMemberAudit.id.desc()
+                    ).limit(query.limit + 1)
+                )
+            ).all()
+        )
 
     async def initialize(self, board: Board, user_id: int, interest_ids: list[int]) -> None:
         db = self._db

@@ -23,6 +23,7 @@ from app.models.board import (
     BoardMember,
     BoardMemberAudit,
     BoardMemberGrade,
+    BoardMemberPatchForm,
     BoardRepository,
 )
 from app.models.user import User
@@ -165,9 +166,82 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
                     == 1
                 )
                 assert (await db.get(Board, board.id)).revision == 1
+            updates = await asyncio.gather(
+                membership.change_member(
+                    user_id,
+                    board.id,
+                    newcomer_id,
+                    BoardMemberPatchForm(
+                        expected_revision=1, reason="동시 제재", status="suspended"
+                    ),
+                ),
+                membership.change_member(
+                    user_id,
+                    board.id,
+                    newcomer_id,
+                    BoardMemberPatchForm(expected_revision=1, reason="동시 역할", role="moderator"),
+                ),
+                return_exceptions=True,
+            )
+            assert sum(not isinstance(item, Exception) for item in updates) == 1
+            assert (
+                sum(
+                    isinstance(item, BoardException)
+                    and item.code.error == BoardErrorCode.CONFLICT.code.error
+                    for item in updates
+                )
+                == 1
+            )
+            async with test_db() as db:
+                assert (await db.get(Board, board.id)).revision == 2
+                assert (
+                    await db.scalar(
+                        select(func.count())
+                        .select_from(BoardMemberAudit)
+                        .where(
+                            BoardMemberAudit.board_id == board.id,
+                            BoardMemberAudit.action == "member_updated",
+                        )
+                    )
+                    == 1
+                )
+                assert (
+                    await db.scalar(
+                        text(
+                            "SELECT count(*) FROM pg_indexes WHERE schemaname=:schema AND indexname IN ('ix_board_members_page','ix_board_member_audit_page')"
+                        ),
+                        {"schema": schema},
+                    )
+                    == 2
+                )
+            restored = await membership.change_member(
+                user_id,
+                board.id,
+                newcomer_id,
+                BoardMemberPatchForm(
+                    expected_revision=2, reason="복원", role="member", status="active"
+                ),
+            )
+            assert restored.board_revision == 3
+            with pytest.raises(BoardException) as rejected:
+                await membership.change_member(
+                    user_id,
+                    board.id,
+                    newcomer_id,
+                    BoardMemberPatchForm(
+                        expected_revision=3,
+                        reason="다른 보드 등급",
+                        grade_id=other_grade,
+                        status="banned",
+                    ),
+                )
+            assert rejected.value.code.error == BoardErrorCode.INVALID_GRADE.code.error
+            async with test_db() as db:
+                assert (await db.get(BoardMember, (board.id, newcomer_id))).status == "active"
+                assert (await db.get(Board, board.id)).revision == 3
             await membership.leave(newcomer_id, board.id)
             await service.delete_empty(
-                user_id, board.id, BoardDeleteForm(expected_revision=2, confirm_slug=board.slug)
+                user_id, board.id, BoardDeleteForm(expected_revision=4, confirm_slug=board.slug)
             )
             async with test_db() as db:
                 assert await db.get(BoardLayout, board.id) is None

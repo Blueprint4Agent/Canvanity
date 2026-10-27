@@ -6,9 +6,15 @@ from app.core.error.board_exception import BoardErrorCode, board_error_responses
 from app.core.error.response_contracts import current_user_error_responses
 from app.deps import get_current_session_user, get_current_token_user
 from app.models.board import (
+    BoardAuditPageResponse,
+    BoardAuditQuery,
     BoardCreateForm,
     BoardDeleteForm,
     BoardHomeResponse,
+    BoardMemberListResponse,
+    BoardMemberPatchForm,
+    BoardMembersQuery,
+    BoardMemberUpdateResponse,
     BoardPageResponse,
     BoardSummary,
     MembershipSummary,
@@ -172,3 +178,71 @@ async def leave_board(
     service: BoardMembershipService = Depends(),
 ) -> None:
     await service.leave(user.id, board_id)
+
+
+MEMBER_READ_CODES = (
+    BoardErrorCode.NOT_FOUND,
+    BoardErrorCode.FORBIDDEN,
+    BoardErrorCode.INVALID_CURSOR,
+    BoardErrorCode.UNAVAILABLE,
+)
+MEMBER_READ_ERRORS = current_user_error_responses(board_error_responses(*MEMBER_READ_CODES))
+MEMBER_PATCH_ERRORS = current_user_error_responses(
+    board_error_responses(
+        BoardErrorCode.NOT_FOUND,
+        BoardErrorCode.FORBIDDEN,
+        BoardErrorCode.MEMBER_NOT_FOUND,
+        BoardErrorCode.INVALID_GRADE,
+        BoardErrorCode.INVALID_MEMBER_CHANGE,
+        BoardErrorCode.CONFLICT,
+        BoardErrorCode.UNAVAILABLE,
+    )
+)
+MEMBER_AUDIT_ERRORS = current_user_error_responses(
+    board_error_responses(*MEMBER_READ_CODES, BoardErrorCode.INVALID_AUDIT_WINDOW)
+)
+
+
+@router.get(
+    "/{board_id}/members", response_model=BoardMemberListResponse, responses=MEMBER_READ_ERRORS
+)
+async def members(
+    board_id: UUID,
+    response: Response,
+    query: BoardMembersQuery = Depends(),
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardMembershipService = Depends(),
+) -> BoardMemberListResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.members(user.id, board_id, query)
+
+
+@router.patch(
+    "/{board_id}/members/{user_id}",
+    response_model=BoardMemberUpdateResponse,
+    responses=MEMBER_PATCH_ERRORS,
+)
+async def update_member(
+    board_id: UUID,
+    user_id: int,
+    form: BoardMemberPatchForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardMembershipService = Depends(),
+) -> BoardMemberUpdateResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.change_member(user.id, board_id, user_id, form)
+
+
+@router.get(
+    "/{board_id}/member-audit", response_model=BoardAuditPageResponse, responses=MEMBER_AUDIT_ERRORS
+)
+async def member_audit(
+    board_id: UUID,
+    response: Response,
+    query: BoardAuditQuery = Depends(),
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardMembershipService = Depends(),
+) -> BoardAuditPageResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.member_audit(user.id, board_id, query)

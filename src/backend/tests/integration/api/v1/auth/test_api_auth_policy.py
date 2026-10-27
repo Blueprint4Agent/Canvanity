@@ -134,6 +134,9 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("DELETE", "/api/v1/boards/{board_id}"),
         ("POST", "/api/v1/boards/{board_id}/join"),
         ("DELETE", "/api/v1/boards/{board_id}/membership"),
+        ("GET", "/api/v1/boards/{board_id}/members"),
+        ("PATCH", "/api/v1/boards/{board_id}/members/{user_id}"),
+        ("GET", "/api/v1/boards/{board_id}/member-audit"),
     }
     assert actual == expected
 
@@ -258,6 +261,23 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
     created = client.post("/api/v1/boards", json=payload, headers=bearer)
     assert created.status_code == 201
     path = f"/api/v1/boards/{created.json()['id']}"
+    assert client.get(path + "/members", headers=key).status_code == 401
+    assert (
+        client.patch(
+            path + "/members/1",
+            headers=key,
+            json={"expected_revision": 0, "reason": "키 거부", "status": "banned"},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.get(
+            path + "/member-audit",
+            headers=key,
+            params={"since": "2026-10-01T00:00:00Z", "until": "2026-10-28T00:00:00Z"},
+        ).status_code
+        == 401
+    )
     assert client.post(path + "/join", headers=key).status_code == 401
     assert client.delete(path + "/membership", headers=key).status_code == 401
     assert client.get(path, headers=key).status_code == 404
