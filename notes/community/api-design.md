@@ -136,3 +136,8 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 페이지가 도메인 훅을 호출하고 훅이 생성 타입 기반 API·로딩/오류/충돌 상태를 소유한다. 편집기 어댑터는 작업 문서·undo 이력, 저장 훅은 서버 revision·저장 큐·계정/document epoch, 카메라 훅은 팬/줌·선택 임시 상태를 소유한다. 카메라 변화로 자동 저장하거나 페이지를 강제 재마운트하지 않는다.
 
 1단계는 설계였으며 후속 Board 개설 구현은 라우터/OpenAPI/생성 타입을 함께 변경했다. 구현 때 `make contract-export` → 루트 계약을 frontend/contracts로 명시 복사 → `make frontend-api-generate` → `make contract-check frontend-api-check frontend-typecheck` 순서로 동기화한다. 제품 E2E는 actual PostgreSQL/로컬 object storage까지 왕복하고 mock/UI probe 성공을 제품 완료로 기록하지 않는다.
+
+
+## 공개 가입·탈퇴 구현 계약
+
+`POST /boards/{board_id}/join`은 200 MembershipSummary(role/status/grade_id/grade_name), `DELETE /boards/{board_id}/membership`은 204다. 둘 다 Bearer 세션 전용이다. Owner 탈퇴는 409 BOARD_OWNER_CANNOT_LEAVE, 초대 전용/신규 보관 보드 가입과 제재 상태 변경 우회는 거부한다. 성공한 변경은 Board revision을 증가시키고 기존 active 가입·이미 탈퇴한 공개 보드의 반복 탈퇴는 상태를 변경하지 않는다. private 보드의 비회원에게는 탈퇴 시에도 404로 존재를 숨긴다. 현재 기본 등급을 사용하며 요청에서 역할/등급을 지정하는 기능은 없다.

@@ -11,9 +11,11 @@ from app.models.board import (
     BoardHomeResponse,
     BoardPageResponse,
     BoardSummary,
+    MembershipSummary,
 )
 from app.models.user import UserResponse
 from app.services.board import BoardService
+from app.services.board_membership import BoardMembershipService
 
 router = APIRouter()
 READ_ERRORS = current_user_error_responses(
@@ -132,3 +134,41 @@ async def delete_empty_board(
     service: BoardService = Depends(),
 ) -> None:
     await service.delete_empty(user.id, board_id, form)
+
+
+MEMBERSHIP_ERRORS = current_user_error_responses(
+    board_error_responses(
+        BoardErrorCode.NOT_FOUND, BoardErrorCode.FORBIDDEN, BoardErrorCode.UNAVAILABLE
+    )
+)
+
+
+@router.post("/{board_id}/join", response_model=MembershipSummary, responses=MEMBERSHIP_ERRORS)
+async def join_board(
+    board_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardMembershipService = Depends(),
+) -> MembershipSummary:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.join(user.id, board_id)
+
+
+@router.delete(
+    "/{board_id}/membership",
+    status_code=status.HTTP_204_NO_CONTENT,
+    responses=current_user_error_responses(
+        board_error_responses(
+            BoardErrorCode.NOT_FOUND,
+            BoardErrorCode.FORBIDDEN,
+            BoardErrorCode.OWNER_CANNOT_LEAVE,
+            BoardErrorCode.UNAVAILABLE,
+        )
+    ),
+)
+async def leave_board(
+    board_id: UUID,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardMembershipService = Depends(),
+) -> None:
+    await service.leave(user.id, board_id)

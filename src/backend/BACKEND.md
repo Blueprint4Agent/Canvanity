@@ -780,3 +780,6 @@ DI를 사용합니다. `OBJECT_STORAGE_PROVIDER=local|s3|r2|supabase`로 선택�
 ## Board 데이터 접근 계층
 
 DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/models/board.py` 안의 `BoardRepository`와 `BoardTransaction`이 담당한다. 별도 Repository 파일을 만들지 않는다. `BoardService`는 Repository와 `BoardPermissionService`를 FastAPI 생성자 DI로 주입받아 현재 권한·상태·한도 판단과 응답 구성을 수행한다. 변경 권한은 모델 트랜잭션의 잠금을 유지하는 동안 검사한다. Board 서비스의 직접 DB import는 아키텍처 검사에서 거부한다.
+
+
+Board 공개 가입/탈퇴는 `BoardMembershipService`가 BoardPermissionService·BoardRepository를 주입받아 처리한다. 현재 역할/등급/상태와 Board 경계를 검사하고 앱 전역 역할을 Board 권한으로 취급하지 않는다. 가입·탈퇴·감사 기록은 models/board.py의 Board 행 잠금 아래 같은 트랜잭션에 저장한다. Owner 탈퇴와 제재 상태 우회는 거부한다. 이번 범위는 API/계약이며 가입·탈퇴 UI는 제공하지 않는다.

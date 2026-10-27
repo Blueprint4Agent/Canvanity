@@ -420,10 +420,59 @@ class BoardTransaction:
     async def member(self, board_id: UUID, user_id: int) -> BoardMember | None:
         return await self._db.get(BoardMember, (board_id, user_id))
 
+    async def grade(self, grade_id: UUID) -> BoardMemberGrade | None:
+        return await self._db.get(BoardMemberGrade, grade_id)
+
+    async def default_grade(self, board_id: UUID) -> BoardMemberGrade | None:
+        return await self._db.scalar(
+            select(BoardMemberGrade).where(
+                BoardMemberGrade.board_id == board_id, BoardMemberGrade.is_default.is_(True)
+            )
+        )
+
     async def member_count(self, board_id: UUID) -> int:
         return await self._db.scalar(
             select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
         )
+
+    async def join_member(self, board: Board, user_id: int, grade_id: UUID) -> BoardMember:
+        member = BoardMember(
+            board_id=board.id, user_id=user_id, grade_id=grade_id, role="member", status="active"
+        )
+        self._db.add(member)
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=user_id,
+                target_user_id=user_id,
+                action="member_joined",
+                changes={"role": "member", "status": "active", "grade_id": str(grade_id)},
+            )
+        )
+        self._touch(board)
+        return member
+
+    async def leave_member(self, board: Board, member: BoardMember) -> None:
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=member.user_id,
+                target_user_id=member.user_id,
+                action="member_left",
+                changes={
+                    "previous_role": member.role,
+                    "previous_status": member.status,
+                    "previous_grade_id": str(member.grade_id),
+                },
+            )
+        )
+        await self._db.delete(member)
+        self._touch(board)
+
+    @staticmethod
+    def _touch(board: Board) -> None:
+        board.revision += 1
+        board.updated_at = utc_now()
 
     async def delete_board(self, board: Board) -> None:
         for model in (
@@ -571,8 +620,6 @@ class BoardRepository:
                         raise BoardException(BoardErrorCode.SLUG_TAKEN) from error
             raise BoardException(BoardErrorCode.UNAVAILABLE) from error
         except SQLAlchemyError as error:
-            if not write:
-                raise
             raise BoardException(BoardErrorCode.UNAVAILABLE) from error
 
     async def list_visible(

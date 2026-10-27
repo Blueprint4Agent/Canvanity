@@ -21,11 +21,13 @@ from app.models.board import (
     BoardDeleteForm,
     BoardLayout,
     BoardMember,
+    BoardMemberAudit,
     BoardMemberGrade,
     BoardRepository,
 )
 from app.models.user import User
 from app.services.board import BoardService
+from app.services.board_membership import BoardMembershipService
 from app.services.board_permission import BoardPermissionService
 
 pytestmark = [
@@ -134,8 +136,38 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
             )
             async with test_db() as db:
                 assert await db.scalar(select(func.count()).select_from(Board)) == 20
+            async with test_db() as db:
+                newcomer = User(
+                    email="pg-join@example.com",
+                    name="Joiner",
+                    role="user",
+                    is_active=True,
+                    is_verified=True,
+                )
+                db.add(newcomer)
+                await db.commit()
+                newcomer_id = newcomer.id
+            membership = BoardMembershipService(BoardPermissionService(), BoardRepository())
+            joined = await asyncio.gather(
+                membership.join(newcomer_id, board.id), membership.join(newcomer_id, board.id)
+            )
+            assert joined[0] == joined[1] and joined[0].role == "member"
+            async with test_db() as db:
+                assert (
+                    await db.scalar(
+                        select(func.count())
+                        .select_from(BoardMemberAudit)
+                        .where(
+                            BoardMemberAudit.board_id == board.id,
+                            BoardMemberAudit.action == "member_joined",
+                        )
+                    )
+                    == 1
+                )
+                assert (await db.get(Board, board.id)).revision == 1
+            await membership.leave(newcomer_id, board.id)
             await service.delete_empty(
-                user_id, board.id, BoardDeleteForm(expected_revision=0, confirm_slug=board.slug)
+                user_id, board.id, BoardDeleteForm(expected_revision=2, confirm_slug=board.slug)
             )
             async with test_db() as db:
                 assert await db.get(BoardLayout, board.id) is None

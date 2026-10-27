@@ -32,3 +32,8 @@ Board 홈의 UI Canvas는 `widgets`, 게시글 Content Canvas는 `nodes/edges`�
 Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립 개인 문서·여러 Board 공유·개인 배치·공동 편집·큰 공용 공간은 후속이다. 자동 승급을 도입해도 아래 등급/권한 모델은 유지한다.
 
 기본 등급은 **Newcomer(뉴커머) → Pinner(피너) → Curator(큐레이터)**이며 rank는 0/10/20이다. Board 운영자는 이름·순서와 Shelf 이용 정책을 변경할 수 있고, 등급 이름을 바꿔도 grade_id 참조는 유지한다.
+
+
+## 구현 진행 추적
+
+현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. 현재 작업은 [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)이며 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.

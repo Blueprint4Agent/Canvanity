@@ -128,7 +128,7 @@ class BoardService:
         self, user_id: int | None, *, board_id: UUID | None = None, slug: str | None = None
     ) -> BoardHomeResponse:
         data = await self.repository.home_data(user_id, board_id=board_id, slug=slug)
-        if data is None or data.board.status == "suspended":
+        if data is None:
             raise BoardException(BoardErrorCode.NOT_FOUND)
         board, member = data.board, data.member
         self.permissions.check_read(board, member)
