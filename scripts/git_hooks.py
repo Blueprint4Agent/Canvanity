@@ -52,9 +52,33 @@ def clean_environment():
     # Git exports repository-local variables to hooks; do not leak these into child Git commands.
     for key in git("rev-parse", "--local-env-vars").splitlines():
         env.pop(key, None)
-    for key in ("VERIFY_BASE", "VERIFY_HEAD", "VERIFY_FULL", "COMMIT_TITLE", "COMMIT_BODY_FILE", "PR_TITLE", "PR_BODY_FILE"):
+    for key in ("VERIFY_BASE", "VERIFY_HEAD", "VERIFY_FULL", "COMMIT_TITLE", "COMMIT_BODY_FILE", "PR_TITLE", "PR_BODY_FILE", "CANVANITY_MAIN_REBASE_APPROVAL"):
         env.pop(key, None)
     return env
+
+
+def authorize_main_rebase(remote, head, previous):
+    """An explicit, exact-ref authorization never skips ordinary push checks."""
+    filename = os.environ.get("CANVANITY_MAIN_REBASE_APPROVAL")
+    require(filename, "Use a pull request to update main; an explicitly approved rebase requires an exact-ref authorization")
+    path = Path(filename).resolve()
+    approvals = Path(git("rev-parse", "--absolute-git-dir")).resolve() / "approvals"
+    require(path.parent == approvals, "Main rebase approval must be inside the local Git approvals directory")
+    approval = json.loads(path.read_text())
+    require(remote == "origin" and approval.get("remote") == remote, "Main rebase approval is restricted to origin")
+    require(approval.get("expected_main") == previous and approval.get("new_head") == head,
+            "Main rebase approval does not match the old/new SHA pair")
+    upstream = git("rev-parse", "refs/remotes/upstream/main")
+    require(approval.get("upstream_main") == upstream, "Main rebase approval has a different upstream base")
+    require(subprocess.run(["git", "merge-base", "--is-ancestor", upstream, head],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0,
+            "The approved upstream base must be an ancestor of the new main")
+    backup = approval.get("backup_ref", "")
+    require(backup.startswith("refs/heads/chore/") and governance.BRANCH.fullmatch(backup.removeprefix("refs/heads/")),
+            "Main rebase requires a valid chore backup ref")
+    require(git("ls-remote", "--heads", remote, backup) == f"{previous}\t{backup}",
+            "Main rebase requires an exact remote backup of the previous main")
+    print("Exact-ref main rebase authorization validated; ordinary push checks still apply.")
 
 
 def pre_push(remote, lines):
@@ -62,12 +86,13 @@ def pre_push(remote, lines):
     for line in lines.splitlines():
         fields = line.split()
         require(len(fields) == 4, "Malformed pre-push ref update")
-        local_ref, sha, remote_ref, _ = fields
+        local_ref, sha, remote_ref, previous = fields
         if set(sha) == {"0"}:
             require(remote_ref != "refs/heads/main", "Deleting main is prohibited")
             continue
-        require(remote_ref != "refs/heads/main", "Use a pull request to update main")
-        if remote_ref.startswith("refs/heads/"):
+        if remote_ref == "refs/heads/main":
+            authorize_main_rebase(remote, sha, previous)
+        elif remote_ref.startswith("refs/heads/"):
             require(governance.BRANCH.fullmatch(remote_ref.removeprefix("refs/heads/")), "Invalid destination branch name")
         require(remote_ref.startswith(("refs/heads/", "refs/tags/")), "Unsupported push ref")
         head = git("rev-parse", f"{sha}^{{commit}}")

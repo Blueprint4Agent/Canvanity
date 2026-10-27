@@ -34,3 +34,10 @@ GitHub Actions는 Run workflow 또는 `gh workflow run`으로만 실행합니다
 실행 파일·환경 설정 변화는 여전히 재검증합니다. 자식과 상위 명령은 같은 셸/도구 환경에서
 실행하세요. 다른 Python 설치를 사용하면 정상적인 캐시 미스로 처리됩니다. 정적 검사와 테스트 결과를 분리하고 선택 테스트 목록을 명령 지문에 포함합니다.
 브랜딩을 먼저 생성하며 자식 빌드·라우트 결과를 상위에서도 공유합니다. 자세한 범위 규칙은 verification.md를 참고하세요.
+
+
+## 명시 승인된 main 리베이스
+
+기본 main 푸시/삭제 차단은 유지한다. 사용자가 리베이스한 main의 원격 교체를 명시 승인했을 때만 Git 디렉터리의 `approvals` 아래 JSON으로 origin, expected_main, new_head, upstream_main, backup_ref를 지정하고 `CANVANITY_MAIN_REBASE_APPROVAL`에 파일 경로를 준다. 훅은 기존/새 SHA와 현재 upstream/main 조상 관계 및 원격 chore 백업의 정확한 기존 SHA를 확인한 뒤 기존 커밋/깨끗한 트리/전체 검증을 실행한다. 자식 검증 프로세스에는 승인 환경변수를 넘기지 않는다.
+
+실제 푸시는 `--force-with-lease=refs/heads/main:<expected_main>`로 수행한다. 승인 파일은 특정 SHA 쌍에 한정되므로 다른 HEAD나 변경된 원격에는 사용할 수 없다. 보호 규칙을 완화하거나 훅을 끄지 않는다.

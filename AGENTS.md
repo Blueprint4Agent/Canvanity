@@ -29,7 +29,7 @@ Canvanity는 B4FastAPI를 포크한 캔버스 기반 커뮤니티다. PROJECT_BR
 5. 루트에서 make verify-plan 다음 make verify를 실행한다. 브랜치 전체는 VERIFY_BASE=<기준 커밋>으로 지정한다. 불명확한 범위는 전체 검사로 확대하며 수동으로 강등하지 않는다. VERIFY_FULL=1은 receipt 재사용 없이 전체 검사한다.
 6. 결과와 생략 이유를 기록하고 대상 파일만 스테이징한 뒤 COMMIT_TITLE과 COMMIT_BODY_FILE을 지정해 make git-governance-check를 실행한다.
 7. 로컬 commit-msg/pre-push 훅을 우회하지 않는다. 푸시/PR이 작업 범위이면 리뷰 가능한 PR을 만들고 실제 메타데이터를 PR_NUMBER=<번호> make git-governance-pr-check로 검사한다.
-8. 기본 병합은 merge commit이다. squash/rebase는 사용자 명시 요청만 허용한다. 자동 병합 등록 시 실제 방식도 확인한다. main 직접 푸시·삭제·이력 재작성 금지.
+8. 기본 병합은 merge commit이다. squash/rebase는 사용자 명시 요청만 허용한다. 자동 병합 등록 시 실제 방식도 확인한다. 기본적으로 main 직접 푸시·삭제·이력 재작성은 금지한다. 사용자가 특정 리베이스의 원격 main 교체를 명시 승인한 경우에만 로컬 Git approvals 문서의 기존/새 SHA·최신 upstream 기반·원격 백업을 pre-push 훅이 검증한 뒤 정확한 기존 SHA의 force-with-lease로 교체한다. 삭제와 승인 없는 교체는 계속 금지하며 훅을 우회하지 않는다.
 
 make init은 환경 파일과 루트 Git 훅을 준비하며 make install은 잠금 의존성을 설치한다. frontend-init은 편입된 소스 존재만 확인한다. 성공한 내용 기반 검증은 24시간 내 동일 입력/환경/출력일 때만 재사용하며 CI와 VERIFY_FULL=1에서는 재사용하지 않는다. GitHub 워크플로는 수동 실행이며 로컬 훅을 서버 CI 보장으로 설명하지 않는다. 원격 보호 규칙 변경은 관리자 권한과 작업 승인이 있을 때만 한다.
 

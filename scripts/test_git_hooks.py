@@ -1,5 +1,7 @@
 """Real Git hooks must reject invalid messages and unverified outgoing snapshots."""
 import json
+import os
+from unittest.mock import patch
 from pathlib import Path
 import shutil
 import subprocess
@@ -106,6 +108,54 @@ class GitHookTests(unittest.TestCase):
         self.commit()
         self.assertIn("pull request", self.command("git", "push", "origin", "HEAD:main", ok=False))
         self.assertIn("destination branch", self.command("git", "push", "origin", "HEAD:wrong_name", ok=False))
+
+    def main_rebase_approval(self):
+        previous = self.command("git", "rev-parse", "main").strip()
+        head = self.command("git", "rev-parse", "HEAD").strip()
+        backup = "refs/heads/chore/main-before-rebase"
+        self.command("git", "update-ref", "refs/remotes/upstream/main", previous)
+        self.command("git", "--git-dir", str(self.remote), "update-ref", backup, previous)
+        folder = self.root / ".git/approvals"
+        folder.mkdir(exist_ok=True)
+        path = folder / "main-rebase.json"
+        data = dict(remote="origin", expected_main=previous, new_head=head,
+                    upstream_main=previous, backup_ref=backup)
+        path.write_text(json.dumps(data))
+        return path, data
+
+    def test_exact_main_rebase_approval_still_runs_verification(self):
+        self.commit()
+        path, data = self.main_rebase_approval()
+        with patch.dict(os.environ, CANVANITY_MAIN_REBASE_APPROVAL=str(path)):
+            self.command("git", "push", "--force-with-lease=refs/heads/main:" + data["expected_main"], "origin", "HEAD:main")
+        self.assertEqual((self.root / ".git/fixture-verification").read_text(), "verified\n")
+        self.assertTrue(self.command("git", "ls-remote", "origin", "main").startswith(data["new_head"]))
+
+    def test_main_rebase_rejects_mismatched_head_previous_and_upstream(self):
+        self.commit()
+        path, data = self.main_rebase_approval()
+        for field in ("expected_main", "new_head", "upstream_main"):
+            with self.subTest(field=field), patch.dict(os.environ, CANVANITY_MAIN_REBASE_APPROVAL=str(path)):
+                path.write_text(json.dumps({**data, field: "0" * 40}))
+                self.command("git", "push", "origin", "HEAD:main", ok=False)
+                self.assertTrue(self.command("git", "ls-remote", "origin", "main").startswith(data["expected_main"]))
+
+    def test_main_rebase_requires_remote_backup(self):
+        self.commit()
+        path, data = self.main_rebase_approval()
+        self.command("git", "--git-dir", str(self.remote), "update-ref", "-d", data["backup_ref"])
+        with patch.dict(os.environ, CANVANITY_MAIN_REBASE_APPROVAL=str(path)):
+            self.assertIn("exact remote backup", self.command("git", "push", "origin", "HEAD:main", ok=False))
+
+    def test_main_rebase_approval_never_skips_failed_verification(self):
+        self.prepare()
+        (self.root / "Makefile").write_text("verify-plan:\n\t@echo Plan\nverify:\n\t@exit 1\n")
+        self.command("git", "add", "Makefile")
+        self.command("git", "commit", "-qm", TITLE + BODY)
+        path, data = self.main_rebase_approval()
+        with patch.dict(os.environ, CANVANITY_MAIN_REBASE_APPROVAL=str(path)):
+            self.assertIn("Local Git check failed", self.command("git", "push", "origin", "HEAD:main", ok=False))
+        self.assertTrue(self.command("git", "ls-remote", "origin", "main").startswith(data["expected_main"]))
 
     def test_install_refuses_to_replace_custom_hooks(self):
         self.command("git", "config", "core.hooksPath", "custom-hooks")
