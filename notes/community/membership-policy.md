@@ -4,25 +4,31 @@
 
 ## 네 가지 독립 축
 
-| 축     | 값·책임                                                                |
-| ------ | ---------------------------------------------------------------------- |
-| role   | owner/admin/moderator/member. 운영 책임이며 앱 전역 UserRole과 별개    |
-| grade  | Board별 새싹/일반/우수 등. 운영자가 이름·순위·기본 등급을 관리         |
-| status | pending/active/suspended/banned. 가입과 제재 상태                      |
-| policy | 액션별 audience/min_grade_id/staff_bypass. Board 기본값과 Shelf 재정의 |
+| 축     | 값·책임                                                                 |
+| ------ | ----------------------------------------------------------------------- |
+| role   | owner/admin/moderator/member. 운영 책임이며 앱 전역 UserRole과 별개     |
+| grade  | Board별 Newcomer/Pinner/Curator 등. 운영자가 이름·순위·기본 등급을 관리 |
+| status | pending/active/suspended/banned. 가입과 제재 상태                       |
+| policy | 액션별 audience/min_grade_id/staff_bypass. Board 기본값과 Shelf 재정의  |
 
-`board_member_grades.rank`는 큰 값이 높은 등급이다. 기본값은 새싹 0, 일반 10, 우수 20이다. 등급 이름이 같아도 Board 간 동일 권한을 의미하지 않는다. Owner에게도 grade_id가 있지만 등급을 높여 운영 권한을 주지 않는다.
+`board_member_grades.rank`는 큰 값이 높은 등급이다. 기본값은 뉴커머(Newcomer) 0, 피너(Pinner) 10, 큐레이터(Curator) 20이다. 등급 이름이 같아도 Board 간 동일 권한을 의미하지 않는다. Owner에게도 grade_id가 있지만 등급을 높여 운영 권한을 주지 않는다.
 
 MVP는 public/open 또는 private/invite Board를 지원한다. private/open은 가입 즉시 비공개 자료를 열람하는 모순을 피하려고 422로 거부한다. private/invite는 Owner가 존재하는 사용자 ID를 직접 등록하는 수동 초대만 제공한다. 사용자 지정 이메일 발송·초대 URL/토큰·승인 워크플로는 후속이다. private Board의 join 요청은 403으로 거부한다. approval 입력도 422다.
 
+## Board별 변경 가능 범위
+
+기본 등급은 Newcomer(뉴커머, rank 0) → Pinner(피너, 10) → Curator(큐레이터, 20)다. Board 운영자는 등급 이름·순서·기본 등급과 Shelf별 읽기/글쓰기/댓글/좋아요 정책을 변경할 수 있다. 이름 변경은 표시명만 갱신하고 grade_id 및 기존 회원/정책 참조를 유지한다. rank 순서를 바꾸면 최소 등급 비교 결과가 달라지므로 정책 영향 미리보기와 명시적 저장을 제공한다.
+
+회원에게 Owner/Admin/Moderator/Member 운영 역할을 지정·해제하는 것은 지원한다. 역할별 세부 운영 권한표는 서비스가 정한 값이며 사용자 정의 역할·체크박스식 운영 권한 편집은 후속 범위다. Curator 등급이 되어도 회원 관리 권한이 생기지 않는다.
+
 ## 기본 액션 정책
 
-| action         | 공개 Board 기본                           | 비공개 Board 기본                     | Shelf 재정의 |
-| -------------- | ----------------------------------------- | ------------------------------------- | ------------ |
-| read_canvas    | public, 최소 등급 없음, staff_bypass=true | members, 새싹 이상, staff_bypass=true | 가능         |
-| create_canvas  | members, 일반 이상, staff_bypass=true     | 동일                                  | 가능         |
-| create_comment | members, 새싹 이상, staff_bypass=true     | 동일                                  | 가능         |
-| react          | members, 새싹 이상, staff_bypass=true     | 동일                                  | 가능         |
+| action         | 공개 Board 기본                           | 비공개 Board 기본                       | Shelf 재정의 |
+| -------------- | ----------------------------------------- | --------------------------------------- | ------------ |
+| read_canvas    | public, 최소 등급 없음, staff_bypass=true | members, 뉴커머 이상, staff_bypass=true | 가능         |
+| create_canvas  | members, 피너 이상, staff_bypass=true     | 동일                                    | 가능         |
+| create_comment | members, 뉴커머 이상, staff_bypass=true   | 동일                                    | 가능         |
+| react          | members, 뉴커머 이상, staff_bypass=true   | 동일                                    | 가능         |
 
 여기서 public은 **Board가 public이고, 게시글 visibility도 public이며, published snapshot이 있을 때** 비회원 열람을 허용한다. Board가 private이거나 Canvas visibility=members면 active 멤버만 가능하다. 정책에서 public을 선택해도 상위 private 경계를 넓히지 못한다. create/react 등 인증이 필요한 액션은 audience=public을 허용하지 않는다.
 
@@ -86,26 +92,26 @@ members PATCH는 role/status/grade_id를 한 번에 받을 수 있으나 **제�
 
 ## 구체적 허용·거부 행렬
 
-조건: public Board A, 일반 Shelf Q는 read 새싹/게시글 일반/댓글 일반, 공개글 P와 작성자 U의 초안 D. Board B는 private. staff_bypass=true다.
+조건: public Board A, 일반 Shelf Q는 read 뉴커머/게시글 피너/댓글 피너, 공개글 P와 작성자 U의 초안 D. Board B는 private. staff_bypass=true다.
 
-| 요청자·조건           | Q 목록/P 본문       | 새 글·댓글 | U의 D 조회/수정                | 공식 홈 PUT |
-| --------------------- | ------------------- | ---------- | ------------------------------ | ----------- |
-| 비회원                | 404(멤버 전용 읽기) | 401        | 404                            | 401         |
-| A의 새싹              | 허용                | 403        | U 본인이면 조회 가능·저장 거부 | 403         |
-| A의 일반/우수         | 허용                | 허용       | U 본인이면 허용, 타인 404      | 403         |
-| A의 Moderator 새싹    | 허용                | 허용       | 타인 404                       | 403         |
-| A의 Admin/Owner 새싹  | 허용                | 허용       | 타인 404                       | 허용        |
-| A의 banned(높은 등급) | 404                 | 404        | 404                            | 404         |
-| B의 Admin, A는 비회원 | 404                 | 403        | 404                            | 403         |
+| 요청자·조건            | Q 목록/P 본문       | 새 글·댓글 | U의 D 조회/수정                | 공식 홈 PUT |
+| ---------------------- | ------------------- | ---------- | ------------------------------ | ----------- |
+| 비회원                 | 404(멤버 전용 읽기) | 401        | 404                            | 401         |
+| A의 뉴커머             | 허용                | 403        | U 본인이면 조회 가능·저장 거부 | 403         |
+| A의 피너/큐레이터      | 허용                | 허용       | U 본인이면 허용, 타인 404      | 403         |
+| A의 Moderator 뉴커머   | 허용                | 허용       | 타인 404                       | 403         |
+| A의 Admin/Owner 뉴커머 | 허용                | 허용       | 타인 404                       | 허용        |
+| A의 banned(높은 등급)  | 404                 | 404        | 404                            | 404         |
+| B의 Admin, A는 비회원  | 404                 | 403        | 404                            | 403         |
 
 추가 시나리오:
 
-- 새싹 → 일반으로 수동 승급 후 POST 가능, 일반 → 새싹 강등 후 기존 문서 PUT 403.
+- 뉴커머 → 피너으로 수동 승급 후 POST 가능, 피너 → 뉴커머 강등 후 기존 문서 PUT 403.
 - Board B grade_id를 A 멤버/정책에 지정하면 API 422 및 DB FK 거부.
 - active→suspended 후 과거 토큰으로 요청하면 거부. 기존 댓글/공개글은 제재만으로 자동 삭제하지 않는다.
-- Q 읽기 최소 등급을 우수로 바꾸면 일반 회원의 목록·검색·미리보기·에셋도 404. 공개글 수·Tag 연결 통계에서 제한 항목을 제외한다.
+- Q 읽기 최소 등급을 큐레이터로 바꾸면 피너 회원의 목록·검색·미리보기·에셋도 404. 공개글 수·Tag 연결 통계에서 제한 항목을 제외한다.
 - Admin이 Owner로 자기 승격하거나 Owner를 차단하는 요청은 403. 마지막 Owner 탈퇴는 409.
-- 공지 staff_only 정책에서는 우수 Member도 글쓰기/댓글 거부. 운영자도 차단 상태면 거부.
+- 공지 staff_only 정책에서는 큐레이터 Member도 글쓰기/댓글 거부. 운영자도 차단 상태면 거부.
 
 ## 자동 승급 확장
 

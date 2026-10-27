@@ -1,5 +1,6 @@
 import { expect, test } from "../fixtures/browser";
 import { setup } from "../fixtures/runtime";
+import { mockBoardDirectory } from "../fixtures/boards";
 import { captureVisual } from "../fixtures/visual";
 
 for (const width of [390, 1440])
@@ -8,6 +9,7 @@ for (const width of [390, 1440])
             await page.setViewportSize({ width, height: 1000 });
             await page.emulateMedia({ colorScheme });
             await setup(page, "manager", "development");
+            await mockBoardDirectory(page);
             await page.goto("/home");
             const nav = page.getByRole("navigation", { name: "Community spaces" });
             await expect(nav.getByRole("link")).toHaveCount(3);
@@ -86,8 +88,10 @@ for (const width of [390, 1440])
             ).toBe(true);
             await captureVisual(page, { path: info.outputPath("board.png"), fullPage: true });
             await page.locator(".community-board").first().click();
-            await expect(page).toHaveURL(/\/home\?topic=/);
-            await expect(page.locator(".explore-selection")).toBeVisible();
+            await expect(page).toHaveURL(/\/b\/agent-lab$/);
+            await expect(
+                page.getByRole("heading", { name: "에이전트 연구소", exact: true }),
+            ).toBeVisible();
             const modifier = await page.evaluate(() =>
                 /Mac/.test(navigator.userAgent) ? "Meta" : "Control",
             );

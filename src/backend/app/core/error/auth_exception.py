@@ -61,6 +61,11 @@ class AuthErrorCode(Enum):
         "Enter your current email to confirm deletion.",
         status.HTTP_400_BAD_REQUEST,
     )
+    BOARD_OWNERSHIP_REQUIRED = ServiceErrorCode(
+        "BOARD_OWNERSHIP_REQUIRED",
+        "Delete your empty boards before deleting your account.",
+        status.HTTP_409_CONFLICT,
+    )
     LAST_ADMIN_REQUIRED = ServiceErrorCode(
         "LAST_ADMIN_REQUIRED",
         "Assign another active administrator before deleting this account.",

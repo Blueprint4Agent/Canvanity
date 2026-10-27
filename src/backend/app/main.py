@@ -52,6 +52,7 @@ from app.routers.v1 import (
     auth,
     billing,
     billing_webhook,
+    board,
     events,
     inbox,
     inquiry,
@@ -307,6 +308,7 @@ def create_app() -> FastAPI:
     setup_metrics(app)
     setup_tracing(app)
 
+    app.include_router(board.router, prefix="/api/v1/boards", tags=["Boards"])
     app.include_router(interest.router, prefix="/api/v1/interests", tags=["Interests"])
     app.include_router(inbox.router, prefix="/api/v1/inbox", tags=["Inbox"])
     app.include_router(inquiry.router, prefix="/api/v1/inquiries", tags=["Inquiries"])

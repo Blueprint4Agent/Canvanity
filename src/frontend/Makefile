@@ -1,3 +1,5 @@
+BROWSER_WORKERS ?= 2
+UNIT_WORKERS ?= 2
 SHELL := /bin/bash
 .DEFAULT_GOAL := help
 NPM ?= npm
@@ -18,7 +20,7 @@ check: architecture-check api-check project-config-check discovery-check style-s
 	$(NPM) run format:check
 	$(NPM) run typecheck
 test: ## Run unit, component, and integration tests
-	$(NPM) test
+	$(NPM) test -- --maxWorkers=$(UNIT_WORKERS)
 format: ## Format source and documentation
 	$(NPM) run format
 api-generate: ## Generate types from the pinned local contract
@@ -44,7 +46,7 @@ architecture-check: ui-composition-check react-performance-check ## Check pages/
 
 .PHONY: test-ui
 test-ui: ## Check component layout and tooltip behavior in Chromium
-	$(NPM) run test:e2e -- tests/e2e/prompt-builder.spec.ts tests/e2e/public-discovery.spec.ts tests/e2e/component-layout.spec.ts tests/e2e/auth-smoke.spec.ts tests/e2e/admin-panel.spec.ts tests/e2e/admin-demo.spec.ts tests/e2e/inbox.spec.ts tests/e2e/support.spec.ts tests/e2e/admin-server.spec.ts tests/e2e/config-sharing.spec.ts tests/e2e/billing.spec.ts tests/e2e/runtime-modes.spec.ts tests/e2e/home.spec.ts tests/e2e/profile-photo.spec.ts tests/e2e/account-profile.spec.ts tests/e2e/minimal-workspace.spec.ts tests/e2e/community-spaces.spec.ts
+	$(NPM) run test:e2e -- --workers=$(BROWSER_WORKERS) tests/e2e/board-creation.spec.ts tests/e2e/prompt-builder.spec.ts tests/e2e/public-discovery.spec.ts tests/e2e/component-layout.spec.ts tests/e2e/auth-smoke.spec.ts tests/e2e/admin-panel.spec.ts tests/e2e/admin-demo.spec.ts tests/e2e/inbox.spec.ts tests/e2e/support.spec.ts tests/e2e/admin-server.spec.ts tests/e2e/config-sharing.spec.ts tests/e2e/billing.spec.ts tests/e2e/runtime-modes.spec.ts tests/e2e/home.spec.ts tests/e2e/profile-photo.spec.ts tests/e2e/account-profile.spec.ts tests/e2e/minimal-workspace.spec.ts tests/e2e/community-spaces.spec.ts
 
 .PHONY: ui-composition-check
 ui-composition-check: ## Verify shared styling and rendered showcase coverage

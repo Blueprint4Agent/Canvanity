@@ -4,7 +4,7 @@
 
 ## 공통 계약
 
-아래는 미구현 API의 설계 명세다. `/api/v1` 기준, snake_case, 신규 ID는 UUID, 기존 user_id는 정수다. Interest id는 기존 slug다. 도메인 예외는 기존 ServiceException/ErrorResponse(`detail.error/message/details`)와 도메인별 응답 생성기를 사용한다. Pydantic의 구조 검증 오류는 기존 FastAPI 422 배열을 유지한다. 새로운 422 도메인 오류는 기존 도메인 에러 DTO를 사용한다.
+아래는 전체 목표 API의 설계 명세다. 현재 구현된 개설/조회/빈 보드 삭제 API의 구체 계약과 화면은 [Board 개설 흐름](board-creation.md)을 우선한다. `/api/v1` 기준, snake_case, 신규 ID는 UUID, 기존 user_id는 정수다. Interest id는 기존 slug다. 도메인 예외는 기존 ServiceException/ErrorResponse(`detail.error/message/details`)와 도메인별 응답 생성기를 사용한다. Pydantic의 구조 검증 오류는 기존 FastAPI 422 배열을 유지한다. 새로운 422 도메인 오류는 기존 도메인 에러 DTO를 사용한다.
 
 | 응답 | 기준                                                                       |
 | ---- | -------------------------------------------------------------------------- |
@@ -36,27 +36,27 @@
 
 ## Board·멤버십·등급 — #22
 
-| Method  | Path                                 | 입력/결과·권한                                                                                                        |
-| ------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
-| GET     | /boards                              | q 최대 200, interest_id 기존 slug, cursor. 조회 가능한 Board만                                                        |
-| GET     | /boards/by-slug/{slug}               | UUID 상세와 같은 응답/권한. 정적 경로를 /{board_id}보다 먼저 등록                                                     |
-| POST    | /boards                              | name/slug/description/rules/interest_ids/visibility/join_policy. 로그인 사용자                                        |
-| GET     | /boards/{board_id}                   | 공개 정보 + 본인 membership/capabilities + revision. 타인 이메일 제외                                                 |
-| PATCH   | /boards/{board_id}                   | expected_revision + 이름/소개/규칙/관심사/visibility/join_policy/status. Owner/Admin, status archived는 Owner만       |
-| GET     | /boards/{board_id}/home              | 기본 Board·허용 Shelf·공개 snapshot 목록·layout/capabilities. 동적 위젯도 현재 방문자 기준                            |
-| POST    | /boards/{board_id}/join              | public/open만. 활성 가입은 같은 결과 200. 탈퇴/제재 상태를 임의 초기화하지 않음                                       |
-| GET     | /boards/{board_id}/membership        | 본인 role/status/grade/board_revision/capabilities                                                                    |
-| DELETE  | /boards/{board_id}/membership        | 활성 비Owner 탈퇴. repeated absent 204. banned/suspended 기록은 탈퇴로 제거하지 않음                                  |
-| GET     | /boards/{board_id}/members           | Owner/Admin은 전체, Moderator는 제재 대상용 공개 필드만. 일반 회원은 이 경로 403                                      |
-| POST    | /boards/{board_id}/members           | user_id/expected_revision/reason. private 수동 초대 Owner/Admin, 새싹 active로 등록. 기존 banned 우회 금지            |
-| PATCH   | /boards/{board_id}/members/{user_id} | expected_revision/reason + role/status/grade_id. 각 필드별 위계 검사                                                  |
-| GET     | /boards/{board_id}/grades            | 조회 가능한 Board의 이름·순위·기본 등급, 사용자 개인정보 없음                                                         |
-| POST    | /boards/{board_id}/grades            | expected_revision/name/rank. Owner/Admin, 최대 20개                                                                   |
-| PATCH   | /boards/{board_id}/grades/{grade_id} | expected_revision/name/is_default. rank는 order API에서만 변경                                                        |
-| PATCH   | /boards/{board_id}/grades/order      | expected_revision/grade_ids(전체). rank를 10 단위로 재부여                                                            |
-| DELETE  | /boards/{board_id}/grades/{grade_id} | expected_revision/replacement_grade_id. 참조 일괄 이동, 기본 등급이면 replacement를 새 기본으로 지정. 마지막 등급 409 |
-| GET/PUT | /boards/{board_id}/policies          | GET은 Owner/Admin. PUT expected_revision/actions(전체 4액션), 역할·등급 정책 원자적 갱신                              |
-| GET     | /boards/{board_id}/member-audit      | Owner/Admin, cursor·기간(최대 180일). 개인정보 최소 필드                                                              |
+| Method  | Path                                 | 입력/결과·권한                                                                                                         |
+| ------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| GET     | /boards                              | q 최대 200, interest_id 기존 slug, cursor. 조회 가능한 Board만                                                         |
+| GET     | /boards/by-slug/{slug}               | UUID 상세와 같은 응답/권한. 정적 경로를 /{board_id}보다 먼저 등록                                                      |
+| POST    | /boards                              | name/slug/description/rules/interest_ids/visibility/join_policy. 로그인 사용자                                         |
+| GET     | /boards/{board_id}                   | 공개 정보 + 본인 membership/capabilities + revision. 타인 이메일 제외                                                  |
+| PATCH   | /boards/{board_id}                   | expected_revision + 이름/소개/규칙/관심사/visibility/join_policy/status. Owner/Admin, status archived는 Owner만        |
+| GET     | /boards/{board_id}/home              | 기본 Board·허용 Shelf·공개 snapshot 목록·layout/capabilities. 동적 위젯도 현재 방문자 기준                             |
+| POST    | /boards/{board_id}/join              | public/open만. 활성 가입은 같은 결과 200. 탈퇴/제재 상태를 임의 초기화하지 않음                                        |
+| GET     | /boards/{board_id}/membership        | 본인 role/status/grade/board_revision/capabilities                                                                     |
+| DELETE  | /boards/{board_id}/membership        | 활성 비Owner 탈퇴. repeated absent 204. banned/suspended 기록은 탈퇴로 제거하지 않음                                   |
+| GET     | /boards/{board_id}/members           | Owner/Admin은 전체, Moderator는 제재 대상용 공개 필드만. 일반 회원은 이 경로 403                                       |
+| POST    | /boards/{board_id}/members           | user_id/expected_revision/reason. private 수동 초대 Owner/Admin, 기본 뉴커머 등급 active로 등록. 기존 banned 우회 금지 |
+| PATCH   | /boards/{board_id}/members/{user_id} | expected_revision/reason + role/status/grade_id. 각 필드별 위계 검사                                                   |
+| GET     | /boards/{board_id}/grades            | 조회 가능한 Board의 이름·순위·기본 등급, 사용자 개인정보 없음                                                          |
+| POST    | /boards/{board_id}/grades            | expected_revision/name/rank. Owner/Admin, 최대 20개                                                                    |
+| PATCH   | /boards/{board_id}/grades/{grade_id} | expected_revision/name/is_default. rank는 order API에서만 변경                                                         |
+| PATCH   | /boards/{board_id}/grades/order      | expected_revision/grade_ids(전체). rank를 10 단위로 재부여                                                             |
+| DELETE  | /boards/{board_id}/grades/{grade_id} | expected_revision/replacement_grade_id. 참조 일괄 이동, 기본 등급이면 replacement를 새 기본으로 지정. 마지막 등급 409  |
+| GET/PUT | /boards/{board_id}/policies          | GET은 Owner/Admin. PUT expected_revision/actions(전체 4액션), 역할·등급 정책 원자적 갱신                               |
+| GET     | /boards/{board_id}/member-audit      | Owner/Admin, cursor·기간(최대 180일). 개인정보 최소 필드                                                               |
 
 MVP public→private 전환은 기존 open 멤버가 유지되며 join_policy=invite를 같은 요청에 요구한다. private→public은 공개 snapshot·파일 노출 범위가 넓어짐을 UI에서 명시하고 Owner만 허용한다. Admin은 visibility 변경 불가다. Board archived→active는 Owner가 명시적으로 복원한다. suspended 설정/해제는 이 일반 API에서 거부한다.
 
@@ -135,4 +135,4 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 
 페이지가 도메인 훅을 호출하고 훅이 생성 타입 기반 API·로딩/오류/충돌 상태를 소유한다. 편집기 어댑터는 작업 문서·undo 이력, 저장 훅은 서버 revision·저장 큐·계정/document epoch, 카메라 훅은 팬/줌·선택 임시 상태를 소유한다. 카메라 변화로 자동 저장하거나 페이지를 강제 재마운트하지 않는다.
 
-현재 1단계에서는 라우터/OpenAPI를 변경하지 않는다. 구현 때 `make contract-export` → 루트 계약을 frontend/contracts로 명시 복사 → `make frontend-api-generate` → `make contract-check frontend-api-check frontend-typecheck` 순서로 동기화한다. 제품 E2E는 actual PostgreSQL/로컬 object storage까지 왕복하고 mock/UI probe 성공을 제품 완료로 기록하지 않는다.
+1단계는 설계였으며 후속 Board 개설 구현은 라우터/OpenAPI/생성 타입을 함께 변경했다. 구현 때 `make contract-export` → 루트 계약을 frontend/contracts로 명시 복사 → `make frontend-api-generate` → `make contract-check frontend-api-check frontend-typecheck` 순서로 동기화한다. 제품 E2E는 actual PostgreSQL/로컬 object storage까지 왕복하고 mock/UI probe 성공을 제품 완료로 기록하지 않는다.

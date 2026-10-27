@@ -803,6 +803,7 @@ class UserRepository:
     async def delete_account(self, user_id: int, email: str, notification=None) -> dict | None:
         """Delete credentials and owned keys atomically; serialize with role changes."""
         from app.models.billing import BillingCheckout
+        from app.models.board import Board
 
         async with get_db() as db:
             if db.bind.dialect.name == "sqlite":
@@ -831,6 +832,8 @@ class UserRepository:
                 is not None
             ):
                 raise AuthException(code=AuthErrorCode.ACCOUNT_BILLING_REVIEW_REQUIRED)
+            if await db.scalar(select(Board.id).where(Board.owner_id == user_id).limit(1)):
+                raise AuthException(code=AuthErrorCode.BOARD_OWNERSHIP_REQUIRED)
             if notification is not None:
                 db.add(notification)
             photo = user.profile_photo

@@ -47,7 +47,7 @@ erDiagram
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | boards                | id PK, owner_id FK users RESTRICT, slug VARCHAR(64) UNIQUE NOT NULL, name VARCHAR(80), description TEXT 기본 빈값(최대 2,000), rules TEXT(최대 10,000), visibility public/private, join_policy open/invite, status active/suspended/archived, avatar_asset_id/cover_asset_id nullable, revision BIGINT 기본 0, created_at/updated_at |
 | board_interests       | (board_id,interest_id) PK, position. 기존 활성 공식 Interest에서 0~3개. Board 수정 시 중복·비활성·수량 검사                                                                                                                                                                                                                          |
-| board_member_grades   | id PK, board_id FK, name VARCHAR(30), rank INTEGER >=0, is_default BOOL, created_at/updated_at. UNIQUE(board_id,id), UNIQUE(board_id,name), UNIQUE(board_id,rank) DEFERRABLE INITIALLY DEFERRED, Board별 is_default 부분 유니크                                                                                                      |
+| board_member_grades   | id PK, board_id FK, name VARCHAR(30), rank INTEGER >=0, is_default BOOL, created_at/updated_at. UNIQUE(board_id,id), UNIQUE(board_id,name), UNIQUE(board_id,rank), Board별 is_default 부분 유니크                                                                                                                                    |
 | board_members         | (board_id,user_id) PK, role owner/admin/moderator/member, status active/pending/suspended/banned, grade_id NOT NULL, joined_at. 복합 FK(board_id,grade_id), role=owner 부분 유니크                                                                                                                                                   |
 | board_policies        | (board_id,action) PK, audience public/members, min_grade_id nullable, staff_bypass BOOL. staff_only BOOL 기본 false. members+staff_only=false면 min_grade_id 필수, public 또는 staff_only=true면 null. 같은 Board grade FK                                                                                                           |
 | shelf_policies        | (board_id,shelf_id,action) PK, 위와 동일. 행이 없으면 Board 정책 상속. 부분 필드가 아닌 액션 정책 전체를 재정의. Shelf/Grade 복합 FK                                                                                                                                                                                                 |
@@ -69,13 +69,13 @@ erDiagram
 ## 생성·수정 트랜잭션
 
 1. 인증·생성 제한(활성/보관 포함 사용자당 최대 20 Board, 생성 트랜잭션에서 User 행 잠금 후 수량 재검사), slug 정규식 `^[a-z0-9]+(?:-[a-z0-9]+)*$`/3~64자와 예약어 `new/settings/admin` 검사.
-2. Board INSERT. 기본 등급 새싹(rank 0), 일반(10), 우수(20), 각 액션의 Board 기본 정책 생성.
-3. Owner 활성 멤버 등록(기본 새싹 grade_id 사용하되 운영 액션은 role로 판단).
+2. Board INSERT. 기본 등급 Newcomer(뉴커머, rank 0), Pinner(피너, 10), Curator(큐레이터, 20), 각 액션의 Board 기본 정책 생성.
+3. Owner 활성 멤버 등록(기본 뉴커머 grade_id 사용하되 운영 액션은 role로 판단).
 4. 기본 자유 Shelf(general/manual/default)와 공지 Shelf(notice/manual) 생성. 공지는 글쓰기·댓글 운영 역할 제한 정책 적용.
 5. 공식 Interest 연결, 기본 widgets 홈 레이아웃 revision 0 생성, 감사 기록 저장 후 commit.
 6. 유니크 경쟁/중간 오류 시 전부 rollback. 외부 파일 업로드는 생성 트랜잭션 안에서 하지 않는다.
 
-등급/정책/역할/상태 변경은 Board 행을 먼저 잠그고 수정+감사를 commit한다. Shelf 순서 변경은 전체 Shelf ID 집합(숨김 포함)을 중복/타 Board/누락 없이 받고 같은 트랜잭션에서 연속 순번을 부여한다. 등급 정렬은 rank 0,10,20…으로 재부여하며 PostgreSQL deferred unique로 중간 충돌을 피한다. SQLite에는 해당 DEFERRABLE UNIQUE DDL을 생성하지 않고, 트랜잭션 안에서 임시 고순위로 이동한 뒤 최종 rank를 부여하는 두 단계 변경을 사용한다. 사용 중 등급 삭제는 같은 Board replacement_grade_id 필수, 멤버·정책 참조를 바꾸고 마지막 등급 삭제는 거부한다.
+등급/정책/역할/상태 변경은 Board 행을 먼저 잠그고 수정+감사를 commit한다. Shelf 순서 변경은 전체 Shelf ID 집합(숨김 포함)을 중복/타 Board/누락 없이 받고 같은 트랜잭션에서 연속 순번을 부여한다. 등급 정렬은 rank 0,10,20…으로 재부여하며 PostgreSQL/SQLite 모두 트랜잭션 안에서 임시 고순위로 이동한 뒤 최종 rank를 부여하는 두 단계 변경을 사용한다. 초기 생성 migration은 즉시 고유 제약을 적용한다. 사용 중 등급 삭제는 같은 Board replacement_grade_id 필수, 멤버·정책 참조를 바꾸고 마지막 등급 삭제는 거부한다.
 
 ## Canvas 수명주기와 공개본
 

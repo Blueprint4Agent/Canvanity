@@ -807,6 +807,7 @@
               "ACCOUNT_DELETE_CODE_SEND_FAILED",
               "ACCOUNT_DELETE_FAILED",
               "ACCOUNT_DELETE_CONFIRMATION_REQUIRED",
+              "BOARD_OWNERSHIP_REQUIRED",
               "LAST_ADMIN_REQUIRED",
               "ADMIN_USERS_FAILED",
               "SIGNUP_FAILED",
@@ -1815,6 +1816,302 @@
         "title": "BillingSubscriptionResponse",
         "type": "object"
       },
+      "BoardCreateForm": {
+        "additionalProperties": false,
+        "properties": {
+          "description": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Description",
+            "type": "string"
+          },
+          "interest_ids": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Interest Ids",
+            "type": "array"
+          },
+          "join_policy": {
+            "default": "open",
+            "enum": [
+              "open",
+              "invite"
+            ],
+            "title": "Join Policy",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "maxLength": 64,
+            "minLength": 3,
+            "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "visibility": {
+            "default": "public",
+            "enum": [
+              "public",
+              "private"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "slug"
+        ],
+        "title": "BoardCreateForm",
+        "type": "object"
+      },
+      "BoardDeleteForm": {
+        "additionalProperties": false,
+        "properties": {
+          "confirm_slug": {
+            "maxLength": 64,
+            "minLength": 3,
+            "title": "Confirm Slug",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "confirm_slug"
+        ],
+        "title": "BoardDeleteForm",
+        "type": "object"
+      },
+      "BoardErrorDetail": {
+        "properties": {
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "error": {
+            "enum": [
+              "BOARD_NOT_FOUND",
+              "BOARD_FORBIDDEN",
+              "BOARD_SLUG_TAKEN",
+              "BOARD_LIMIT_REACHED",
+              "BOARD_INVALID_INTEREST",
+              "BOARD_INVALID_CURSOR",
+              "BOARD_REVISION_CONFLICT",
+              "BOARD_DELETE_CONFIRMATION",
+              "BOARD_NOT_EMPTY",
+              "BOARD_UNAVAILABLE"
+            ],
+            "example": "BOARD_NOT_FOUND",
+            "title": "Error",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "message"
+        ],
+        "title": "BoardErrorDetail",
+        "type": "object"
+      },
+      "BoardErrorResponse": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/BoardErrorDetail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "BoardErrorResponse",
+        "type": "object"
+      },
+      "BoardHomeResponse": {
+        "properties": {
+          "board": {
+            "$ref": "#/components/schemas/BoardSummary"
+          },
+          "grades": {
+            "items": {
+              "$ref": "#/components/schemas/GradeSummary"
+            },
+            "title": "Grades",
+            "type": "array"
+          },
+          "layout": {
+            "additionalProperties": true,
+            "title": "Layout",
+            "type": "object"
+          },
+          "layout_revision": {
+            "title": "Layout Revision",
+            "type": "integer"
+          },
+          "membership": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MembershipSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rules": {
+            "title": "Rules",
+            "type": "string"
+          },
+          "shelves": {
+            "items": {
+              "$ref": "#/components/schemas/ShelfSummary"
+            },
+            "title": "Shelves",
+            "type": "array"
+          }
+        },
+        "required": [
+          "board",
+          "rules",
+          "membership",
+          "grades",
+          "shelves",
+          "layout",
+          "layout_revision"
+        ],
+        "title": "BoardHomeResponse",
+        "type": "object"
+      },
+      "BoardPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BoardSummary"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "BoardPageResponse",
+        "type": "object"
+      },
+      "BoardSummary": {
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "interest_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Interest Ids",
+            "type": "array"
+          },
+          "join_policy": {
+            "enum": [
+              "open",
+              "invite"
+            ],
+            "title": "Join Policy",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "integer"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "archived",
+              "suspended"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "private"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "owner_id",
+          "slug",
+          "name",
+          "description",
+          "visibility",
+          "join_policy",
+          "status",
+          "revision",
+          "interest_ids",
+          "created_at"
+        ],
+        "title": "BoardSummary",
+        "type": "object"
+      },
       "Body_oauth_token_login_api_v1_auth_token_post": {
         "properties": {
           "client_id": {
@@ -2052,6 +2349,35 @@
           "message"
         ],
         "title": "ForgotPasswordResponse",
+        "type": "object"
+      },
+      "GradeSummary": {
+        "properties": {
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "rank": {
+            "title": "Rank",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "rank",
+          "is_default"
+        ],
+        "title": "GradeSummary",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -2945,6 +3271,47 @@
         "title": "LoginResponse",
         "type": "object"
       },
+      "MembershipSummary": {
+        "properties": {
+          "grade_id": {
+            "format": "uuid",
+            "title": "Grade Id",
+            "type": "string"
+          },
+          "grade_name": {
+            "title": "Grade Name",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "admin",
+              "moderator",
+              "member"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "pending",
+              "suspended",
+              "banned"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "role",
+          "status",
+          "grade_id",
+          "grade_name"
+        ],
+        "title": "MembershipSummary",
+        "type": "object"
+      },
       "OAuthProvider": {
         "enum": [
           "google",
@@ -3197,6 +3564,81 @@
           "message"
         ],
         "title": "ResetPasswordResponse",
+        "type": "object"
+      },
+      "ShelfSummary": {
+        "properties": {
+          "capabilities": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "propertyNames": {
+              "enum": [
+                "read_canvas",
+                "create_canvas",
+                "create_comment",
+                "react"
+              ]
+            },
+            "title": "Capabilities",
+            "type": "object"
+          },
+          "classification": {
+            "const": "manual",
+            "title": "Classification",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "icon": {
+            "title": "Icon",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "is_default": {
+            "title": "Is Default",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "general",
+              "notice"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "sort_order": {
+            "title": "Sort Order",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "icon",
+          "purpose",
+          "classification",
+          "sort_order",
+          "is_default",
+          "capabilities"
+        ],
+        "title": "ShelfSummary",
         "type": "object"
       },
       "SignupForm": {
@@ -10538,6 +10980,864 @@
         "summary": "Billing Webhook",
         "tags": [
           "Billing"
+        ]
+      }
+    },
+    "/api/v1/boards": {
+      "get": {
+        "operationId": "list_boards_api_v1_boards_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 2048,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 200,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "interest_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 40,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Interest Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "mine",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Mine",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardPageResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 List Boards Api V1 Boards Get"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 List Boards Api V1 Boards Get"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "USER_NOT_FOUND",
+                    "message": "User not found."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_INVALID_CURSOR",
+                    "message": "목록을 다시 불러와 주세요."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {}
+        ],
+        "summary": "List Boards",
+        "tags": [
+          "Boards"
+        ]
+      },
+      "post": {
+        "operationId": "create_board_api_v1_boards_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardCreateForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Create Board Api V1 Boards Post"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Create Board Api V1 Boards Post"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "USER_NOT_FOUND",
+                    "message": "User not found."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/AuthErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_SLUG_TAKEN",
+                    "message": "이미 사용 중인 보드 주소입니다."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_INVALID_INTEREST",
+                    "message": "활성 공식 관심사를 선택해 주세요."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_UNAVAILABLE",
+                    "message": "보드 작업을 완료하지 못했습니다."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Board",
+        "tags": [
+          "Boards"
+        ]
+      }
+    },
+    "/api/v1/boards/by-slug/{slug}": {
+      "get": {
+        "operationId": "home_by_slug_api_v1_boards_by_slug__slug__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardHomeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Home By Slug Api V1 Boards By Slug  Slug  Get"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Home By Slug Api V1 Boards By Slug  Slug  Get"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Home By Slug Api V1 Boards By Slug  Slug  Get"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_UNAVAILABLE",
+                    "message": "보드 작업을 완료하지 못했습니다."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {}
+        ],
+        "summary": "Home By Slug",
+        "tags": [
+          "Boards"
+        ]
+      }
+    },
+    "/api/v1/boards/{board_id}": {
+      "delete": {
+        "operationId": "delete_empty_board_api_v1_boards__board_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardDeleteForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Delete Empty Board Api V1 Boards  Board Id  Delete"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Delete Empty Board Api V1 Boards  Board Id  Delete"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Delete Empty Board Api V1 Boards  Board Id  Delete"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_REVISION_CONFLICT",
+                    "message": "최신 보드 정보를 다시 불러와 주세요."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_DELETE_CONFIRMATION",
+                    "message": "보드 주소를 정확히 입력해 주세요."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_UNAVAILABLE",
+                    "message": "보드 작업을 완료하지 못했습니다."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Delete Empty Board",
+        "tags": [
+          "Boards"
+        ]
+      },
+      "get": {
+        "operationId": "board_home_api_v1_boards__board_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardHomeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Board Home Api V1 Boards  Board Id  Get"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Board Home Api V1 Boards  Board Id  Get"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Board Home Api V1 Boards  Board Id  Get"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_UNAVAILABLE",
+                    "message": "보드 작업을 완료하지 못했습니다."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {}
+        ],
+        "summary": "Board Home",
+        "tags": [
+          "Boards"
+        ]
+      }
+    },
+    "/api/v1/boards/{board_id}/home": {
+      "get": {
+        "operationId": "board_home_api_v1_boards__board_id__home_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardHomeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Board Home Api V1 Boards  Board Id  Home Get"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Board Home Api V1 Boards  Board Id  Home Get"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Board Home Api V1 Boards  Board Id  Home Get"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_UNAVAILABLE",
+                    "message": "보드 작업을 완료하지 못했습니다."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          },
+          {}
+        ],
+        "summary": "Board Home",
+        "tags": [
+          "Boards"
         ]
       }
     },

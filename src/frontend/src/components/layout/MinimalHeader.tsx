@@ -72,9 +72,17 @@ export function MinimalHeader({
                     <NavLink to={user ? "/my-canvas" : "/login?next=%2Fmy-canvas"}>
                         <Palette size={16} aria-hidden="true" /> My Canvas
                     </NavLink>
-                    <NavLink to="/board">
+                    <Link
+                        to="/board"
+                        aria-current={
+                            communityReturnPath.split("?")[0] === "/board" ||
+                            communityReturnPath.startsWith("/b/")
+                                ? "page"
+                                : undefined
+                        }
+                    >
                         <PanelsTopLeft size={16} aria-hidden="true" /> Board
-                    </NavLink>
+                    </Link>
                 </nav>
             ) : null}
             <div className="minimal-header__actions">

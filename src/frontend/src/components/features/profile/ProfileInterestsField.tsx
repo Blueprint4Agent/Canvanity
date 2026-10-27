@@ -46,8 +46,17 @@ type Props = {
     onChange: (interests: string[]) => void;
     busy: boolean;
     catalog: Catalog;
+    maxSelections?: number;
+    selectionHelp?: string;
 };
-export function ProfileInterestsField({ interests, onChange, busy, catalog }: Props) {
+export function ProfileInterestsField({
+    interests,
+    onChange,
+    busy,
+    catalog,
+    maxSelections = 8,
+    selectionHelp,
+}: Props) {
     const { t, i18n } = useTranslation();
     const [query, setQuery] = useState("");
     const id = useId();
@@ -57,12 +66,14 @@ export function ProfileInterestsField({ interests, onChange, busy, catalog }: Pr
             value.toLocaleLowerCase().includes(search),
         ),
     );
-    const full = interests.length >= 8;
+    const full = interests.length >= maxSelections;
     return (
         <section className="profile-interest-picker" aria-labelledby={id}>
             <div className="profile-interest-picker__heading">
                 <h3 id={id}>{t("settings.profile.interests")}</h3>
-                <span>{interests.length}/8</span>
+                <span>
+                    {interests.length}/{maxSelections}
+                </span>
             </div>
             <div className="profile-interests profile-interest-picker__selected">
                 <ProfileInterestTags
@@ -129,11 +140,12 @@ export function ProfileInterestsField({ interests, onChange, busy, catalog }: Pr
                 </div>
             )}
             <p className="muted">
-                {t(
-                    full
-                        ? "settings.profile.interestsFull"
-                        : "settings.profile.interestsPickerHelp",
-                )}
+                {selectionHelp ??
+                    t(
+                        full
+                            ? "settings.profile.interestsFull"
+                            : "settings.profile.interestsPickerHelp",
+                    )}
             </p>
         </section>
     );
