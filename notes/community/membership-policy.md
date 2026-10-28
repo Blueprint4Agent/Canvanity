@@ -122,3 +122,8 @@ members PATCH는 role/status/grade_id를 한 번에 받을 수 있으나 **제�
 행렬은 다음 구현의 수용 기준이다. 이번 PostgreSQL probe는 등급/소속 FK·기본 등급 유니크·revision CAS 등 DB 의미론을 확인하며 **제품 서버 권한 평가기가 구현됐음을 의미하지 않는다**. 구현 시 행렬을 서비스 단위+API 통합 fixture로 옮기고 실제 계정 승급/강등 브라우저 흐름을 검증한다.
 
 [OWASP 객체 권한](https://api-security.owasp.org/editions/2023/en/0xa1-broken-object-level-authorization/)과 [속성 권한](https://api-security.owasp.org/editions/2023/en/0xa3-broken-object-property-level-authorization/)에 따라 ID 소속·액션과 수정 필드를 함께 검사한다.
+
+
+## 회원 운영 구현 경계 — #31
+
+회원 목록·역할/수동 등급·제재 변경과 Owner/Admin 감사 조회는 [member-administration.md](member-administration.md)에 구현 계약을 정리했다. 본인/Owner·pending 대상의 일반 PATCH는 거부하며 role=owner/status=pending은 422다. Moderator는 active 일반 Member의 suspended/banned 변경만 허용한다. 모든 필드는 현재 권한으로 검사하고 하나라도 금지이면 전체 롤백한다. 등급 정의(이름·순서·기본값) 편집은 #32이고 Canvas/댓글/에셋에 대한 위 설계 행렬의 확장 적용은 해당 도메인의 후속 구현이다.

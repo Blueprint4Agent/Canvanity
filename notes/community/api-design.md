@@ -141,3 +141,8 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## 공개 가입·탈퇴 구현 계약
 
 `POST /boards/{board_id}/join`은 200 MembershipSummary(role/status/grade_id/grade_name), `DELETE /boards/{board_id}/membership`은 204다. 둘 다 Bearer 세션 전용이다. Owner 탈퇴는 409 BOARD_OWNER_CANNOT_LEAVE, 초대 전용/신규 보관 보드 가입과 제재 상태 변경 우회는 거부한다. 성공한 변경은 Board revision을 증가시키고 기존 active 가입·이미 탈퇴한 공개 보드의 반복 탈퇴는 상태를 변경하지 않는다. private 보드의 비회원에게는 탈퇴 시에도 404로 존재를 숨긴다. 현재 기본 등급을 사용하며 요청에서 역할/등급을 지정하는 기능은 없다.
+
+
+## 회원 운영 API 구현 — #31
+
+[회원 운영 계약](member-administration.md)을 따른다. GET members는 Owner/Admin의 관리 항목과 Moderator의 최소 공개 제재 대상 항목을 구분한다. PATCH members는 expected_revision/reason과 role/status/grade_id를 받고 필드 전체의 권한을 원자적으로 검사한다. GET member-audit의 since/until은 시간대 포함 필수 입력이며 최대 180일, target_user_id와 cursor를 지원한다. 목록/감사 정렬은 시각·식별자 내림차순이다. 이번 변경은 UI와 등급 정의 CRUD를 포함하지 않는다.

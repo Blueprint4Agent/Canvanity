@@ -568,7 +568,10 @@ for (const colorScheme of ["light", "dark"] as const) {
         await expect(won).toHaveAttribute("aria-pressed", "false");
         await expect(example.getByRole("group").last().getByRole("button").first()).toBeDisabled();
         expect((await active.boundingBox())!.width).toBeLessThan(100);
-        expect((await dollar.boundingBox())!.height).toBeLessThanOrEqual(32);
+        // DOMRect subtraction can add floating error; compare at 0.01 CSS px precision.
+        expect(Math.round((await dollar.boundingBox())!.height * 100) / 100).toBeLessThanOrEqual(
+            32,
+        );
         await expectReadableHover(dollar);
         await expectReadableHover(won);
         await captureVisual(page, { path: info.outputPath("segmented-control.png") });

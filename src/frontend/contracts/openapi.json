@@ -1604,6 +1604,77 @@
                 "title": "BillingSubscriptionResponse",
                 "type": "object"
             },
+            "BoardAuditPageResponse": {
+                "properties": {
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/BoardMemberAuditResponse"
+                        },
+                        "title": "Items",
+                        "type": "array"
+                    },
+                    "next_cursor": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Next Cursor"
+                    }
+                },
+                "required": ["items", "board_revision"],
+                "title": "BoardAuditPageResponse",
+                "type": "object"
+            },
+            "BoardAuditState": {
+                "properties": {
+                    "grade_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Grade Id"
+                    },
+                    "role": {
+                        "anyOf": [
+                            {
+                                "enum": ["owner", "admin", "moderator", "member"],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Role"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "enum": ["active", "pending", "suspended", "banned"],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    }
+                },
+                "title": "BoardAuditState",
+                "type": "object"
+            },
             "BoardCreateForm": {
                 "additionalProperties": false,
                 "properties": {
@@ -1696,6 +1767,10 @@
                             "BOARD_DELETE_CONFIRMATION",
                             "BOARD_NOT_EMPTY",
                             "BOARD_OWNER_CANNOT_LEAVE",
+                            "BOARD_MEMBER_NOT_FOUND",
+                            "BOARD_INVALID_GRADE",
+                            "BOARD_INVALID_MEMBER_CHANGE",
+                            "BOARD_INVALID_AUDIT_WINDOW",
                             "BOARD_UNAVAILABLE"
                         ],
                         "example": "BOARD_NOT_FOUND",
@@ -1774,6 +1849,298 @@
                     "layout_revision"
                 ],
                 "title": "BoardHomeResponse",
+                "type": "object"
+            },
+            "BoardMemberAuditResponse": {
+                "properties": {
+                    "action": {
+                        "title": "Action",
+                        "type": "string"
+                    },
+                    "actor_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Actor User Id"
+                    },
+                    "after": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardAuditState"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "before": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardAuditState"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "created_at": {
+                        "format": "date-time",
+                        "title": "Created At",
+                        "type": "string"
+                    },
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "reason": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reason"
+                    },
+                    "target_user_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Target User Id"
+                    }
+                },
+                "required": ["id", "actor_user_id", "target_user_id", "action", "created_at"],
+                "title": "BoardMemberAuditResponse",
+                "type": "object"
+            },
+            "BoardMemberDetail": {
+                "properties": {
+                    "grade_id": {
+                        "format": "uuid",
+                        "title": "Grade Id",
+                        "type": "string"
+                    },
+                    "grade_name": {
+                        "title": "Grade Name",
+                        "type": "string"
+                    },
+                    "grade_rank": {
+                        "title": "Grade Rank",
+                        "type": "integer"
+                    },
+                    "handle": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Handle"
+                    },
+                    "joined_at": {
+                        "format": "date-time",
+                        "title": "Joined At",
+                        "type": "string"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "role": {
+                        "enum": ["owner", "admin", "moderator", "member"],
+                        "title": "Role",
+                        "type": "string"
+                    },
+                    "status": {
+                        "enum": ["active", "pending", "suspended", "banned"],
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "title": "User Id",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "user_id",
+                    "name",
+                    "handle",
+                    "role",
+                    "status",
+                    "grade_id",
+                    "grade_name",
+                    "grade_rank",
+                    "joined_at"
+                ],
+                "title": "BoardMemberDetail",
+                "type": "object"
+            },
+            "BoardMemberListResponse": {
+                "properties": {
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "items": {
+                        "items": {
+                            "anyOf": [
+                                {
+                                    "$ref": "#/components/schemas/BoardMemberDetail"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/BoardMemberPublic"
+                                }
+                            ]
+                        },
+                        "title": "Items",
+                        "type": "array"
+                    },
+                    "next_cursor": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Next Cursor"
+                    },
+                    "scope": {
+                        "enum": ["management", "moderation"],
+                        "title": "Scope",
+                        "type": "string"
+                    }
+                },
+                "required": ["scope", "items", "board_revision"],
+                "title": "BoardMemberListResponse",
+                "type": "object"
+            },
+            "BoardMemberPatchForm": {
+                "additionalProperties": false,
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {
+                                "properties": {
+                                    "role": {
+                                        "enum": ["admin", "moderator", "member"],
+                                        "title": "Role",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["role"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "status": {
+                                        "enum": ["active", "suspended", "banned"],
+                                        "title": "Status",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["status"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "grade_id": {
+                                        "format": "uuid",
+                                        "title": "Grade Id",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["grade_id"],
+                                "type": "object"
+                            }
+                        ]
+                    }
+                ],
+                "properties": {
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "grade_id": {
+                        "format": "uuid",
+                        "title": "Grade Id",
+                        "type": "string"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    },
+                    "role": {
+                        "enum": ["admin", "moderator", "member"],
+                        "title": "Role",
+                        "type": "string"
+                    },
+                    "status": {
+                        "enum": ["active", "suspended", "banned"],
+                        "title": "Status",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason"],
+                "title": "BoardMemberPatchForm",
+                "type": "object"
+            },
+            "BoardMemberPublic": {
+                "properties": {
+                    "handle": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Handle"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "user_id": {
+                        "title": "User Id",
+                        "type": "integer"
+                    }
+                },
+                "required": ["user_id", "name", "handle"],
+                "title": "BoardMemberPublic",
+                "type": "object"
+            },
+            "BoardMemberUpdateResponse": {
+                "properties": {
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "member": {
+                        "$ref": "#/components/schemas/BoardMemberDetail"
+                    }
+                },
+                "required": ["member", "board_revision"],
+                "title": "BoardMemberUpdateResponse",
                 "type": "object"
             },
             "BoardPageResponse": {
@@ -11380,6 +11747,587 @@
                     }
                 ],
                 "summary": "Join Board",
+                "tags": ["Boards"]
+            }
+        },
+        "/api/v1/boards/{board_id}/member-audit": {
+            "get": {
+                "operationId": "member_audit_api_v1_boards__board_id__member_audit_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "since",
+                        "required": true,
+                        "schema": {
+                            "format": "date-time",
+                            "title": "Since",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "until",
+                        "required": true,
+                        "schema": {
+                            "format": "date-time",
+                            "title": "Until",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1,
+                            "title": "Limit",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "cursor",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "maxLength": 2048,
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Cursor"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "target_user_id",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "exclusiveMinimum": 0,
+                                    "maximum": 2147483647,
+                                    "type": "integer"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Target User Id"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardAuditPageResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Member Audit Api V1 Boards  Board Id  Member Audit Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Member Audit Api V1 Boards  Board Id  Member Audit Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Member Audit Api V1 Boards  Board Id  Member Audit Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_CURSOR",
+                                        "message": "목록을 다시 불러와 주세요."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "보드 작업을 완료하지 못했습니다."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Member Audit",
+                "tags": ["Boards"]
+            }
+        },
+        "/api/v1/boards/{board_id}/members": {
+            "get": {
+                "operationId": "members_api_v1_boards__board_id__members_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1,
+                            "title": "Limit",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "cursor",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "maxLength": 2048,
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Cursor"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "required": false,
+                        "schema": {
+                            "default": "",
+                            "maxLength": 200,
+                            "title": "Q",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "role",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": ["owner", "admin", "moderator", "member"],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Role"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": ["active", "pending", "suspended", "banned"],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Status"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardMemberListResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Members Api V1 Boards  Board Id  Members Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Members Api V1 Boards  Board Id  Members Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Members Api V1 Boards  Board Id  Members Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_CURSOR",
+                                        "message": "목록을 다시 불러와 주세요."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "보드 작업을 완료하지 못했습니다."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Members",
+                "tags": ["Boards"]
+            }
+        },
+        "/api/v1/boards/{board_id}/members/{user_id}": {
+            "patch": {
+                "operationId": "update_member_api_v1_boards__board_id__members__user_id__patch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "user_id",
+                        "required": true,
+                        "schema": {
+                            "title": "User Id",
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BoardMemberPatchForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardMemberUpdateResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Update Member Api V1 Boards  Board Id  Members  User Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Update Member Api V1 Boards  Board Id  Members  User Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Update Member Api V1 Boards  Board Id  Members  User Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "최신 보드 정보를 다시 불러와 주세요."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_GRADE",
+                                        "message": "같은 보드의 회원 등급을 선택해 주세요."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "보드 작업을 완료하지 못했습니다."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Update Member",
                 "tags": ["Boards"]
             }
         },

@@ -783,3 +783,6 @@ DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/mode
 
 
 Board 공개 가입/탈퇴는 `BoardMembershipService`가 BoardPermissionService·BoardRepository를 주입받아 처리한다. 현재 역할/등급/상태와 Board 경계를 검사하고 앱 전역 역할을 Board 권한으로 취급하지 않는다. 가입·탈퇴·감사 기록은 models/board.py의 Board 행 잠금 아래 같은 트랜잭션에 저장한다. Owner 탈퇴와 제재 상태 우회는 거부한다. 이번 범위는 API/계약이며 가입·탈퇴 UI는 제공하지 않는다.
+
+
+Board 회원 목록·역할/등급·제재 변경·감사 API는 [회원 운영 계약](../../notes/community/member-administration.md)을 따른다. 기존 BoardMembershipService/BoardPermissionService와 models/board.py 안의 Repository를 재사용하며, 서비스에서 세션·SQL·ORM 저장 필드 변경을 수행하지 않는다. 0025 migration은 회원/감사 keyset 조회용 복합 인덱스만 추가한다. UI·등급 정의 편집·초대·위임은 후속이다.

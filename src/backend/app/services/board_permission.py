@@ -3,7 +3,14 @@
 from uuid import UUID
 
 from app.core.error.board_exception import BoardErrorCode, BoardException
-from app.models.board import Board, BoardMember, BoardMemberGrade, BoardPolicy, ShelfPolicy
+from app.models.board import (
+    Board,
+    BoardMember,
+    BoardMemberGrade,
+    BoardMemberPatchForm,
+    BoardPolicy,
+    ShelfPolicy,
+)
 
 STAFF = {"owner", "admin", "moderator"}
 
@@ -50,3 +57,43 @@ class BoardPermissionService:
             and minimum.board_id == board.id
             and own.rank >= minimum.rank
         )
+
+    def member_scope(self, board: Board, actor: BoardMember | None, *, audit: bool = False) -> str:
+        self.check_read(board, actor)
+        if actor is None or actor.status != "active":
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+        if actor.role in {"owner", "admin"}:
+            return "management"
+        if actor.role == "moderator" and not audit:
+            return "moderation"
+        raise BoardException(BoardErrorCode.FORBIDDEN)
+
+    def check_member_change(
+        self, board: Board, actor: BoardMember, target: BoardMember, form: BoardMemberPatchForm
+    ) -> None:
+        self.member_scope(board, actor)
+        if board.status != "active":
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+        if (
+            target.board_id != board.id
+            or actor.user_id == target.user_id
+            or target.role == "owner"
+            or board.owner_id == target.user_id
+            or target.status == "pending"
+        ):
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+        fields = form.model_fields_set & {"role", "status", "grade_id"}
+        if actor.role == "admin" and (
+            target.role not in {"member", "moderator"} or form.role == "admin"
+        ):
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+        if actor.role == "moderator" and (
+            target.role != "member"
+            or target.status != "active"
+            or fields != {"status"}
+            or form.status not in {"suspended", "banned"}
+        ):
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+        final_status = form.status if "status" in fields else target.status
+        if "role" in fields and form.role != "member" and final_status != "active":
+            raise BoardException(BoardErrorCode.INVALID_MEMBER_CHANGE)
