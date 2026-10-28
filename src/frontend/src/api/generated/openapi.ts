@@ -812,7 +812,8 @@ export interface paths {
         delete: operations["delete_empty_board_api_v1_boards__board_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Board */
+        patch: operations["update_board_api_v1_boards__board_id__patch"];
         trace?: never;
     };
     "/api/v1/boards/{board_id}/grades": {
@@ -2113,6 +2114,7 @@ export interface components {
                 | "BOARD_SLUG_TAKEN"
                 | "BOARD_LIMIT_REACHED"
                 | "BOARD_INVALID_INTEREST"
+                | "BOARD_INVALID_SETTINGS"
                 | "BOARD_INVALID_CURSOR"
                 | "BOARD_REVISION_CONFLICT"
                 | "BOARD_DELETE_CONFIRMATION"
@@ -2258,6 +2260,7 @@ export interface components {
             actor_user_id: number | null;
             after?: components["schemas"]["BoardAuditState"] | null;
             before?: components["schemas"]["BoardAuditState"] | null;
+            board_change?: components["schemas"]["BoardSettingsAuditChange"] | null;
             /**
              * Created At
              * Format: date-time
@@ -2399,6 +2402,105 @@ export interface components {
             /** Next Cursor */
             next_cursor?: string | null;
         };
+        /** BoardSettingsAuditChange */
+        BoardSettingsAuditChange: {
+            after: components["schemas"]["BoardSettingsState"];
+            before: components["schemas"]["BoardSettingsState"];
+        };
+        /** BoardSettingsPatchForm */
+        BoardSettingsPatchForm: {
+            /** Description */
+            description?: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Interest Ids */
+            interest_ids?: string[];
+            /**
+             * Join Policy
+             * @enum {string}
+             */
+            join_policy?: "open" | "invite";
+            /** Name */
+            name?: string;
+            /** Reason */
+            reason: string;
+            /** Rules */
+            rules?: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status?: "active" | "archived";
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility?: "public" | "private";
+        } & (
+            | {
+                  /** Name */
+                  name: string;
+              }
+            | {
+                  /** Description */
+                  description: string;
+              }
+            | {
+                  /** Rules */
+                  rules: string;
+              }
+            | {
+                  /** Interest Ids */
+                  interest_ids: string[];
+              }
+            | {
+                  /**
+                   * Visibility
+                   * @enum {string}
+                   */
+                  visibility: "public" | "private";
+              }
+            | {
+                  /**
+                   * Join Policy
+                   * @enum {string}
+                   */
+                  join_policy: "open" | "invite";
+              }
+            | {
+                  /**
+                   * Status
+                   * @enum {string}
+                   */
+                  status: "active" | "archived";
+              }
+        );
+        /** BoardSettingsState */
+        BoardSettingsState: {
+            /** Description */
+            description: string;
+            /** Interest Ids */
+            interest_ids: string[];
+            /**
+             * Join Policy
+             * @enum {string}
+             */
+            join_policy: "open" | "invite";
+            /** Name */
+            name: string;
+            /** Rules */
+            rules: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "archived" | "suspended";
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "public" | "private";
+        };
         /** BoardSummary */
         BoardSummary: {
             /**
@@ -2438,6 +2540,14 @@ export interface components {
              * @enum {string}
              */
             visibility: "public" | "private";
+        };
+        /** BoardUpdateResponse */
+        BoardUpdateResponse: {
+            board: components["schemas"]["BoardSummary"];
+            /** Board Revision */
+            board_revision: number;
+            /** Rules */
+            rules: string;
         };
         /** Body_oauth_token_login_api_v1_auth_token_post */
         Body_oauth_token_login_api_v1_auth_token_post: {
@@ -9190,6 +9300,126 @@ export interface operations {
                      *       "detail": {
                      *         "error": "BOARD_DELETE_CONFIRMATION",
                      *         "message": "Enter the exact board slug to confirm deletion."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    update_board_api_v1_boards__board_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardSettingsPatchForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardUpdateResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_INTEREST",
+                     *         "message": "Select active official interests."
                      *       }
                      *     }
                      */

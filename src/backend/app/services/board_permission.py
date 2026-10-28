@@ -4,11 +4,13 @@ from uuid import UUID
 
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
+    BOARD_SETTING_FIELDS,
     Board,
     BoardMember,
     BoardMemberGrade,
     BoardMemberPatchForm,
     BoardPolicy,
+    BoardSettingsPatchForm,
     ShelfPolicy,
 )
 
@@ -39,8 +41,10 @@ class BoardPermissionService:
             return False
         if policy.board_id != board.id or (member is not None and member.board_id != board.id):
             return False
-        if policy.audience == "public" and action == "read_canvas" and board.visibility == "public":
-            return True
+        if policy.audience == "public" and action == "read_canvas":
+            return board.visibility == "public" or (
+                member is not None and member.status == "active"
+            )
         if member is None or member.status != "active":
             return False
         staff = member.role in STAFF
@@ -76,6 +80,20 @@ class BoardPermissionService:
     def check_invite(self, board: Board, actor: BoardMember | None) -> None:
         self.member_scope(board, actor, audit=True)
         if board.status != "active" or board.join_policy != "invite":
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+
+    def check_settings_change(
+        self, board: Board, actor: BoardMember | None, form: BoardSettingsPatchForm
+    ) -> None:
+        self.member_scope(board, actor, audit=True)
+        fields = form.model_fields_set & set(BOARD_SETTING_FIELDS)
+        owner = actor is not None and actor.role == "owner" and actor.user_id == board.owner_id
+        if fields & {"visibility", "status"} and not owner:
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+        if board.status == "archived" and not (
+            owner
+            and (form.status == "active" or (fields == {"status"} and form.status == "archived"))
+        ):
             raise BoardException(BoardErrorCode.FORBIDDEN)
 
     def check_member_change(

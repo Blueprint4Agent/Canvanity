@@ -19,7 +19,9 @@ from app.models.board import (
     BoardHomeResponse,
     BoardPageResponse,
     BoardRepository,
+    BoardSettingsPatchForm,
     BoardSummary,
+    BoardUpdateResponse,
     GradeSummary,
     MembershipSummary,
     ShelfSummary,
@@ -50,6 +52,36 @@ class BoardService:
             board = await tx.create_board(user_id, form)
             await tx.initialize(board, user_id, [by_slug[key].id for key in form.interest_ids])
             result = self._summary(board, form.interest_ids)
+        return result
+
+    async def update(
+        self, user_id: int, board_id: UUID, form: BoardSettingsPatchForm
+    ) -> BoardUpdateResponse:
+        async with self.repository.transaction() as tx:
+            board = await tx.locked_board(board_id)
+            if board is None:
+                raise BoardException(BoardErrorCode.NOT_FOUND)
+            actor = await tx.member(board_id, user_id)
+            self.permissions.check_settings_change(board, actor, form)
+            if board.revision != form.expected_revision:
+                raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
+            visibility = form.visibility or board.visibility
+            join_policy = form.join_policy or board.join_policy
+            if visibility == "private" and (
+                join_policy != "invite"
+                or (board.visibility == "public" and form.join_policy != "invite")
+            ):
+                raise BoardException(BoardErrorCode.INVALID_SETTINGS)
+            interests = None
+            if form.interest_ids is not None:
+                by_slug = await tx.active_interests(form.interest_ids)
+                if len(by_slug) != len(form.interest_ids):
+                    raise BoardException(BoardErrorCode.INVALID_INTEREST)
+                interests = [by_slug[slug] for slug in form.interest_ids]
+            slugs = await tx.update_settings(board, user_id, form, interests)
+            result = BoardUpdateResponse(
+                board=self._summary(board, slugs), rules=board.rules, board_revision=board.revision
+            )
         return result
 
     @staticmethod

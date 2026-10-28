@@ -1762,6 +1762,7 @@
                             "BOARD_SLUG_TAKEN",
                             "BOARD_LIMIT_REACHED",
                             "BOARD_INVALID_INTEREST",
+                            "BOARD_INVALID_SETTINGS",
                             "BOARD_INVALID_CURSOR",
                             "BOARD_REVISION_CONFLICT",
                             "BOARD_DELETE_CONFIRMATION",
@@ -2119,6 +2120,16 @@
                             }
                         ]
                     },
+                    "board_change": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardSettingsAuditChange"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
                     "created_at": {
                         "format": "date-time",
                         "title": "Created At",
@@ -2434,6 +2445,213 @@
                 "title": "BoardPageResponse",
                 "type": "object"
             },
+            "BoardSettingsAuditChange": {
+                "properties": {
+                    "after": {
+                        "$ref": "#/components/schemas/BoardSettingsState"
+                    },
+                    "before": {
+                        "$ref": "#/components/schemas/BoardSettingsState"
+                    }
+                },
+                "required": ["before", "after"],
+                "title": "BoardSettingsAuditChange",
+                "type": "object"
+            },
+            "BoardSettingsPatchForm": {
+                "additionalProperties": false,
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {
+                                "properties": {
+                                    "name": {
+                                        "maxLength": 80,
+                                        "minLength": 1,
+                                        "title": "Name",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["name"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "description": {
+                                        "maxLength": 2000,
+                                        "title": "Description",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["description"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "rules": {
+                                        "maxLength": 10000,
+                                        "title": "Rules",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["rules"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "interest_ids": {
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "maxItems": 3,
+                                        "title": "Interest Ids",
+                                        "type": "array"
+                                    }
+                                },
+                                "required": ["interest_ids"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "visibility": {
+                                        "enum": ["public", "private"],
+                                        "title": "Visibility",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["visibility"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "join_policy": {
+                                        "enum": ["open", "invite"],
+                                        "title": "Join Policy",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["join_policy"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "status": {
+                                        "enum": ["active", "archived"],
+                                        "title": "Status",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["status"],
+                                "type": "object"
+                            }
+                        ]
+                    }
+                ],
+                "properties": {
+                    "description": {
+                        "maxLength": 2000,
+                        "title": "Description",
+                        "type": "string"
+                    },
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "interest_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "maxItems": 3,
+                        "title": "Interest Ids",
+                        "type": "array"
+                    },
+                    "join_policy": {
+                        "enum": ["open", "invite"],
+                        "title": "Join Policy",
+                        "type": "string"
+                    },
+                    "name": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    },
+                    "rules": {
+                        "maxLength": 10000,
+                        "title": "Rules",
+                        "type": "string"
+                    },
+                    "status": {
+                        "enum": ["active", "archived"],
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "visibility": {
+                        "enum": ["public", "private"],
+                        "title": "Visibility",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason"],
+                "title": "BoardSettingsPatchForm",
+                "type": "object"
+            },
+            "BoardSettingsState": {
+                "properties": {
+                    "description": {
+                        "title": "Description",
+                        "type": "string"
+                    },
+                    "interest_ids": {
+                        "items": {
+                            "type": "string"
+                        },
+                        "title": "Interest Ids",
+                        "type": "array"
+                    },
+                    "join_policy": {
+                        "enum": ["open", "invite"],
+                        "title": "Join Policy",
+                        "type": "string"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "rules": {
+                        "title": "Rules",
+                        "type": "string"
+                    },
+                    "status": {
+                        "enum": ["active", "archived", "suspended"],
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "visibility": {
+                        "enum": ["public", "private"],
+                        "title": "Visibility",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "rules",
+                    "interest_ids",
+                    "visibility",
+                    "join_policy",
+                    "status"
+                ],
+                "title": "BoardSettingsState",
+                "type": "object"
+            },
             "BoardSummary": {
                 "properties": {
                     "created_at": {
@@ -2503,6 +2721,24 @@
                     "created_at"
                 ],
                 "title": "BoardSummary",
+                "type": "object"
+            },
+            "BoardUpdateResponse": {
+                "properties": {
+                    "board": {
+                        "$ref": "#/components/schemas/BoardSummary"
+                    },
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "rules": {
+                        "title": "Rules",
+                        "type": "string"
+                    }
+                },
+                "required": ["board", "rules", "board_revision"],
+                "title": "BoardUpdateResponse",
                 "type": "object"
             },
             "Body_oauth_token_login_api_v1_auth_token_post": {
@@ -11757,6 +11993,165 @@
                     {}
                 ],
                 "summary": "Board Home",
+                "tags": ["Boards"]
+            },
+            "patch": {
+                "operationId": "update_board_api_v1_boards__board_id__patch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BoardSettingsPatchForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardUpdateResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Update Board Api V1 Boards  Board Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Update Board Api V1 Boards  Board Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Update Board Api V1 Boards  Board Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "Board revision conflict. Reload the latest board information."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_INTEREST",
+                                        "message": "Select active official interests."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Update Board",
                 "tags": ["Boards"]
             }
         },

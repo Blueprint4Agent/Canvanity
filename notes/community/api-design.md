@@ -42,7 +42,7 @@
 | GET     | /boards/by-slug/{slug}               | UUID 상세와 같은 응답/권한. 정적 경로를 /{board_id}보다 먼저 등록                                                      |
 | POST    | /boards                              | name/slug/description/rules/interest_ids/visibility/join_policy. 로그인 사용자                                         |
 | GET     | /boards/{board_id}                   | 공개 정보 + 본인 membership/capabilities + revision. 타인 이메일 제외                                                  |
-| PATCH   | /boards/{board_id}                   | expected_revision + 이름/소개/규칙/관심사/visibility/join_policy/status. Owner/Admin, status archived는 Owner만        |
+| PATCH   | /boards/{board_id}                   | expected_revision/reason + 이름/소개/규칙/관심사/공개·가입 정책/상태. Owner/Admin, visibility/status 제공은 Owner만. 200 board/rules/board_revision |
 | GET     | /boards/{board_id}/home              | 기본 Board·허용 Shelf·공개 snapshot 목록·layout/capabilities. 동적 위젯도 현재 방문자 기준                             |
 | POST    | /boards/{board_id}/join              | public/open만. 활성 가입은 같은 결과 200. 탈퇴/제재 상태를 임의 초기화하지 않음                                        |
 | GET     | /boards/{board_id}/membership        | 본인 role/status/grade/board_revision/capabilities                                                                     |
@@ -59,6 +59,8 @@
 | GET     | /boards/{board_id}/member-audit      | Owner/Admin, cursor·기간(최대 180일). 개인정보 최소 필드                                                               |
 
 MVP public→private 전환은 기존 open 멤버가 유지되며 join_policy=invite를 같은 요청에 요구한다. private→public은 공개 snapshot·파일 노출 범위가 넓어짐을 UI에서 명시하고 Owner만 허용한다. Admin은 visibility 변경 불가다. Board archived→active는 Owner가 명시적으로 복원한다. suspended 설정/해제는 이 일반 API에서 거부한다.
+
+현재 PATCH의 길이·권한·보관/복원·관심사·감사는 [Board 기본 설정](board-settings.md)을 따른다. public 정책도 private Board에서는 active 멤버만 허용하며 members 정책은 공개 전환으로 자동 개방하지 않는다. UI의 전환 안내·소유권 위임·영구 삭제/파일 정리는 후속이다.
 
 ```json
 {

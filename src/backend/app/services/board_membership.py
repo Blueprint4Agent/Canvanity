@@ -27,6 +27,7 @@ from app.models.board import (
     BoardMembersQuery,
     BoardMemberUpdateResponse,
     BoardRepository,
+    BoardSettingsAuditChange,
     MembershipSummary,
 )
 from app.services.board_permission import BoardPermissionService
@@ -251,19 +252,21 @@ class BoardMembershipService:
         def state(value):
             return BoardAuditState.model_validate(value) if isinstance(value, dict) else None
 
+        board_change = row.action == "board_updated"
         return BoardMemberAuditResponse(
             id=row.id,
             actor_user_id=row.actor_user_id,
             target_user_id=row.target_user_id,
             action=row.action,
-            before=state(before),
-            after=state(after),
+            before=state(before) if not board_change else None,
+            after=state(after) if not board_change else None,
             reason=changes.get("reason"),
             grade_change=(
                 BoardGradeAuditChange.model_validate(changes)
                 if row.action in GRADE_AUDIT_ACTIONS
                 else None
             ),
+            board_change=BoardSettingsAuditChange.model_validate(changes) if board_change else None,
             created_at=cls._utc(row.created_at),
         )
 
