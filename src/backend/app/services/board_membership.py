@@ -20,6 +20,7 @@ from app.models.board import (
     BoardMemberAuditResponse,
     BoardMemberData,
     BoardMemberDetail,
+    BoardMemberInviteForm,
     BoardMemberListResponse,
     BoardMemberPatchForm,
     BoardMemberPublic,
@@ -84,6 +85,34 @@ class BoardMembershipService:
             if board.owner_id == user_id or member.role == "owner":
                 raise BoardException(BoardErrorCode.OWNER_CANNOT_LEAVE)
             await tx.leave_member(board, member)
+
+    async def invite(
+        self, user_id: int, board_id: UUID, form: BoardMemberInviteForm
+    ) -> BoardMemberUpdateResponse:
+        async with self.repository.transaction() as tx:
+            board = await tx.locked_board(board_id)
+            if board is None:
+                raise BoardException(BoardErrorCode.NOT_FOUND)
+            actor = await tx.member(board_id, user_id)
+            self.permissions.check_invite(board, actor)
+            if board.revision != form.expected_revision:
+                raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
+            if not await tx.invitable_user(form.user_id):
+                raise BoardException(BoardErrorCode.INVITEE_NOT_FOUND)
+            existing = await tx.member_details(board_id, form.user_id)
+            if existing is not None:
+                if existing.member.status != "active":
+                    raise BoardException(BoardErrorCode.INVITATION_CONFLICT)
+                result = existing
+            else:
+                grade = await tx.default_grade(board_id)
+                if grade is None:
+                    raise BoardException(BoardErrorCode.UNAVAILABLE)
+                result = await tx.invite_member(board, user_id, form.user_id, grade.id, form.reason)
+            response = BoardMemberUpdateResponse(
+                member=self._detail(result), board_revision=board.revision
+            )
+        return response
 
     @staticmethod
     def _utc(value: datetime) -> datetime:

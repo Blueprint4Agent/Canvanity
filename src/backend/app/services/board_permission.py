@@ -73,6 +73,11 @@ class BoardPermissionService:
         if board.status != "active":
             raise BoardException(BoardErrorCode.FORBIDDEN)
 
+    def check_invite(self, board: Board, actor: BoardMember | None) -> None:
+        self.member_scope(board, actor, audit=True)
+        if board.status != "active" or board.join_policy != "invite":
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+
     def check_member_change(
         self, board: Board, actor: BoardMember, target: BoardMember, form: BoardMemberPatchForm
     ) -> None:
