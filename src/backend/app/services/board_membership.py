@@ -11,10 +11,12 @@ from fastapi import Depends
 
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
+    GRADE_AUDIT_ACTIONS,
     MAX_BOARD_USER_ID,
     BoardAuditPageResponse,
     BoardAuditQuery,
     BoardAuditState,
+    BoardGradeAuditChange,
     BoardMemberAuditResponse,
     BoardMemberData,
     BoardMemberDetail,
@@ -228,6 +230,11 @@ class BoardMembershipService:
             before=state(before),
             after=state(after),
             reason=changes.get("reason"),
+            grade_change=(
+                BoardGradeAuditChange.model_validate(changes)
+                if row.action in GRADE_AUDIT_ACTIONS
+                else None
+            ),
             created_at=cls._utc(row.created_at),
         )
 

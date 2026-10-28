@@ -137,6 +137,10 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("GET", "/api/v1/boards/{board_id}/members"),
         ("PATCH", "/api/v1/boards/{board_id}/members/{user_id}"),
         ("GET", "/api/v1/boards/{board_id}/member-audit"),
+        ("POST", "/api/v1/boards/{board_id}/grades"),
+        ("PATCH", "/api/v1/boards/{board_id}/grades/order"),
+        ("PATCH", "/api/v1/boards/{board_id}/grades/{grade_id}"),
+        ("DELETE", "/api/v1/boards/{board_id}/grades/{grade_id}"),
     }
     assert actual == expected
 
@@ -261,6 +265,23 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
     created = client.post("/api/v1/boards", json=payload, headers=bearer)
     assert created.status_code == 201
     path = f"/api/v1/boards/{created.json()['id']}"
+    grade_ids = [g["id"] for g in client.get(path + "/grades", headers=bearer).json()["items"]]
+    assert client.get(path + "/grades", headers=key).status_code == 404
+    for method, suffix, changes in [
+        ("POST", "", {"name": "새 등급", "rank": 30}),
+        ("PATCH", "/order", {"grade_ids": grade_ids}),
+        ("PATCH", f"/{grade_ids[0]}", {"name": "변경"}),
+        ("DELETE", f"/{grade_ids[0]}", {"replacement_grade_id": grade_ids[1]}),
+    ]:
+        assert (
+            client.request(
+                method,
+                path + "/grades" + suffix,
+                headers=key,
+                json={"expected_revision": 0, "reason": "키 거부", **changes},
+            ).status_code
+            == 401
+        )
     assert client.get(path + "/members", headers=key).status_code == 401
     assert (
         client.patch(

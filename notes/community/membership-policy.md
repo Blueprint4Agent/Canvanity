@@ -127,3 +127,7 @@ members PATCH는 role/status/grade_id를 한 번에 받을 수 있으나 **제�
 ## 회원 운영 구현 경계 — #31
 
 회원 목록·역할/수동 등급·제재 변경과 Owner/Admin 감사 조회는 [member-administration.md](member-administration.md)에 구현 계약을 정리했다. 본인/Owner·pending 대상의 일반 PATCH는 거부하며 role=owner/status=pending은 422다. Moderator는 active 일반 Member의 suspended/banned 변경만 허용한다. 모든 필드는 현재 권한으로 검사하고 하나라도 금지이면 전체 롤백한다. 등급 정의(이름·순서·기본값) 편집은 #32이고 Canvas/댓글/에셋에 대한 위 설계 행렬의 확장 적용은 해당 도메인의 후속 구현이다.
+
+## 등급 정의 설정 — #32
+
+[등급 설정 계약](grade-management.md)은 현재 active Owner/Admin에게 이름·순서·기본값 편집과 삭제/대체를 제공한다. 기본값은 이후 가입자에게만 적용하며 기존 회원의 grade_id는 유지한다. 순서를 바꾸면 현재 정책의 최소 rank 비교에 즉시 반영된다. 삭제만 회원/정책의 참조를 같은 Board 대체 등급으로 원자적으로 이동한다. 기본 등급은 정확히 하나, 전체는 1~20개로 유지하고 역할/제재 상태는 변경하지 않는다. 기본값 전환과 재배치는 즉시 유니크 제약을 지키며 감사/revision과 함께 롤백된다. UI의 영향 안내/미리보기는 별도 후속이다.
