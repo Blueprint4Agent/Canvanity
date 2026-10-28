@@ -972,6 +972,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/ownership-transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transfer Board Ownership */
+        post: operations["transfer_board_ownership_api_v1_boards__board_id__ownership_transfer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/stream": {
         parameters: {
             query?: never;
@@ -2123,6 +2140,7 @@ export interface components {
                 | "BOARD_MEMBER_NOT_FOUND"
                 | "BOARD_INVITEE_NOT_FOUND"
                 | "BOARD_INVITATION_CONFLICT"
+                | "BOARD_INVALID_OWNERSHIP_TARGET"
                 | "BOARD_INVALID_GRADE"
                 | "BOARD_GRADE_NOT_FOUND"
                 | "BOARD_GRADE_NAME_TAKEN"
@@ -2272,6 +2290,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            ownership_change?: components["schemas"]["BoardOwnershipAuditChange"] | null;
             /** Reason */
             reason?: string | null;
             /** Target User Id */
@@ -2394,6 +2413,61 @@ export interface components {
             /** Board Revision */
             board_revision: number;
             member: components["schemas"]["BoardMemberDetail"];
+        };
+        /** BoardOwnershipAuditChange */
+        BoardOwnershipAuditChange: {
+            after: components["schemas"]["BoardOwnershipState"];
+            before: components["schemas"]["BoardOwnershipState"];
+        };
+        /** BoardOwnershipMemberState */
+        BoardOwnershipMemberState: {
+            /**
+             * Grade Id
+             * Format: uuid
+             */
+            grade_id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "owner" | "admin" | "moderator" | "member";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "pending" | "suspended" | "banned";
+            /** User Id */
+            user_id: number;
+        };
+        /** BoardOwnershipState */
+        BoardOwnershipState: {
+            /** Members */
+            members: components["schemas"]["BoardOwnershipMemberState"][];
+            /** Owner Id */
+            owner_id: number;
+        };
+        /** BoardOwnershipTransferForm */
+        BoardOwnershipTransferForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+            /** Target User Id */
+            target_user_id: number;
+        };
+        /** BoardOwnershipTransferResponse */
+        BoardOwnershipTransferResponse: {
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            /** Board Revision */
+            board_revision: number;
+            /** Owner Id */
+            owner_id: number;
+            /** Previous Owner Id */
+            previous_owner_id: number;
         };
         /** BoardPageResponse */
         BoardPageResponse: {
@@ -10710,6 +10784,126 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    transfer_board_ownership_api_v1_boards__board_id__ownership_transfer_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardOwnershipTransferForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardOwnershipTransferResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_OWNERSHIP_TARGET",
+                     *         "message": "Select another active member of this board with an active account."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
                 };
             };
             /** @description Unexpected server error */

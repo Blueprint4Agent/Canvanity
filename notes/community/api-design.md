@@ -77,6 +77,8 @@ interest_ids 값은 설명용이며 실제 GET /interests의 활성 id만 수락
 
 Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/target_user_id/reason을 받는다. 기존 Owner→Admin, 대상 active 멤버→Owner, owner_id 변경과 감사를 원자적으로 처리한다. generic member PATCH의 role=owner는 422다. `DELETE /boards/{board_id}`는 Owner만 archived 상태에서 `{expected_revision,confirm_slug}`로 요청한다. 게시글 등 하위 DB 데이터 삭제와 파일 정리 outbox를 원자적으로 기록하고 204를 반환한다. sole Owner도 보관→명시적 영구 삭제로 계정 삭제 전제조건을 해소할 수 있다. 계정 삭제 소유 검사는 이 종료 경로와 함께 출시한다.
 
+현재 구현은 [소유권·종료 계약](board-lifecycle.md)을 따른다. 위임은 같은 Board의 다른 active 회원/활성 계정을 대상으로 하고 응답은 board_id/previous_owner_id/owner_id/board_revision이다. 삭제는 archived 전체 현재 데이터 정리와 기존 active 빈 Board 되돌리기를 지원한다. 현재 Board에는 파일 참조가 없어 파일 I/O/outbox는 없으며 User 프로필 파일을 보존한다. 위 문단의 Canvas/에셋/outbox는 #6/#8 연결 전 구현할 후속 범위다.
+
 ## Shelf — #23
 
 | Method   | Path                             | 계약                                                                                                                          |

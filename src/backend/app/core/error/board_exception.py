@@ -52,7 +52,7 @@ class BoardErrorCode(Enum):
     )
     NOT_EMPTY = ServiceErrorCode(
         "BOARD_NOT_EMPTY",
-        "Remove other members and content before deleting the board.",
+        "Archive the board before deleting a community with other members or content.",
         status.HTTP_409_CONFLICT,
     )
 
@@ -72,6 +72,11 @@ class BoardErrorCode(Enum):
         "BOARD_INVITATION_CONFLICT",
         "Use member management to update an existing inactive membership.",
         status.HTTP_409_CONFLICT,
+    )
+    INVALID_OWNERSHIP_TARGET = ServiceErrorCode(
+        "BOARD_INVALID_OWNERSHIP_TARGET",
+        "Select another active member of this board with an active account.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
     INVALID_GRADE = ServiceErrorCode(
         "BOARD_INVALID_GRADE",
