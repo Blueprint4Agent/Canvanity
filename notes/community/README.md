@@ -7,6 +7,7 @@
 | [도메인과 데이터](domain-model.md)       | ERD·필드·제약·트랜잭션·게시 상태·마이그레이션   |
 | [멤버십과 권한](membership-policy.md)    | 역할·등급·상태·Shelf 정책·허용/거부 행렬        |
 | [API 명세](api-design.md)                | 요청/응답·권한·동시성·목록·오류·화면 경로       |
+| [등급 설정 API](grade-management.md)     | 이름·순서·기본값·삭제 대체·감사·예외 기본 메시지 |
 | [개발과 검증](development-validation.md) | 현행 환경 감사·독립 fixture·실행·정리·검증 결과 |
 | [편집 엔진 검토](editor-decision.md)     | 후보·선정 근거·문서 어댑터·브라우저 실험과 한계 |
 
@@ -18,7 +19,7 @@ Board 홈의 UI Canvas는 `widgets`, 게시글 Content Canvas는 `nodes/edges`�
 
 회원에게는 운영 역할과 활동 등급을 별도로 부여한다. 뉴커머 등급이라고 운영 역할이 생기지 않고, Moderator라고 타인의 비공개 초안을 읽지 않는다. 회원 등급·수동 승급·등급별 읽기/글쓰기/댓글 정책은 기본 구현 범위다.
 
-이 디렉터리의 전체 명세는 **단계별 구현의 기준**이다. 현재 제공하는 개설·조회·빈 보드 삭제 API와 화면은 [사용자 Board 개설 흐름](board-creation.md)을 따른다. 나머지 관리/콘텐츠 API는 아직 제공하지 않는다. 미구현 경로를 배포 OpenAPI에 선행 노출하지 않는다. 실제 구현과 같은 변경에서 양쪽 OpenAPI와 생성 타입을 갱신한다. 검증용 DDL/편집기는 제품 마이그레이션·편집기로 사용하지 않는다.
+이 디렉터리의 전체 명세는 **단계별 구현의 기준**이다. 개설·조회·빈 보드 삭제 API와 화면은 [사용자 Board 개설 흐름](board-creation.md), 회원 운영과 등급 설정 API는 각 구현 계약을 따른다. 구현·검증·main 병합·배포는 이슈/PR 상태로 구분한다. 미구현 콘텐츠 경로를 배포 OpenAPI에 선행 노출하지 않는다. 실제 구현과 같은 변경에서 양쪽 OpenAPI와 생성 타입을 갱신한다. 검증용 DDL/편집기는 제품 마이그레이션·편집기로 사용하지 않는다.
 
 ## 구현 순서와 완료 경계
 
@@ -36,7 +37,7 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 
 ## 구현 진행 추적
 
-현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. 현재 작업은 [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)이며 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
+현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)는 PR #30으로 main에 반영했다. 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
 
 
-현재 회원 운영 API는 [#31](https://github.com/Blueprint4Agent/Canvanity/issues/31)과 [구현 계약](member-administration.md)에서 추적한다. 회원 목록·수동 역할/등급·제재·감사 조회가 대상이며 UI는 제외한다. 다음은 [#32 등급 정의 관리](https://github.com/Blueprint4Agent/Canvanity/issues/32)다.
+회원 운영 API는 [#31](https://github.com/Blueprint4Agent/Canvanity/issues/31)과 [구현 계약](member-administration.md)에서 추적하며 선행 초안 PR #33에 있다. 현재 [#32 등급 정의 관리](https://github.com/Blueprint4Agent/Canvanity/issues/32)와 [구현 계약](grade-management.md)을 별도 브랜치에서 진행한다. UI는 제외한다.

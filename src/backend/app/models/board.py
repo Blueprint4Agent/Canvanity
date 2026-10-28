@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -29,6 +29,7 @@ from sqlalchemy import (
     or_,
     select,
     text,
+    update,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -41,6 +42,11 @@ from app.models.interest import Interest
 from app.models.user import User
 
 MAX_BOARD_USER_ID = 2**31 - 1
+MAX_BOARD_GRADES = 20
+MAX_GRADE_RANK = 2**31 - 1
+GRADE_AUDIT_ACTIONS = frozenset(
+    {"grade_created", "grade_updated", "grades_reordered", "grade_deleted"}
+)
 
 DocumentJSON = JSON().with_variant(JSONB(), "postgresql")
 BoardVisibility = Literal["public", "private"]
@@ -359,9 +365,8 @@ class BoardHomeResponse(BaseModel):
     layout_revision: int
 
 
-def _member_patch_schema(schema: dict) -> None:
+def _patch_schema(schema: dict, changes: tuple[str, ...]) -> None:
     # Omission preserves a field; explicit null is invalid in the request contract.
-    changes = ("role", "status", "grade_id")
     for field in changes:
         schema["properties"][field].pop("default", None)
     schema["allOf"] = [
@@ -376,6 +381,72 @@ def _member_patch_schema(schema: dict) -> None:
             ]
         }
     ]
+
+
+def _member_patch_schema(schema: dict) -> None:
+    _patch_schema(schema, ("role", "status", "grade_id"))
+
+
+def _grade_patch_schema(schema: dict) -> None:
+    _patch_schema(schema, ("name", "is_default"))
+
+
+class BoardGradeChangeForm(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class BoardGradeCreateForm(BoardGradeChangeForm):
+    name: str = Field(min_length=1, max_length=30)
+    rank: int = Field(ge=0, le=MAX_GRADE_RANK, strict=True)
+
+
+class BoardGradePatchForm(BoardGradeChangeForm):
+    model_config = ConfigDict(json_schema_extra=_grade_patch_schema)
+    name: Annotated[str, Field(min_length=1, max_length=30)] | SkipJsonSchema[None] = None
+    is_default: Literal[True] | SkipJsonSchema[None] = None
+
+    @model_validator(mode="after")
+    def validate_changes(self):
+        fields = self.model_fields_set & {"name", "is_default"}
+        if not fields or any(getattr(self, field) is None for field in fields):
+            raise ValueError("Provide a name or select this grade as the default.")
+        return self
+
+
+class BoardGradeOrderForm(BoardGradeChangeForm):
+    grade_ids: list[UUID] = Field(min_length=1, max_length=MAX_BOARD_GRADES)
+
+    @field_validator("grade_ids")
+    @classmethod
+    def unique_grades(cls, value: list[UUID]) -> list[UUID]:
+        if len(set(value)) != len(value):
+            raise ValueError("Grade IDs must be unique.")
+        return value
+
+
+class BoardGradeDeleteForm(BoardGradeChangeForm):
+    replacement_grade_id: UUID
+
+
+class BoardGradesResponse(BaseModel):
+    items: list[GradeSummary]
+    board_revision: int
+
+
+class BoardGradeResponse(BaseModel):
+    grade: GradeSummary
+    board_revision: int
+
+
+class BoardGradeAuditChange(BaseModel):
+    before: list[GradeSummary]
+    after: list[GradeSummary]
+    replacement_grade_id: UUID | None = None
+    reassigned_members: int = 0
+    reassigned_board_policies: int = 0
+    reassigned_shelf_policies: int = 0
 
 
 class BoardMemberPatchForm(BaseModel):
@@ -453,6 +524,7 @@ class BoardMemberAuditResponse(BaseModel):
     before: BoardAuditState | None = None
     after: BoardAuditState | None = None
     reason: str | None = None
+    grade_change: BoardGradeAuditChange | None = None
     created_at: datetime
 
 
@@ -483,6 +555,13 @@ class BoardHomeData:
     shelves: list[Shelf]
     interests: list[str]
     layout: BoardLayout | None
+
+
+@dataclass
+class BoardGradeData:
+    board: Board
+    member: BoardMember | None
+    grades: list[BoardMemberGrade]
 
 
 class BoardTransaction:
@@ -545,6 +624,185 @@ class BoardTransaction:
                 BoardMemberGrade.board_id == board_id, BoardMemberGrade.is_default.is_(True)
             )
         )
+
+    async def grades(self, board_id: UUID) -> list[BoardMemberGrade]:
+        return list(
+            (
+                await self._db.scalars(
+                    select(BoardMemberGrade)
+                    .where(BoardMemberGrade.board_id == board_id)
+                    .order_by(BoardMemberGrade.rank, BoardMemberGrade.id)
+                )
+            ).all()
+        )
+
+    async def grade_listing(self, board_id: UUID, user_id: int | None) -> BoardGradeData | None:
+        # One statement keeps the list, access context and revision in the same snapshot.
+        rows = (
+            await self._db.execute(
+                select(Board, BoardMember, BoardMemberGrade)
+                .outerjoin(
+                    BoardMember,
+                    and_(BoardMember.board_id == Board.id, BoardMember.user_id == user_id),
+                )
+                .outerjoin(BoardMemberGrade, BoardMemberGrade.board_id == Board.id)
+                .where(Board.id == board_id)
+                .order_by(BoardMemberGrade.rank, BoardMemberGrade.id)
+            )
+        ).all()
+        if not rows:
+            return None
+        return BoardGradeData(
+            rows[0][0], rows[0][1], [row[2] for row in rows if row[2] is not None]
+        )
+
+    @staticmethod
+    def _grade_state(grades: list[BoardMemberGrade]) -> list[dict]:
+        return [
+            {"id": str(g.id), "name": g.name, "rank": g.rank, "is_default": g.is_default}
+            for g in sorted(grades, key=lambda g: (g.rank, g.id))
+        ]
+
+    async def _record_grade_change(
+        self,
+        board: Board,
+        actor_user_id: int,
+        action: str,
+        before: list[dict],
+        grades: list[BoardMemberGrade],
+        reason: str,
+        **details,
+    ) -> None:
+        if not 1 <= len(grades) <= MAX_BOARD_GRADES or sum(g.is_default for g in grades) != 1:
+            raise BoardException(BoardErrorCode.UNAVAILABLE)
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=actor_user_id,
+                target_user_id=None,
+                action=action,
+                changes={
+                    "before": before,
+                    "after": self._grade_state(grades),
+                    "reason": reason,
+                    **details,
+                },
+            )
+        )
+        self._touch(board)
+        await self._db.flush()
+
+    async def create_grade(
+        self,
+        board: Board,
+        actor_user_id: int,
+        grades: list[BoardMemberGrade],
+        form: BoardGradeCreateForm,
+    ) -> BoardMemberGrade:
+        before = self._grade_state(grades)
+        grade = BoardMemberGrade(
+            board_id=board.id, name=form.name, rank=form.rank, is_default=False
+        )
+        self._db.add(grade)
+        await self._db.flush()
+        grades.append(grade)
+        await self._record_grade_change(
+            board, actor_user_id, "grade_created", before, grades, form.reason
+        )
+        return grade
+
+    async def change_grade(
+        self,
+        board: Board,
+        actor_user_id: int,
+        grades: list[BoardMemberGrade],
+        grade: BoardMemberGrade,
+        form: BoardGradePatchForm,
+    ) -> BoardMemberGrade:
+        before = self._grade_state(grades)
+        if form.name is not None:
+            grade.name = form.name
+        if form.is_default and not grade.is_default:
+            for current in grades:
+                current.is_default = False
+            # The partial unique index is immediate: clear before assigning the new default.
+            await self._db.flush()
+            grade.is_default = True
+        if before != self._grade_state(grades):
+            await self._record_grade_change(
+                board, actor_user_id, "grade_updated", before, grades, form.reason
+            )
+        return grade
+
+    async def reorder_grades(
+        self,
+        board: Board,
+        actor_user_id: int,
+        grades: list[BoardMemberGrade],
+        form: BoardGradeOrderForm,
+    ) -> list[BoardMemberGrade]:
+        by_id = {grade.id: grade for grade in grades}
+        ordered = [by_id[grade_id] for grade_id in form.grade_ids]
+        if all(grade.rank == index * 10 for index, grade in enumerate(ordered)):
+            return ordered
+        before = self._grade_state(grades)
+        # Avoid old and final ranks; adding to max(rank) could overflow PostgreSQL INTEGER.
+        used = {g.rank for g in grades} | {index * 10 for index in range(len(grades))}
+        candidate = 1
+        for grade in ordered:
+            while candidate in used:
+                candidate += 1
+            grade.rank = candidate
+            used.add(candidate)
+        await self._db.flush()
+        for index, grade in enumerate(ordered):
+            grade.rank = index * 10
+        await self._db.flush()
+        await self._record_grade_change(
+            board, actor_user_id, "grades_reordered", before, ordered, form.reason
+        )
+        return ordered
+
+    async def delete_grade(
+        self,
+        board: Board,
+        actor_user_id: int,
+        grades: list[BoardMemberGrade],
+        grade: BoardMemberGrade,
+        replacement: BoardMemberGrade,
+        form: BoardGradeDeleteForm,
+    ) -> list[BoardMemberGrade]:
+        before = self._grade_state(grades)
+        counts = {}
+        for model, column, label in (
+            (BoardMember, BoardMember.grade_id, "reassigned_members"),
+            (BoardPolicy, BoardPolicy.min_grade_id, "reassigned_board_policies"),
+            (ShelfPolicy, ShelfPolicy.min_grade_id, "reassigned_shelf_policies"),
+        ):
+            result = await self._db.execute(
+                update(model)
+                .where(model.board_id == board.id, column == grade.id)
+                .values({column: replacement.id})
+            )
+            counts[label] = result.rowcount
+        if grade.is_default:
+            grade.is_default = False
+            await self._db.flush()
+            replacement.is_default = True
+        await self._db.delete(grade)
+        await self._db.flush()
+        remaining = [g for g in grades if g.id != grade.id]
+        await self._record_grade_change(
+            board,
+            actor_user_id,
+            "grade_deleted",
+            before,
+            remaining,
+            form.reason,
+            replacement_grade_id=str(replacement.id),
+            **counts,
+        )
+        return remaining
 
     async def member_count(self, board_id: UUID) -> int:
         return await self._db.scalar(

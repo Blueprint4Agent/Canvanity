@@ -786,3 +786,5 @@ Board 공개 가입/탈퇴는 `BoardMembershipService`가 BoardPermissionService
 
 
 Board 회원 목록·역할/등급·제재 변경·감사 API는 [회원 운영 계약](../../notes/community/member-administration.md)을 따른다. 기존 BoardMembershipService/BoardPermissionService와 models/board.py 안의 Repository를 재사용하며, 서비스에서 세션·SQL·ORM 저장 필드 변경을 수행하지 않는다. 0025 migration은 회원/감사 keyset 조회용 복합 인덱스만 추가한다. UI·등급 정의 편집·초대·위임은 후속이다.
+
+Board 등급 정의 설정은 [등급 설정 계약](../../notes/community/grade-management.md)의 `BoardGradeService`를 DI로 사용한다. 이름·기본값·순서·삭제 대체의 DB 작업과 감사/revision은 기존 BoardTransaction이 소유한다. 기존 테이블/제약을 재사용하며 별도 migration은 추가하지 않는다. 역할 부여와 등급 정의는 분리한다. Board 예외의 기본 메시지는 다른 도메인과 같은 영어이고, UI 번역은 error 코드 기반 i18n이 담당한다. 전역 핸들러에 언어 분기를 추가하지 않는다.

@@ -815,6 +815,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/grades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Grades */
+        get: operations["grades_api_v1_boards__board_id__grades_get"];
+        put?: never;
+        /** Create Grade */
+        post: operations["create_grade_api_v1_boards__board_id__grades_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{board_id}/grades/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reorder Grades */
+        patch: operations["reorder_grades_api_v1_boards__board_id__grades_order_patch"];
+        trace?: never;
+    };
+    "/api/v1/boards/{board_id}/grades/{grade_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Grade */
+        delete: operations["delete_grade_api_v1_boards__board_id__grades__grade_id__delete"];
+        options?: never;
+        head?: never;
+        /** Change Grade */
+        patch: operations["change_grade_api_v1_boards__board_id__grades__grade_id__patch"];
+        trace?: never;
+    };
     "/api/v1/boards/{board_id}/home": {
         parameters: {
             query?: never;
@@ -2066,6 +2119,12 @@ export interface components {
                 | "BOARD_OWNER_CANNOT_LEAVE"
                 | "BOARD_MEMBER_NOT_FOUND"
                 | "BOARD_INVALID_GRADE"
+                | "BOARD_GRADE_NOT_FOUND"
+                | "BOARD_GRADE_NAME_TAKEN"
+                | "BOARD_GRADE_RANK_TAKEN"
+                | "BOARD_GRADE_LIMIT_REACHED"
+                | "BOARD_INVALID_GRADE_ORDER"
+                | "BOARD_LAST_GRADE"
                 | "BOARD_INVALID_MEMBER_CHANGE"
                 | "BOARD_INVALID_AUDIT_WINDOW"
                 | "BOARD_UNAVAILABLE";
@@ -2075,6 +2134,101 @@ export interface components {
         /** BoardErrorResponse */
         BoardErrorResponse: {
             detail: components["schemas"]["BoardErrorDetail"];
+        };
+        /** BoardGradeAuditChange */
+        BoardGradeAuditChange: {
+            /** After */
+            after: components["schemas"]["GradeSummary"][];
+            /** Before */
+            before: components["schemas"]["GradeSummary"][];
+            /**
+             * Reassigned Board Policies
+             * @default 0
+             */
+            reassigned_board_policies: number;
+            /**
+             * Reassigned Members
+             * @default 0
+             */
+            reassigned_members: number;
+            /**
+             * Reassigned Shelf Policies
+             * @default 0
+             */
+            reassigned_shelf_policies: number;
+            /** Replacement Grade Id */
+            replacement_grade_id?: string | null;
+        };
+        /** BoardGradeCreateForm */
+        BoardGradeCreateForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Name */
+            name: string;
+            /** Rank */
+            rank: number;
+            /** Reason */
+            reason: string;
+        };
+        /** BoardGradeDeleteForm */
+        BoardGradeDeleteForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+            /**
+             * Replacement Grade Id
+             * Format: uuid
+             */
+            replacement_grade_id: string;
+        };
+        /** BoardGradeOrderForm */
+        BoardGradeOrderForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Grade Ids */
+            grade_ids: string[];
+            /** Reason */
+            reason: string;
+        };
+        /** BoardGradePatchForm */
+        BoardGradePatchForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Is Default
+             * @constant
+             */
+            is_default?: true;
+            /** Name */
+            name?: string;
+            /** Reason */
+            reason: string;
+        } & (
+            | {
+                  /** Name */
+                  name: string;
+              }
+            | {
+                  /**
+                   * Is Default
+                   * @constant
+                   */
+                  is_default: true;
+              }
+        );
+        /** BoardGradeResponse */
+        BoardGradeResponse: {
+            /** Board Revision */
+            board_revision: number;
+            grade: components["schemas"]["GradeSummary"];
+        };
+        /** BoardGradesResponse */
+        BoardGradesResponse: {
+            /** Board Revision */
+            board_revision: number;
+            /** Items */
+            items: components["schemas"]["GradeSummary"][];
         };
         /** BoardHomeResponse */
         BoardHomeResponse: {
@@ -2106,6 +2260,7 @@ export interface components {
              * Format: date-time
              */
             created_at: string;
+            grade_change?: components["schemas"]["BoardGradeAuditChange"] | null;
             /**
              * Id
              * Format: uuid
@@ -8618,7 +8773,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_INVALID_CURSOR",
-                     *         "message": "목록을 다시 불러와 주세요."
+                     *         "message": "Invalid board cursor. Reload the list."
                      *       }
                      *     }
                      */
@@ -8707,7 +8862,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_SLUG_TAKEN",
-                     *         "message": "이미 사용 중인 보드 주소입니다."
+                     *         "message": "Board slug already exists."
                      *       }
                      *     }
                      */
@@ -8724,7 +8879,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_INVALID_INTEREST",
-                     *         "message": "활성 공식 관심사를 선택해 주세요."
+                     *         "message": "Select active official interests."
                      *       }
                      *     }
                      */
@@ -8750,7 +8905,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -8840,7 +8995,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -8930,7 +9085,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9005,7 +9160,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_REVISION_CONFLICT",
-                     *         "message": "최신 보드 정보를 다시 불러와 주세요."
+                     *         "message": "Board revision conflict. Reload the latest board information."
                      *       }
                      *     }
                      */
@@ -9022,7 +9177,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_DELETE_CONFIRMATION",
-                     *         "message": "보드 주소를 정확히 입력해 주세요."
+                     *         "message": "Enter the exact board slug to confirm deletion."
                      *       }
                      *     }
                      */
@@ -9048,7 +9203,563 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    grades_api_v1_boards__board_id__grades_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardGradesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    create_grade_api_v1_boards__board_id__grades_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardGradeCreateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardGradeResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    reorder_grades_api_v1_boards__board_id__grades_order_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardGradeOrderForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardGradesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_GRADE_ORDER",
+                     *         "message": "Provide every grade in this board exactly once."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_grade_api_v1_boards__board_id__grades__grade_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+                grade_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardGradeDeleteForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardGradesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_GRADE",
+                     *         "message": "Select a member grade from the same board."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    change_grade_api_v1_boards__board_id__grades__grade_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+                grade_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardGradePatchForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardGradeResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9138,7 +9849,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9229,7 +9940,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9308,7 +10019,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_INVALID_CURSOR",
-                     *         "message": "목록을 다시 불러와 주세요."
+                     *         "message": "Invalid board cursor. Reload the list."
                      *       }
                      *     }
                      */
@@ -9334,7 +10045,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9413,7 +10124,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_INVALID_CURSOR",
-                     *         "message": "목록을 다시 불러와 주세요."
+                     *         "message": "Invalid board cursor. Reload the list."
                      *       }
                      *     }
                      */
@@ -9439,7 +10150,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9517,7 +10228,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_REVISION_CONFLICT",
-                     *         "message": "최신 보드 정보를 다시 불러와 주세요."
+                     *         "message": "Board revision conflict. Reload the latest board information."
                      *       }
                      *     }
                      */
@@ -9534,7 +10245,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_INVALID_GRADE",
-                     *         "message": "같은 보드의 회원 등급을 선택해 주세요."
+                     *         "message": "Select a member grade from the same board."
                      *       }
                      *     }
                      */
@@ -9560,7 +10271,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */
@@ -9631,7 +10342,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_OWNER_CANNOT_LEAVE",
-                     *         "message": "보드 소유자는 소유권을 이전하거나 보드를 정리한 뒤 탈퇴할 수 있습니다."
+                     *         "message": "Transfer ownership or delete the board before leaving."
                      *       }
                      *     }
                      */
@@ -9666,7 +10377,7 @@ export interface operations {
                      * @example {
                      *       "detail": {
                      *         "error": "BOARD_UNAVAILABLE",
-                     *         "message": "보드 작업을 완료하지 못했습니다."
+                     *         "message": "Unable to complete the board operation."
                      *       }
                      *     }
                      */

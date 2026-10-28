@@ -10,7 +10,7 @@
 | ---- | -------------------------------------------------------------------------- |
 | 200  | 조회/수정/가입/게시 성공. 바뀐 revision/capabilities 반환                  |
 | 201  | Board/Shelf/Grade/Canvas/Tag 생성. Location 헤더에 리소스 경로             |
-| 204  | 멤버 탈퇴·빈 Shelf/Grade 삭제·게시글 휴지통 이동                           |
+| 204  | 멤버 탈퇴·빈 Shelf 삭제·게시글 휴지통 이동 (Grade 대체 삭제는 200 목록 반환) |
 | 401  | 인증이 필요한 액션의 토큰 없음/만료                                        |
 | 403  | 볼 수 있는 객체에서 역할·등급·액션 부족                                    |
 | 404  | 없음 또는 읽기 권한 없는 객체(비공개 Board/초안/제한 Shelf 포함)           |
@@ -51,10 +51,10 @@
 | POST    | /boards/{board_id}/members           | user_id/expected_revision/reason. private 수동 초대 Owner/Admin, 기본 뉴커머 등급 active로 등록. 기존 banned 우회 금지 |
 | PATCH   | /boards/{board_id}/members/{user_id} | expected_revision/reason + role/status/grade_id. 각 필드별 위계 검사                                                   |
 | GET     | /boards/{board_id}/grades            | 조회 가능한 Board의 이름·순위·기본 등급, 사용자 개인정보 없음                                                          |
-| POST    | /boards/{board_id}/grades            | expected_revision/name/rank. Owner/Admin, 최대 20개                                                                    |
-| PATCH   | /boards/{board_id}/grades/{grade_id} | expected_revision/name/is_default. rank는 order API에서만 변경                                                         |
-| PATCH   | /boards/{board_id}/grades/order      | expected_revision/grade_ids(전체). rank를 10 단위로 재부여                                                             |
-| DELETE  | /boards/{board_id}/grades/{grade_id} | expected_revision/replacement_grade_id. 참조 일괄 이동, 기본 등급이면 replacement를 새 기본으로 지정. 마지막 등급 409  |
+| POST    | /boards/{board_id}/grades            | expected_revision/reason/name/rank. Owner/Admin, 최대 20개. 201 grade/board_revision                                   |
+| PATCH   | /boards/{board_id}/grades/{grade_id} | expected_revision/reason + name 또는 is_default:true. rank는 order API에서만 변경. 200 grade/board_revision            |
+| PATCH   | /boards/{board_id}/grades/order      | expected_revision/reason/grade_ids(전체). rank를 10 단위로 재부여. 200 items/board_revision                             |
+| DELETE  | /boards/{board_id}/grades/{grade_id} | expected_revision/reason/replacement_grade_id. 참조·기본값 이동, 마지막 등급 409. 200 items/board_revision             |
 | GET/PUT | /boards/{board_id}/policies          | GET은 Owner/Admin. PUT expected_revision/actions(전체 4액션), 역할·등급 정책 원자적 갱신                               |
 | GET     | /boards/{board_id}/member-audit      | Owner/Admin, cursor·기간(최대 180일). 개인정보 최소 필드                                                               |
 

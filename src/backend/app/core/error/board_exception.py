@@ -11,67 +11,97 @@ from .error import (
 
 
 class BoardErrorCode(Enum):
-    NOT_FOUND = ServiceErrorCode(
-        "BOARD_NOT_FOUND", "보드를 찾을 수 없습니다.", status.HTTP_404_NOT_FOUND
-    )
+    NOT_FOUND = ServiceErrorCode("BOARD_NOT_FOUND", "Board not found.", status.HTTP_404_NOT_FOUND)
     FORBIDDEN = ServiceErrorCode(
-        "BOARD_FORBIDDEN", "보드 작업 권한이 없습니다.", status.HTTP_403_FORBIDDEN
+        "BOARD_FORBIDDEN",
+        "You do not have permission to perform this board operation.",
+        status.HTTP_403_FORBIDDEN,
     )
     SLUG_TAKEN = ServiceErrorCode(
-        "BOARD_SLUG_TAKEN", "이미 사용 중인 보드 주소입니다.", status.HTTP_409_CONFLICT
+        "BOARD_SLUG_TAKEN", "Board slug already exists.", status.HTTP_409_CONFLICT
     )
     LIMIT_REACHED = ServiceErrorCode(
-        "BOARD_LIMIT_REACHED", "보드는 최대 20개까지 개설할 수 있습니다.", status.HTTP_409_CONFLICT
+        "BOARD_LIMIT_REACHED",
+        "The board creation limit has been reached.",
+        status.HTTP_409_CONFLICT,
     )
     INVALID_INTEREST = ServiceErrorCode(
         "BOARD_INVALID_INTEREST",
-        "활성 공식 관심사를 선택해 주세요.",
+        "Select active official interests.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
     INVALID_CURSOR = ServiceErrorCode(
-        "BOARD_INVALID_CURSOR", "목록을 다시 불러와 주세요.", status.HTTP_422_UNPROCESSABLE_CONTENT
+        "BOARD_INVALID_CURSOR",
+        "Invalid board cursor. Reload the list.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
     CONFLICT = ServiceErrorCode(
-        "BOARD_REVISION_CONFLICT", "최신 보드 정보를 다시 불러와 주세요.", status.HTTP_409_CONFLICT
+        "BOARD_REVISION_CONFLICT",
+        "Board revision conflict. Reload the latest board information.",
+        status.HTTP_409_CONFLICT,
     )
     DELETE_CONFIRMATION = ServiceErrorCode(
         "BOARD_DELETE_CONFIRMATION",
-        "보드 주소를 정확히 입력해 주세요.",
+        "Enter the exact board slug to confirm deletion.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
     NOT_EMPTY = ServiceErrorCode(
         "BOARD_NOT_EMPTY",
-        "다른 회원이나 게시글이 있는 보드는 먼저 정리해 주세요.",
+        "Remove other members and content before deleting the board.",
         status.HTTP_409_CONFLICT,
     )
 
     OWNER_CANNOT_LEAVE = ServiceErrorCode(
         "BOARD_OWNER_CANNOT_LEAVE",
-        "보드 소유자는 소유권을 이전하거나 보드를 정리한 뒤 탈퇴할 수 있습니다.",
+        "Transfer ownership or delete the board before leaving.",
         status.HTTP_409_CONFLICT,
     )
 
     MEMBER_NOT_FOUND = ServiceErrorCode(
-        "BOARD_MEMBER_NOT_FOUND", "보드 회원을 찾을 수 없습니다.", status.HTTP_404_NOT_FOUND
+        "BOARD_MEMBER_NOT_FOUND", "Board member not found.", status.HTTP_404_NOT_FOUND
     )
     INVALID_GRADE = ServiceErrorCode(
         "BOARD_INVALID_GRADE",
-        "같은 보드의 회원 등급을 선택해 주세요.",
+        "Select a member grade from the same board.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+    GRADE_NOT_FOUND = ServiceErrorCode(
+        "BOARD_GRADE_NOT_FOUND", "Board member grade not found.", status.HTTP_404_NOT_FOUND
+    )
+    GRADE_NAME_TAKEN = ServiceErrorCode(
+        "BOARD_GRADE_NAME_TAKEN", "Member grade name already exists.", status.HTTP_409_CONFLICT
+    )
+    GRADE_RANK_TAKEN = ServiceErrorCode(
+        "BOARD_GRADE_RANK_TAKEN", "Member grade rank already exists.", status.HTTP_409_CONFLICT
+    )
+    GRADE_LIMIT_REACHED = ServiceErrorCode(
+        "BOARD_GRADE_LIMIT_REACHED",
+        "The member grade limit has been reached.",
+        status.HTTP_409_CONFLICT,
+    )
+    INVALID_GRADE_ORDER = ServiceErrorCode(
+        "BOARD_INVALID_GRADE_ORDER",
+        "Provide every grade in this board exactly once.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+    LAST_GRADE = ServiceErrorCode(
+        "BOARD_LAST_GRADE", "The last member grade cannot be deleted.", status.HTTP_409_CONFLICT
     )
     INVALID_MEMBER_CHANGE = ServiceErrorCode(
         "BOARD_INVALID_MEMBER_CHANGE",
-        "운영 역할을 부여하려면 최종 회원 상태가 활성이어야 합니다.",
+        "The final membership status must be active to assign an operational role.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
     INVALID_AUDIT_WINDOW = ServiceErrorCode(
         "BOARD_INVALID_AUDIT_WINDOW",
-        "시간대가 있는 시작·종료 시각과 최대 180일 기간을 지정해 주세요.",
+        "Provide timezone-aware start and end times within a maximum window of 180 days.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
 
     UNAVAILABLE = ServiceErrorCode(
-        "BOARD_UNAVAILABLE", "보드 작업을 완료하지 못했습니다.", status.HTTP_503_SERVICE_UNAVAILABLE
+        "BOARD_UNAVAILABLE",
+        "Unable to complete the board operation.",
+        status.HTTP_503_SERVICE_UNAVAILABLE,
     )
 
     @property
