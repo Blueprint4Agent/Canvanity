@@ -15,6 +15,7 @@ from app.core.error import (
     AuthException,
 )
 from app.core.object_storage import ObjectStorage
+from app.core.object_storage.identity import StorageLocation
 from app.models.api_key import APIKey, APIKeys
 from app.models.user import UserResponse, UserRole, Users
 
@@ -144,3 +145,7 @@ async def get_current_directory_user(
 def get_object_storage(request: Request) -> ObjectStorage:
     """Inject into domain services; never construct SDK clients in routers."""
     return request.app.state.object_storage
+
+
+def get_object_storage_location(request: Request) -> StorageLocation:
+    return request.app.state.object_storage_location

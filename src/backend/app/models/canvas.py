@@ -47,6 +47,7 @@ def as_utc(value: datetime) -> datetime:
 class Canvas(Base):
     __tablename__ = "canvases"
     __table_args__ = (
+        Index("uq_canvas_board_id", "board_id", "id", unique=True),
         ForeignKeyConstraint(
             ["board_id", "shelf_id"],
             ["shelves.board_id", "shelves.id"],

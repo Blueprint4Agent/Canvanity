@@ -13,6 +13,7 @@ from app.core.db.session import Base
 # Ensure models are imported so Base.metadata includes every mapped table.
 from app.models import (
     api_key,  # noqa: F401
+    asset,  # noqa: F401
     billing,  # noqa: F401
     board,  # noqa: F401
     canvas,  # noqa: F401

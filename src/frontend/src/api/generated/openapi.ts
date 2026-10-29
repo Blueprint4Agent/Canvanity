@@ -1078,6 +1078,41 @@ export interface paths {
         patch: operations["change_canvas_api_v1_canvases__canvas_id__patch"];
         trace?: never;
     };
+    "/api/v1/canvases/{canvas_id}/assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Asset */
+        post: operations["upload_asset_api_v1_canvases__canvas_id__assets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canvases/{canvas_id}/assets/{asset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Asset */
+        get: operations["read_asset_api_v1_canvases__canvas_id__assets__asset_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Asset */
+        delete: operations["delete_asset_api_v1_canvases__canvas_id__assets__asset_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/canvases/{canvas_id}/document": {
         parameters: {
             query?: never;
@@ -1802,6 +1837,73 @@ export interface components {
             oauth_enabled: boolean;
             /** Oauth Providers */
             oauth_providers: string[];
+        };
+        /** AssetErrorDetail */
+        AssetErrorDetail: {
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Error
+             * @example ASSET_NOT_FOUND
+             * @enum {string}
+             */
+            error:
+                | "ASSET_LIMIT_REACHED"
+                | "ASSET_NOT_FOUND"
+                | "ASSET_INVALID_IMAGE"
+                | "ASSET_TOO_LARGE"
+                | "ASSET_CONFLICT"
+                | "ASSET_REFERENCED"
+                | "ASSET_INVALID_REFERENCE"
+                | "ASSET_UNAVAILABLE";
+            /** Message */
+            message: string;
+        };
+        /** AssetErrorResponse */
+        AssetErrorResponse: {
+            detail: components["schemas"]["AssetErrorDetail"];
+        };
+        /** AssetResponse */
+        AssetResponse: {
+            /** Byte Size */
+            byte_size: number;
+            /**
+             * Canvas Id
+             * Format: uuid
+             */
+            canvas_id: string;
+            /**
+             * Content Type
+             * @constant
+             */
+            content_type: "image/webp";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Expires At */
+            expires_at: string | null;
+            /** Frame Count */
+            frame_count: number;
+            /** Height */
+            height: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * State
+             * @constant
+             */
+            state: "ready";
+            /** Url */
+            url: string;
+            /** Width */
+            width: number;
         };
         /** AuthErrorDetail */
         AuthErrorDetail: {
@@ -2863,6 +2965,11 @@ export interface components {
             session_id?: string | null;
             /** User Id */
             user_id?: number | null;
+        };
+        /** Body_upload_asset_api_v1_canvases__canvas_id__assets_post */
+        Body_upload_asset_api_v1_canvases__canvas_id__assets_post: {
+            /** File */
+            file: string;
         };
         /** CanvasCapabilities */
         CanvasCapabilities: {
@@ -12597,6 +12704,331 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_asset_api_v1_canvases__canvas_id__assets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_asset_api_v1_canvases__canvas_id__assets_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssetResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "ASSET_TOO_LARGE",
+                     *         "message": "Image upload or normalized output exceeds 8 MiB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "ASSET_INVALID_IMAGE",
+                     *         "message": "Upload a supported image within the pixel and frame limits."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+        };
+    };
+    read_asset_api_v1_canvases__canvas_id__assets__asset_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Private normalized image. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_INVALID_STATE",
+                     *         "message": "Restore the canvas before editing it."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_asset_api_v1_canvases__canvas_id__assets__asset_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
                 };
             };
         };

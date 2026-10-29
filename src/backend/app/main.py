@@ -49,6 +49,7 @@ from app.models.user import UserResponse
 from app.routers.v1 import (
     admin,
     api_key,
+    asset,
     auth,
     billing,
     billing_webhook,
@@ -297,6 +298,7 @@ def create_app() -> FastAPI:
     app.include_router(events.router, prefix="/api/v1/events", tags=["Events"])
     app.include_router(shelf.router, prefix="/api/v1", tags=["Shelves"])
     app.include_router(canvas.router, prefix="/api/v1", tags=["Canvases"])
+    app.include_router(asset.router, prefix="/api/v1", tags=["Assets"])
 
     if static_dist_dir.exists():
         frontend = RuntimeStaticFiles(

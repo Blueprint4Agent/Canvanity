@@ -158,6 +158,9 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("DELETE", "/api/v1/canvases/{canvas_id}"),
         ("GET", "/api/v1/canvases/{canvas_id}/document"),
         ("POST", "/api/v1/canvases/{canvas_id}/restore"),
+        ("POST", "/api/v1/canvases/{canvas_id}/assets"),
+        ("GET", "/api/v1/canvases/{canvas_id}/assets/{asset_id}"),
+        ("DELETE", "/api/v1/canvases/{canvas_id}/assets/{asset_id}"),
     }
     assert actual == expected
 

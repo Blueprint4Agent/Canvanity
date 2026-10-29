@@ -1,5 +1,7 @@
 # 오브젝트 스토리지 프로바이더
 
+Canvas 이미지는 [Canvas 이미지 에셋](community/canvas-assets.md)의 예약·참조·삭제 outbox를 사용한다. 프로필 사진의 기존 best-effort 정리와 별도이며 같은 ObjectStorage DI를 재사용한다. API/worker는 시작 시 실제 클라이언트와 비밀 없는 저장 위치를 함께 고정한다.
+
 `OBJECT_STORAGE_PROVIDER=local|s3|r2|supabase`로 저장소를 선택합니다.
 사용자가 고르는 제공자는 네 가지이며, 원격 세 가지는 공통 S3 구현을 사용합니다.
 설정은 중앙 `SETTINGS`에서 관리하고 `src/backend/.env.example`,

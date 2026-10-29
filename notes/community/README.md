@@ -13,6 +13,7 @@
 | [소유권·종료](board-lifecycle.md) | Owner 위임·보관 Board 삭제·계정/파일 경계 |
 | [Shelf 관리·정책](shelf-management.md) | 분류 CRUD/정렬·직접 조회·기본/재정의 등급 정책·현재 구현 경계 |
 | [Canvas 초안 기반](canvas-drafts.md) | 작성자 전용 메타데이터·JSONB 초기 문서·Shelf 이동·휴지통/복구·삭제 경계 |
+| [Canvas 이미지 에셋](canvas-assets.md) | 이미지 API·참조 보호·업로드 예약·Board 삭제 outbox·운영 재처리 |
 | [개발과 검증](development-validation.md) | 현행 환경 감사·독립 fixture·실행·정리·검증 결과 |
 | [편집 엔진 검토](editor-decision.md)     | 후보·선정 근거·문서 어댑터·브라우저 실험과 한계 |
 
@@ -45,4 +46,4 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)는 PR #30으로 main에 반영했다. 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
 
 
-회원 운영 #31/PR #33과 등급 설정 #32/PR #34는 main에 반영했다. 초대 #35/초안 PR #36, 기본 설정 #37/초안 PR #38, [#39 소유권·종료](https://github.com/Blueprint4Agent/Canvanity/issues/39)/초안 PR #40, #23 Shelf 관리/초안 PR #41은 main 미병합이다. 현재 #8의 Canvas 초안·메타데이터·빈 문서와 Shelf 소속/삭제 경계를 feat/shelf-management 기준으로 분리해 진행한다. UI는 제외하며 각 이슈에서 구현·검증·게시·main 병합을 구분한다. 문서 저장은 #7, Tag는 #24, 공개 목록/게시와 실제 에셋/삭제 outbox는 #8/#6에서 이어간다.
+회원 운영 #31/PR #33과 등급 설정 #32/PR #34는 main에 반영했다. 초대 #35/초안 PR #36, 기본 설정 #37/초안 PR #38, #39 소유권·종료/초안 PR #40, #23 Shelf 관리/초안 PR #41, #8 Canvas 초안/초안 PR #42는 main 미병합이다. #6 이미지 API·참조 보호·파일 정리 outbox를 feat/canvas-draft-foundation 기준으로 분리한다. UI는 제외하며 각 이슈에서 구현·검증·게시·main 병합을 구분한다. 다음은 #7 본문 저장/CAS·에셋 참조 원자 동기화, #24 Tag, #8 공개 목록/게시다.

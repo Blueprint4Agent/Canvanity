@@ -3,6 +3,7 @@
 import asyncio
 import os
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime, timedelta
 from unittest.mock import patch
 from uuid import uuid4
 
@@ -16,9 +17,13 @@ from alembic import command
 from app.core.config.settings import SETTINGS
 from app.core.db.migrations import _build_alembic_config
 from app.core.error import AuthErrorCode, AuthException
+from app.core.error.asset_exception import AssetException
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
 from app.core.error.shelf_exception import ShelfErrorCode, ShelfException
+from app.core.object_storage.identity import StorageLocation
+from app.core.object_storage.local import LocalObjectStorage
+from app.models.asset import Asset, AssetDeletionOutbox, AssetRepository, CanvasAssetRef
 from app.models.board import (
     ACTIONS,
     Board,
@@ -55,12 +60,16 @@ from app.models.canvas import (
     CanvasRevisionForm,
 )
 from app.models.user import User, Users
+from app.services.asset import AssetService
+from app.services.asset_cleanup import AssetCleanupService
 from app.services.board import BoardService
 from app.services.board_grade import BoardGradeService
 from app.services.board_membership import BoardMembershipService
 from app.services.board_permission import BoardPermissionService
 from app.services.canvas import CanvasService
+from app.services.canvas_access import CanvasAccessService
 from app.services.shelf import ShelfService
+from tests.unit.services.test_canvas_image import encoded_image
 
 pytestmark = [
     pytest.mark.primary_data,
@@ -709,7 +718,7 @@ async def assert_shelf_management(test_db, owner_id, board_id, other_id, other_g
 
 
 async def assert_canvas_drafts(test_db, owner_id, board_id, other_id, other_grade):
-    service = CanvasService(BoardPermissionService(), CanvasRepository())
+    service = CanvasService(CanvasAccessService(BoardPermissionService()), CanvasRepository())
     shelves = ShelfService(BoardPermissionService(), BoardRepository())
     current = await shelves.list(owner_id, board_id, manage=True)
     general = next(s.id for s in current.items if s.is_default)
@@ -1052,7 +1061,186 @@ async def assert_board_lifecycle(test_db, owner_id, board_id, target_id):
         assert await db.get(User, target_id) is not None
 
 
-def test_real_migration_creation_race_and_downgrade(monkeypatch):
+async def assert_canvas_assets(test_db, owner_id, root):
+    """Real FK checks and locks fence references, concurrent workers and late upload completion."""
+    async with test_db() as db:
+        owner = User(
+            email="pg-assets-owner@example.com",
+            name="에셋 소유자",
+            role="user",
+            is_active=True,
+            is_verified=True,
+        )
+        db.add(owner)
+        await db.commit()
+        owner_id = owner.id
+    board_service = BoardService(BoardPermissionService(), BoardRepository())
+    board = await board_service.create(
+        owner_id, BoardCreateForm(name="에셋 경쟁", slug="asset-races", interest_ids=["ai"])
+    )
+    home = await board_service.home(owner_id, board_id=board.id)
+    shelf = next(s.id for s in home.shelves if s.is_default)
+    access, repository = CanvasAccessService(BoardPermissionService()), AssetRepository()
+    canvas_service = CanvasService(access, CanvasRepository())
+    canvas = (
+        await canvas_service.create(
+            owner_id, board.id, CanvasCreateForm(shelf_id=shelf, title="에셋")
+        )
+    ).canvas
+    other = (
+        await canvas_service.create(
+            owner_id, board.id, CanvasCreateForm(shelf_id=shelf, title="다른 문서")
+        )
+    ).canvas
+    storage = LocalObjectStorage(root, 8 * 1024 * 1024)
+    await storage.initialize()
+    location = StorageLocation("a" * 64, {"provider": "local", "root": str(root)})
+    service = AssetService(access, repository, storage, location)
+    cleanup = AssetCleanupService(repository, storage, location)
+
+    async def chunks():
+        yield encoded_image()
+
+    async def refs(ids):
+        async with repository.transaction() as tx:
+            _, _, current = await access.context(tx.context, owner_id, canvas.id, write=True)
+            await tx.replace_refs(current, set(ids), scope="draft")
+
+    async def age():
+        async with test_db() as db:
+            await db.execute(
+                text("UPDATE asset_deletion_outbox SET available_at=:past"),
+                {"past": datetime.now(UTC) - timedelta(seconds=1)},
+            )
+            await db.execute(
+                text("UPDATE assets SET upload_deadline=:past"),
+                {"past": datetime.now(UTC) - timedelta(seconds=1)},
+            )
+            await db.commit()
+
+    try:
+        image = await service.upload(owner_id, canvas.id, chunks())
+        await refs([image.id])
+        async with test_db() as db:
+            assert (
+                await db.scalar(
+                    text("SELECT pg_typeof(storage_location)::text FROM assets LIMIT 1")
+                )
+                == "jsonb"
+            )
+            with pytest.raises(IntegrityError):
+                await db.execute(
+                    text("UPDATE assets SET state='deleting' WHERE id=:id"), {"id": image.id}
+                )
+            await db.rollback()
+            with pytest.raises(IntegrityError):
+                db.add(
+                    CanvasAssetRef(
+                        canvas_id=other.id, board_id=board.id, asset_id=image.id, scope="draft"
+                    )
+                )
+                await db.commit()
+            await db.rollback()
+        await refs([])
+        await age()
+        async with test_db() as db:
+            job_id = await db.scalar(
+                select(AssetDeletionOutbox.id).where(AssetDeletionOutbox.asset_id == image.id)
+            )
+        # A document attachment and a cleanup claim serialize on the same Board/Asset locks.
+        raced = await asyncio.gather(
+            refs([image.id]), repository.claim(job_id, location.fingerprint), return_exceptions=True
+        )
+        assert not any(isinstance(item, SQLAlchemyError) for item in raced)
+        claim = raced[1]
+        if claim is not None:
+            assert isinstance(raced[0], AssetException)
+            await storage.delete(claim.object_key)
+            assert await repository.finish(claim)
+        else:
+            assert raced[0] is None
+            await refs([])
+            await age()
+            claims = await asyncio.gather(
+                repository.claim(job_id, location.fingerprint),
+                repository.claim(job_id, location.fingerprint),
+            )
+            assert sum(item is not None for item in claims) == 1
+            claim = next(item for item in claims if item is not None)
+            await age()
+            successor = await repository.claim(job_id, location.fingerprint)
+            assert successor and successor.token != claim.token
+            assert not await repository.finish(claim)
+            await storage.delete(successor.object_key)
+            assert await repository.finish(successor)
+        # Hold file I/O open while the Board is archived/deleted. SQL locks must be released.
+        started, release = asyncio.Event(), asyncio.Event()
+        original_put = storage.put
+
+        async def slow_put(key, data, content_type):
+            started.set()
+            await release.wait()
+            return await original_put(key, data, content_type)
+
+        with patch.object(storage, "put", side_effect=slow_put):
+            uploading = asyncio.create_task(service.upload(owner_id, canvas.id, chunks()))
+            await asyncio.wait_for(started.wait(), timeout=5)
+            try:
+                current = await board_service.home(owner_id, board_id=board.id)
+                archived = await asyncio.wait_for(
+                    board_service.update(
+                        owner_id,
+                        board.id,
+                        BoardSettingsPatchForm(
+                            expected_revision=current.board.revision,
+                            reason="업로드 중 종료",
+                            status="archived",
+                        ),
+                    ),
+                    timeout=5,
+                )
+                await asyncio.wait_for(
+                    board_service.delete_board(
+                        owner_id,
+                        board.id,
+                        BoardDeleteForm(
+                            expected_revision=archived.board_revision, confirm_slug=board.slug
+                        ),
+                    ),
+                    timeout=5,
+                )
+            finally:
+                release.set()
+            with pytest.raises(CanvasException):
+                await uploading
+        async with test_db() as db:
+            assert await db.get(Board, board.id) is None
+            assert (
+                await db.scalar(
+                    select(func.count()).select_from(Asset).where(Asset.board_id == board.id)
+                )
+                == 0
+            )
+            late = await db.scalar(
+                select(AssetDeletionOutbox).where(AssetDeletionOutbox.state == "pending")
+            )
+            assert late and late.reason == "upload_failed"
+        await age()
+        assert (await cleanup.drain())["done"] == 1
+        async with test_db() as db:
+            assert (
+                await db.scalar(
+                    select(func.count())
+                    .select_from(AssetDeletionOutbox)
+                    .where(AssetDeletionOutbox.state != "done")
+                )
+                == 0
+            )
+    finally:
+        await storage.close()
+
+
+def test_real_migration_creation_race_and_downgrade(monkeypatch, tmp_path):
     url = make_url(SETTINGS.DATABASE_URL)
     assert url.drivername == "postgresql+asyncpg" and url.host in {"localhost", "127.0.0.1", "::1"}
     schema = "canvanity_creation_test_" + uuid4().hex
@@ -1081,6 +1269,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
 
         monkeypatch.setattr("app.models.board.get_db", test_db)
         monkeypatch.setattr("app.models.canvas.get_db", test_db)
+        monkeypatch.setattr("app.models.asset.get_db", test_db)
         monkeypatch.setattr("app.models.user.get_db", test_db)
         try:
             async with admin.begin() as connection:
@@ -1258,6 +1447,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
             await assert_board_settings(test_db, user_id, board.id, newcomer_id)
             await assert_shelf_management(test_db, user_id, board.id, other.id, other_grade)
             await assert_canvas_drafts(test_db, user_id, board.id, other.id, other_grade)
+            await assert_canvas_assets(test_db, user_id, tmp_path / "pg-assets")
             await assert_board_lifecycle(test_db, user_id, board.id, newcomer_id)
             await service.delete_board(
                 user_id,
