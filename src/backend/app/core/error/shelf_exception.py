@@ -11,6 +11,11 @@ from .error import (
 
 
 class ShelfErrorCode(Enum):
+    NOT_EMPTY = ServiceErrorCode(
+        "SHELF_NOT_EMPTY",
+        "Move all canvases, including drafts and trash, before deleting this shelf.",
+        status.HTTP_409_CONFLICT,
+    )
     NOT_FOUND = ServiceErrorCode("SHELF_NOT_FOUND", "Shelf not found.", status.HTTP_404_NOT_FOUND)
     SLUG_TAKEN = ServiceErrorCode(
         "SHELF_SLUG_TAKEN", "Shelf slug already exists in this board.", status.HTTP_409_CONFLICT

@@ -252,6 +252,8 @@ class BoardService:
                 raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
             if board.slug != form.confirm_slug:
                 raise BoardException(BoardErrorCode.DELETE_CONFIRMATION)
-            if board.status != "archived" and await tx.member_count(board_id) != 1:
+            if board.status != "archived" and (
+                await tx.member_count(board_id) != 1 or await tx.canvas_count(board_id)
+            ):
                 raise BoardException(BoardErrorCode.NOT_EMPTY)
             await tx.delete_board(board)

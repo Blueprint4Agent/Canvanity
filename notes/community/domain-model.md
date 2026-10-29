@@ -111,7 +111,7 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 
 ## 단계별 마이그레이션
 
-현재 head는 0023_broaden_interest_catalog다. 아래 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다.
+현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약만 제공하며 위 표의 공개본/태그/에셋 컬럼·전체 수명주기는 단계별 목표다.
 
 1. #22/#23: Board/등급/멤버/정책/감사/Shelf/홈/Interest. 신규 테이블만 생성하고 기존 users/Interest 데이터는 보존한다. 계정 삭제 소유 검사는 Board 종료/에셋 정리 기반까지 연결한 뒤 활성화한다.
 2. #8 기반/#24: Canvas/Document/Publication/Tag, 복합 FK·조회 인덱스. 초기 빈 문서 생성은 API에 연결할 때 함께 구현한다.

@@ -13,7 +13,7 @@
 | POST | /boards/{board_id}/shelves | 현재 active Owner/Admin. 이름/slug/설명/icon/purpose/classification/is_visible, 뒤에 추가 |
 | PATCH | /shelves/{shelf_id} | 같은 표시 필드만 수정. board_id/is_default/sort_order 변경 금지 |
 | PATCH | /boards/{board_id}/shelves/order | shelf_ids에 숨김을 포함한 같은 Board의 전체 ID를 중복 없이 제공 |
-| DELETE | /shelves/{shelf_id} | 현재 비기본 Shelf 삭제. 마지막 Shelf도 보호 |
+| DELETE | /shelves/{shelf_id} | 초안/휴지통을 포함해 비어 있는 비기본 Shelf만 삭제. 마지막 Shelf도 보호 |
 | GET/PUT | /boards/{board_id}/policies | Owner/Admin의 4액션 기본 정책 조회/전체 교체 |
 | GET/PUT | /shelves/{shelf_id}/policies | Owner/Admin의 4액션 재정의 조회/전체 교체. null 액션은 상속 |
 
@@ -45,4 +45,4 @@ ShelfService는 BoardRepository와 BoardPermissionService를 생성자 DI로 사
 
 ## 후속 경계
 
-현재 Canvas 모델/목록 API가 없어 모든 현재 Shelf에는 게시글 참조가 없다. 삭제는 현재 Shelf/정책을 정리하며 기본/마지막 Shelf 보호와 다른 Board/멤버/등급/기본 정책 보존을 검증한다. #8에서 Canvas를 연결하기 전에 (board_id, shelf_id) 복합 FK와 RESTRICT 삭제, 초안/휴지통을 포함한 비어 있지 않음 검사·원자적 이동·권한이 적용된 공개 snapshot 목록/cursor를 함께 추가해야 한다. 이 검증 전에는 콘텐츠가 있는 Shelf 삭제를 지원한다고 설명하지 않는다. Smart Shelf·인기/조회 통계·Canvas/댓글/에셋의 실제 권한 적용·UI는 후속이며 #23 전체는 열린 상태로 유지한다.
+[Canvas 초안 기반](canvas-drafts.md)이 (board_id, shelf_id) 복합 FK/RESTRICT와 초안·휴지통·작성자 없는 문서의 비어 있지 않음 검사(SHELF_NOT_EMPTY 409)를 연결한다. 작성자의 메타데이터 PATCH는 같은 Board 원본/대상 Shelf의 현재 읽기/작성 정책 아래 원자적으로 이동한다. Shelf 운영 권한만으로 타인 초안을 읽거나 이동하지 않는다. 빈 비기본 Shelf 삭제는 정책도 함께 정리하고 다른 Board/멤버/등급/기본 정책을 보존한다. 공개 snapshot 목록/cursor는 #8의 게시 단계에서 구현한다. Smart Shelf·인기/조회 통계·본문 저장/게시/댓글/에셋·UI는 후속이며 #23 전체는 열린 상태로 유지한다.

@@ -17,6 +17,8 @@ from app.core.config.settings import SETTINGS
 from app.core.db.migrations import _build_alembic_config
 from app.core.error import AuthErrorCode, AuthException
 from app.core.error.board_exception import BoardErrorCode, BoardException
+from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
+from app.core.error.shelf_exception import ShelfErrorCode, ShelfException
 from app.models.board import (
     ACTIONS,
     Board,
@@ -44,11 +46,20 @@ from app.models.board import (
     ShelfPoliciesForm,
     ShelfPolicy,
 )
+from app.models.canvas import (
+    Canvas,
+    CanvasCreateForm,
+    CanvasDocument,
+    CanvasPatchForm,
+    CanvasRepository,
+    CanvasRevisionForm,
+)
 from app.models.user import User, Users
 from app.services.board import BoardService
 from app.services.board_grade import BoardGradeService
 from app.services.board_membership import BoardMembershipService
 from app.services.board_permission import BoardPermissionService
+from app.services.canvas import CanvasService
 from app.services.shelf import ShelfService
 
 pytestmark = [
@@ -697,6 +708,250 @@ async def assert_shelf_management(test_db, owner_id, board_id, other_id, other_g
         assert await db.get(Board, other_id) is not None
 
 
+async def assert_canvas_drafts(test_db, owner_id, board_id, other_id, other_grade):
+    service = CanvasService(BoardPermissionService(), CanvasRepository())
+    shelves = ShelfService(BoardPermissionService(), BoardRepository())
+    current = await shelves.list(owner_id, board_id, manage=True)
+    general = next(s.id for s in current.items if s.is_default)
+    source = await shelves.create(
+        owner_id,
+        board_id,
+        ShelfCreateForm(
+            expected_revision=current.board_revision,
+            reason="Canvas 소속",
+            name="Canvas 분류",
+            slug="canvas-drafts",
+        ),
+    )
+    created = await service.create(
+        owner_id, board_id, CanvasCreateForm(shelf_id=source.shelf.id, title="PostgreSQL 초안")
+    )
+    canvas_id = created.canvas.id
+    assert created.canvas.revision == created.document_revision == 0
+    async with test_db() as db:
+        assert (
+            await db.scalar(
+                text("SELECT pg_typeof(document)::text FROM canvas_documents WHERE canvas_id=:id"),
+                {"id": canvas_id},
+            )
+            == "jsonb"
+        )
+        assert (
+            await db.scalar(
+                text("SELECT pg_typeof(revision)::text FROM canvases WHERE id=:id"),
+                {"id": canvas_id},
+            )
+            == "bigint"
+        )
+        foreign_shelf = await db.scalar(select(Shelf.id).where(Shelf.board_id == other_id).limit(1))
+        with pytest.raises(IntegrityError):
+            await db.execute(
+                text("UPDATE canvases SET shelf_id=:shelf WHERE id=:id"),
+                {"shelf": foreign_shelf, "id": canvas_id},
+            )
+        await db.rollback()
+        with pytest.raises(IntegrityError):
+            await db.execute(text("DELETE FROM shelves WHERE id=:id"), {"id": source.shelf.id})
+        await db.rollback()
+    changes = await asyncio.gather(
+        *[
+            service.change(owner_id, canvas_id, CanvasPatchForm(expected_revision=0, title=title))
+            for title in ("첫 변경", "다른 변경")
+        ],
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(item, Exception) for item in changes) == 1
+    assert (
+        sum(
+            isinstance(item, CanvasException)
+            and item.code.error == CanvasErrorCode.CONFLICT.code.error
+            for item in changes
+        )
+        == 1
+    )
+    saved = await service.get(owner_id, canvas_id)
+    assert saved.canvas.revision == 1 and saved.document_revision == 0
+    with patch(
+        "sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=SQLAlchemyError("commit failed")
+    ):
+        for operation in (
+            lambda: service.change(
+                owner_id,
+                canvas_id,
+                CanvasPatchForm(expected_revision=1, shelf_id=general, title="이동 롤백"),
+            ),
+            lambda: service.trash(owner_id, canvas_id, CanvasRevisionForm(expected_revision=1)),
+            lambda: service.create(
+                owner_id, board_id, CanvasCreateForm(shelf_id=general, title="생성 롤백")
+            ),
+        ):
+            with pytest.raises(CanvasException) as rejected:
+                await operation()
+            assert rejected.value.code.error == CanvasErrorCode.UNAVAILABLE.code.error
+    assert await service.get(owner_id, canvas_id) == saved
+    async with test_db() as db:
+        assert await db.scalar(select(func.count()).select_from(Canvas)) == 1
+        assert await db.scalar(select(func.count()).select_from(CanvasDocument)) == 1
+    await service.trash(owner_id, canvas_id, CanvasRevisionForm(expected_revision=1))
+    board_revision = (await shelves.list(owner_id, board_id, manage=True)).board_revision
+    with pytest.raises(ShelfException) as rejected:
+        await shelves.delete(
+            owner_id,
+            source.shelf.id,
+            PolicyChangeForm(expected_revision=board_revision, reason="휴지통 포함"),
+        )
+    assert rejected.value.code.error == ShelfErrorCode.NOT_EMPTY.code.error
+    restored = await service.restore(owner_id, canvas_id, CanvasRevisionForm(expected_revision=2))
+    moved = await service.change(
+        owner_id,
+        canvas_id,
+        CanvasPatchForm(expected_revision=restored.canvas.revision, shelf_id=general),
+    )
+    assert moved.document_revision == 0 and moved.canvas.shelf_id == general
+    await shelves.delete(
+        owner_id,
+        source.shelf.id,
+        PolicyChangeForm(expected_revision=board_revision, reason="빈 분류 삭제"),
+    )
+    current = await shelves.list(owner_id, board_id, manage=True)
+    racing = await shelves.create(
+        owner_id,
+        board_id,
+        ShelfCreateForm(
+            expected_revision=current.board_revision,
+            reason="삭제 경쟁",
+            name="경쟁 분류",
+            slug="canvas-create-race",
+        ),
+    )
+    results = await asyncio.gather(
+        service.create(
+            owner_id, board_id, CanvasCreateForm(shelf_id=racing.shelf.id, title="삭제와 생성 경쟁")
+        ),
+        shelves.delete(
+            owner_id,
+            racing.shelf.id,
+            PolicyChangeForm(expected_revision=racing.board_revision, reason="생성과 삭제 경쟁"),
+        ),
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(item, Exception) for item in results) == 1
+    assert any(
+        (
+            isinstance(item, ShelfException)
+            and item.code.error == ShelfErrorCode.NOT_EMPTY.code.error
+        )
+        or (
+            isinstance(item, CanvasException)
+            and item.code.error == CanvasErrorCode.INVALID_SHELF.code.error
+        )
+        for item in results
+    )
+    # A separate author exercises privilege revocation and User -> Canvas SET NULL races.
+    async with test_db() as db:
+        author = User(
+            email="pg-canvas-author@example.com",
+            name="Canvas author",
+            role="user",
+            is_active=True,
+            is_verified=True,
+        )
+        db.add(author)
+        await db.flush()
+        author_id = author.id
+        grade_id = await db.scalar(
+            select(BoardMemberGrade.id)
+            .where(BoardMemberGrade.board_id == board_id)
+            .order_by(BoardMemberGrade.rank.desc())
+            .limit(1)
+        )
+        db.add(
+            BoardMember(
+                board_id=board_id,
+                user_id=author_id,
+                grade_id=grade_id,
+                role="member",
+                status="active",
+            )
+        )
+        await db.commit()
+    author_canvas = await service.create(
+        author_id, board_id, CanvasCreateForm(shelf_id=general, title="작성자 초안")
+    )
+    policy = await shelves.shelf_policies(owner_id, general)
+    actions = policy.actions.model_dump()
+    actions["create_canvas"] = {
+        "audience": "members",
+        "min_grade_id": None,
+        "staff_only": True,
+        "staff_bypass": False,
+    }
+    results = await asyncio.gather(
+        service.change(
+            author_id,
+            author_canvas.canvas.id,
+            CanvasPatchForm(expected_revision=0, title="정책 변경과 편집 경쟁"),
+        ),
+        shelves.set_shelf_policies(
+            owner_id,
+            general,
+            ShelfPoliciesForm(
+                expected_revision=policy.board_revision, reason="작성 권한 회수", actions=actions
+            ),
+        ),
+        return_exceptions=True,
+    )
+    assert not isinstance(results[1], Exception)
+    assert not isinstance(results[0], Exception) or (
+        isinstance(results[0], CanvasException)
+        and results[0].code.error == CanvasErrorCode.FORBIDDEN.code.error
+    )
+    own = await service.get(author_id, author_canvas.canvas.id)
+    with pytest.raises(CanvasException) as denied:
+        await service.change(
+            author_id,
+            author_canvas.canvas.id,
+            CanvasPatchForm(expected_revision=own.canvas.revision, title="회수 뒤 수정"),
+        )
+    assert denied.value.code.error == CanvasErrorCode.FORBIDDEN.code.error
+    policy = await shelves.shelf_policies(owner_id, general)
+    await shelves.set_shelf_policies(
+        owner_id,
+        general,
+        ShelfPoliciesForm(
+            expected_revision=policy.board_revision,
+            reason="계정 경쟁 준비",
+            actions={a: None for a in ACTIONS},
+        ),
+    )
+    results = await asyncio.gather(
+        service.create(
+            author_id, board_id, CanvasCreateForm(shelf_id=general, title="계정 삭제와 생성 경쟁")
+        ),
+        Users.delete_account(author_id, "pg-canvas-author@example.com"),
+        return_exceptions=True,
+    )
+    assert not isinstance(results[1], Exception)
+    if isinstance(results[0], Exception):
+        assert (
+            isinstance(results[0], CanvasException)
+            and results[0].code.error == CanvasErrorCode.FORBIDDEN.code.error
+        ) or (
+            isinstance(results[0], AuthException)
+            and results[0].code.error == AuthErrorCode.USER_NOT_FOUND.code.error
+        )
+    async with test_db() as db:
+        assert await db.get(User, author_id) is None
+        assert (await db.get(Canvas, author_canvas.canvas.id)).author_id is None
+        assert await db.get(CanvasDocument, author_canvas.canvas.id) is not None
+        assert (
+            await db.scalar(
+                select(func.count()).select_from(Canvas).where(Canvas.author_id == author_id)
+            )
+            == 0
+        )
+
+
 async def assert_board_lifecycle(test_db, owner_id, board_id, target_id):
     service = BoardService(BoardPermissionService(), BoardRepository())
     before = await service.home(owner_id, board_id=board_id)
@@ -783,6 +1038,8 @@ async def assert_board_lifecycle(test_db, owner_id, board_id, target_id):
     assert await service.home(target_id, board_id=board_id) == saved
     await service.delete_board(target_id, board_id, delete_form)
     async with test_db() as db:
+        assert await db.scalar(select(func.count()).select_from(Canvas)) == 0
+        assert await db.scalar(select(func.count()).select_from(CanvasDocument)) == 0
         assert await db.get(Board, board_id) is None
         assert (
             await db.scalar(
@@ -823,6 +1080,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
                 yield db
 
         monkeypatch.setattr("app.models.board.get_db", test_db)
+        monkeypatch.setattr("app.models.canvas.get_db", test_db)
         monkeypatch.setattr("app.models.user.get_db", test_db)
         try:
             async with admin.begin() as connection:
@@ -999,6 +1257,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
             await assert_member_invitations(test_db, user_id, board.id)
             await assert_board_settings(test_db, user_id, board.id, newcomer_id)
             await assert_shelf_management(test_db, user_id, board.id, other.id, other_grade)
+            await assert_canvas_drafts(test_db, user_id, board.id, other.id, other_grade)
             await assert_board_lifecycle(test_db, user_id, board.id, newcomer_id)
             await service.delete_board(
                 user_id,
