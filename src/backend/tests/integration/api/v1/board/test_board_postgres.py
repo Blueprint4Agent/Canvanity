@@ -18,6 +18,7 @@ from app.core.db.migrations import _build_alembic_config
 from app.core.error import AuthErrorCode, AuthException
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
+    ACTIONS,
     Board,
     BoardCreateForm,
     BoardDeleteForm,
@@ -32,10 +33,15 @@ from app.models.board import (
     BoardMemberInviteForm,
     BoardMemberPatchForm,
     BoardOwnershipTransferForm,
+    BoardPoliciesForm,
     BoardRepository,
     BoardSettingsPatchForm,
     BoardTransaction,
+    PolicyChangeForm,
     Shelf,
+    ShelfCreateForm,
+    ShelfOrderForm,
+    ShelfPoliciesForm,
     ShelfPolicy,
 )
 from app.models.user import User, Users
@@ -43,6 +49,7 @@ from app.services.board import BoardService
 from app.services.board_grade import BoardGradeService
 from app.services.board_membership import BoardMembershipService
 from app.services.board_permission import BoardPermissionService
+from app.services.shelf import ShelfService
 
 pytestmark = [
     pytest.mark.primary_data,
@@ -514,6 +521,182 @@ async def assert_board_settings(test_db, user_id, board_id, member_id):
     assert repeated == private
 
 
+async def assert_shelf_management(test_db, owner_id, board_id, other_id, other_grade):
+    service = ShelfService(BoardPermissionService(), BoardRepository())
+    initial = await service.list(owner_id, board_id, manage=True)
+    results = await asyncio.gather(
+        *[
+            service.create(
+                owner_id,
+                board_id,
+                ShelfCreateForm(
+                    expected_revision=initial.board_revision,
+                    reason="동시 분류 생성",
+                    name="프로젝트",
+                    slug="projects",
+                ),
+            )
+            for _ in range(2)
+        ],
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(result, Exception) for result in results) == 1
+    assert (
+        sum(
+            isinstance(result, BoardException)
+            and result.code.error == BoardErrorCode.CONFLICT.code.error
+            for result in results
+        )
+        == 1
+    )
+    created = next(result for result in results if not isinstance(result, Exception))
+    shelf_id = created.shelf.id
+    async with test_db() as db:
+        own_grade = (await db.get(BoardMember, (board_id, owner_id))).grade_id
+        with pytest.raises(IntegrityError):
+            await db.execute(
+                text(
+                    "INSERT INTO shelves(id, board_id, name, slug, purpose, sort_order, created_at) VALUES (:id, :board, 'duplicate', 'projects', 'general', 3, now())"
+                ),
+                {"id": uuid4(), "board": board_id},
+            )
+        await db.rollback()
+        with pytest.raises(IntegrityError):
+            await db.execute(
+                text(
+                    "INSERT INTO shelf_policies(board_id, shelf_id, action, audience, min_grade_id) VALUES (:board, :shelf, 'react', 'members', :grade)"
+                ),
+                {"board": board_id, "shelf": shelf_id, "grade": other_grade},
+            )
+        await db.rollback()
+        with pytest.raises(IntegrityError):
+            await db.execute(
+                text(
+                    "INSERT INTO shelf_policies(board_id, shelf_id, action, audience, min_grade_id) VALUES (:board, :shelf, 'react', 'members', :grade)"
+                ),
+                {"board": other_id, "shelf": shelf_id, "grade": other_grade},
+            )
+        await db.rollback()
+    current = await service.list(owner_id, board_id, manage=True)
+    ids = [s.id for s in current.items][::-1]
+    actions = {a: None for a in ACTIONS}
+    actions["react"] = {
+        "audience": "members",
+        "min_grade_id": own_grade,
+        "staff_only": False,
+        "staff_bypass": True,
+    }
+    results = await asyncio.gather(
+        service.reorder(
+            owner_id,
+            board_id,
+            ShelfOrderForm(
+                expected_revision=current.board_revision, reason="동시 정렬", shelf_ids=ids
+            ),
+        ),
+        service.set_shelf_policies(
+            owner_id,
+            shelf_id,
+            ShelfPoliciesForm(
+                expected_revision=current.board_revision, reason="동시 정책", actions=actions
+            ),
+        ),
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(result, Exception) for result in results) == 1
+    assert (
+        sum(
+            isinstance(result, BoardException)
+            and result.code.error == BoardErrorCode.CONFLICT.code.error
+            for result in results
+        )
+        == 1
+    )
+    saved = await service.list(owner_id, board_id, manage=True)
+    saved_policy = await service.shelf_policies(owner_id, shelf_id)
+    saved_board_policy = await service.board_policies(owner_id, board_id)
+    async with test_db() as db:
+        audits = await db.scalar(
+            select(func.count())
+            .select_from(BoardMemberAudit)
+            .where(BoardMemberAudit.board_id == board_id)
+        )
+    ordered = [s.id for s in saved.items][::-1]
+    changed_actions = saved_board_policy.actions.model_dump()
+    changed_actions["react"] = {
+        "audience": "members",
+        "min_grade_id": None,
+        "staff_only": True,
+        "staff_bypass": False,
+    }
+    with patch(
+        "sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=SQLAlchemyError("commit failed")
+    ):
+        for operation in (
+            lambda: service.reorder(
+                owner_id,
+                board_id,
+                ShelfOrderForm(
+                    expected_revision=saved.board_revision, reason="정렬 롤백", shelf_ids=ordered
+                ),
+            ),
+            lambda: service.set_shelf_policies(
+                owner_id,
+                shelf_id,
+                ShelfPoliciesForm(
+                    expected_revision=saved.board_revision,
+                    reason="정책 롤백",
+                    actions={**actions, "react": None} if saved_policy.actions.react else actions,
+                ),
+            ),
+            lambda: service.set_board_policies(
+                owner_id,
+                board_id,
+                BoardPoliciesForm(
+                    expected_revision=saved.board_revision,
+                    reason="기본 정책 롤백",
+                    actions=changed_actions,
+                ),
+            ),
+            lambda: service.delete(
+                owner_id,
+                shelf_id,
+                PolicyChangeForm(expected_revision=saved.board_revision, reason="삭제 롤백"),
+            ),
+        ):
+            with pytest.raises(BoardException) as rejected:
+                await operation()
+            assert rejected.value.code.error == BoardErrorCode.UNAVAILABLE.code.error
+    assert await service.list(owner_id, board_id, manage=True) == saved
+    assert await service.shelf_policies(owner_id, shelf_id) == saved_policy
+    assert await service.board_policies(owner_id, board_id) == saved_board_policy
+    async with test_db() as db:
+        assert (
+            await db.scalar(
+                select(func.count())
+                .select_from(BoardMemberAudit)
+                .where(BoardMemberAudit.board_id == board_id)
+            )
+            == audits
+        )
+    await service.delete(
+        owner_id,
+        shelf_id,
+        PolicyChangeForm(expected_revision=saved.board_revision, reason="분류 정리"),
+    )
+    async with test_db() as db:
+        assert await db.get(Shelf, shelf_id) is None
+        assert (
+            await db.scalar(
+                select(func.count())
+                .select_from(ShelfPolicy)
+                .where(ShelfPolicy.shelf_id == shelf_id)
+            )
+            == 0
+        )
+        assert await db.get(Board, other_id) is not None
+
+
 async def assert_board_lifecycle(test_db, owner_id, board_id, target_id):
     service = BoardService(BoardPermissionService(), BoardRepository())
     before = await service.home(owner_id, board_id=board_id)
@@ -815,6 +998,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
             await assert_grade_management(test_db, user_id, board.id)
             await assert_member_invitations(test_db, user_id, board.id)
             await assert_board_settings(test_db, user_id, board.id, newcomer_id)
+            await assert_shelf_management(test_db, user_id, board.id, other.id, other_grade)
             await assert_board_lifecycle(test_db, user_id, board.id, newcomer_id)
             await service.delete_board(
                 user_id,

@@ -4,8 +4,10 @@ from uuid import UUID
 
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
+    ACTIONS,
     BOARD_SETTING_FIELDS,
     Board,
+    BoardAction,
     BoardMember,
     BoardMemberGrade,
     BoardMemberPatchForm,
@@ -71,6 +73,32 @@ class BoardPermissionService:
         if actor.role == "moderator" and not audit:
             return "moderation"
         raise BoardException(BoardErrorCode.FORBIDDEN)
+
+    def shelf_capabilities(
+        self,
+        board: Board,
+        member: BoardMember | None,
+        shelf_id: UUID,
+        grades: dict[UUID, BoardMemberGrade],
+        policies: dict[str, BoardPolicy],
+        overrides: dict[tuple[UUID, str], ShelfPolicy],
+    ) -> dict[BoardAction, bool]:
+        allowed = {
+            action: self.allowed(
+                board,
+                member,
+                overrides.get((shelf_id, action), policies.get(action)),
+                grades,
+                action,
+            )
+            for action in ACTIONS
+        }
+        return {action: value and allowed["read_canvas"] for action, value in allowed.items()}
+
+    def check_manage_shelves(self, board: Board, actor: BoardMember | None, *, write: bool) -> None:
+        self.member_scope(board, actor, audit=True)
+        if write and board.status != "active":
+            raise BoardException(BoardErrorCode.FORBIDDEN)
 
     def check_owner_action(self, board: Board, actor: BoardMember | None) -> None:
         self.check_read(board, actor)
