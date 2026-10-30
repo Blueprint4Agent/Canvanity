@@ -3514,6 +3514,446 @@
         "title": "Body_refresh_token_api_v1_auth_refresh_post",
         "type": "object"
       },
+      "CanvasCapabilities": {
+        "properties": {
+          "edit_metadata": {
+            "title": "Edit Metadata",
+            "type": "boolean"
+          },
+          "read_document": {
+            "title": "Read Document",
+            "type": "boolean"
+          },
+          "restore": {
+            "title": "Restore",
+            "type": "boolean"
+          },
+          "trash": {
+            "title": "Trash",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "read_document",
+          "edit_metadata",
+          "trash",
+          "restore"
+        ],
+        "title": "CanvasCapabilities",
+        "type": "object"
+      },
+      "CanvasContent": {
+        "properties": {
+          "edges": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "element_order": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Element Order",
+            "type": "array"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/CanvasEngine"
+          },
+          "nodes": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CanvasSettings"
+          }
+        },
+        "title": "CanvasContent",
+        "type": "object"
+      },
+      "CanvasCreateForm": {
+        "additionalProperties": false,
+        "properties": {
+          "shelf_id": {
+            "format": "uuid",
+            "title": "Shelf Id",
+            "type": "string"
+          },
+          "summary": {
+            "default": "",
+            "maxLength": 500,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "visibility": {
+            "default": "members",
+            "enum": [
+              "public",
+              "members"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "shelf_id",
+          "title"
+        ],
+        "title": "CanvasCreateForm",
+        "type": "object"
+      },
+      "CanvasDocumentResponse": {
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/CanvasContent"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "view": {
+            "const": "draft",
+            "default": "draft",
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "document",
+          "revision"
+        ],
+        "title": "CanvasDocumentResponse",
+        "type": "object"
+      },
+      "CanvasEngine": {
+        "properties": {
+          "adapter_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Adapter Version",
+            "type": "integer"
+          },
+          "name": {
+            "const": "excalidraw",
+            "default": "excalidraw",
+            "title": "Name",
+            "type": "string"
+          },
+          "version": {
+            "const": "0.18.1",
+            "default": "0.18.1",
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "title": "CanvasEngine",
+        "type": "object"
+      },
+      "CanvasErrorDetail": {
+        "properties": {
+          "details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          },
+          "error": {
+            "enum": [
+              "CANVAS_NOT_FOUND",
+              "CANVAS_FORBIDDEN",
+              "CANVAS_INVALID_SHELF",
+              "CANVAS_REVISION_CONFLICT",
+              "CANVAS_INVALID_STATE",
+              "CANVAS_RESTORE_EXPIRED",
+              "CANVAS_UNAVAILABLE"
+            ],
+            "example": "CANVAS_NOT_FOUND",
+            "title": "Error",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "message"
+        ],
+        "title": "CanvasErrorDetail",
+        "type": "object"
+      },
+      "CanvasErrorResponse": {
+        "properties": {
+          "detail": {
+            "$ref": "#/components/schemas/CanvasErrorDetail"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "CanvasErrorResponse",
+        "type": "object"
+      },
+      "CanvasMetadata": {
+        "properties": {
+          "author_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Author Id"
+          },
+          "board_id": {
+            "format": "uuid",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "shelf_id": {
+            "format": "uuid",
+            "title": "Shelf Id",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "trashed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "trashed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trashed At"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "members"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "board_id",
+          "shelf_id",
+          "author_id",
+          "title",
+          "summary",
+          "visibility",
+          "status",
+          "revision",
+          "trashed_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CanvasMetadata",
+        "type": "object"
+      },
+      "CanvasPatchForm": {
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "anyOf": [
+              {
+                "required": [
+                  "title"
+                ]
+              },
+              {
+                "required": [
+                  "summary"
+                ]
+              },
+              {
+                "required": [
+                  "shelf_id"
+                ]
+              },
+              {
+                "required": [
+                  "visibility"
+                ]
+              }
+            ]
+          }
+        ],
+        "properties": {
+          "expected_revision": {
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "shelf_id": {
+            "format": "uuid",
+            "title": "Shelf Id",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 500,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "visibility": {
+            "enum": [
+              "public",
+              "members"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "CanvasPatchForm",
+        "type": "object"
+      },
+      "CanvasResponse": {
+        "properties": {
+          "canvas": {
+            "$ref": "#/components/schemas/CanvasMetadata"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/CanvasCapabilities"
+          },
+          "document_revision": {
+            "title": "Document Revision",
+            "type": "integer"
+          },
+          "view": {
+            "const": "draft",
+            "default": "draft",
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "canvas",
+          "document_revision",
+          "capabilities"
+        ],
+        "title": "CanvasResponse",
+        "type": "object"
+      },
+      "CanvasRevisionForm": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "CanvasRevisionForm",
+        "type": "object"
+      },
+      "CanvasSettings": {
+        "properties": {
+          "background": {
+            "default": "#F8F7F4",
+            "title": "Background",
+            "type": "string"
+          },
+          "grid": {
+            "default": "dots",
+            "enum": [
+              "none",
+              "dots"
+            ],
+            "title": "Grid",
+            "type": "string"
+          },
+          "height": {
+            "default": 2100,
+            "title": "Height",
+            "type": "integer"
+          },
+          "width": {
+            "default": 3200,
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "title": "CanvasSettings",
+        "type": "object"
+      },
       "ChangePasswordForm": {
         "properties": {
           "code": {
@@ -5137,6 +5577,7 @@
           },
           "error": {
             "enum": [
+              "SHELF_NOT_EMPTY",
               "SHELF_NOT_FOUND",
               "SHELF_SLUG_TAKEN",
               "SHELF_LIMIT_REACHED",
@@ -13892,6 +14333,153 @@
         ]
       }
     },
+    "/api/v1/boards/{board_id}/canvases": {
+      "post": {
+        "operationId": "create_canvas_api_v1_boards__board_id__canvases_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanvasCreateForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Create Canvas Api V1 Boards  Board Id  Canvases Post"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Create Canvas Api V1 Boards  Board Id  Canvases Post"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Create Canvas Api V1 Boards  Board Id  Canvases Post"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_INVALID_SHELF",
+                    "message": "Select a manual shelf in the same board."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Create Canvas",
+        "tags": [
+          "Canvases"
+        ]
+      }
+    },
     "/api/v1/boards/{board_id}/grades": {
       "get": {
         "operationId": "grades_api_v1_boards__board_id__grades_get",
@@ -16766,6 +17354,750 @@
         "summary": "Reorder Shelves",
         "tags": [
           "Shelves"
+        ]
+      }
+    },
+    "/api/v1/canvases/{canvas_id}": {
+      "delete": {
+        "operationId": "trash_canvas_api_v1_canvases__canvas_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canvas_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Canvas Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanvasRevisionForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Trash Canvas Api V1 Canvases  Canvas Id  Delete"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Trash Canvas Api V1 Canvases  Canvas Id  Delete"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Trash Canvas Api V1 Canvases  Canvas Id  Delete"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_REVISION_CONFLICT",
+                    "message": "Canvas metadata revision conflict. Reload the latest canvas."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Trash Canvas",
+        "tags": [
+          "Canvases"
+        ]
+      },
+      "get": {
+        "operationId": "get_canvas_api_v1_canvases__canvas_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canvas_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Canvas Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "const": "draft",
+              "default": "draft",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Get Canvas Api V1 Canvases  Canvas Id  Get"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Get Canvas Api V1 Canvases  Canvas Id  Get"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Get Canvas Api V1 Canvases  Canvas Id  Get"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Canvas",
+        "tags": [
+          "Canvases"
+        ]
+      },
+      "patch": {
+        "operationId": "change_canvas_api_v1_canvases__canvas_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canvas_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Canvas Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanvasPatchForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Change Canvas Api V1 Canvases  Canvas Id  Patch"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Change Canvas Api V1 Canvases  Canvas Id  Patch"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Change Canvas Api V1 Canvases  Canvas Id  Patch"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_REVISION_CONFLICT",
+                    "message": "Canvas metadata revision conflict. Reload the latest canvas."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_INVALID_SHELF",
+                    "message": "Select a manual shelf in the same board."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Change Canvas",
+        "tags": [
+          "Canvases"
+        ]
+      }
+    },
+    "/api/v1/canvases/{canvas_id}/document": {
+      "get": {
+        "operationId": "get_canvas_document_api_v1_canvases__canvas_id__document_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canvas_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Canvas Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "view",
+            "required": false,
+            "schema": {
+              "const": "draft",
+              "default": "draft",
+              "title": "View",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasDocumentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Get Canvas Document Api V1 Canvases  Canvas Id  Document Get"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Get Canvas Document Api V1 Canvases  Canvas Id  Document Get"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Get Canvas Document Api V1 Canvases  Canvas Id  Document Get"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Get Canvas Document",
+        "tags": [
+          "Canvases"
+        ]
+      }
+    },
+    "/api/v1/canvases/{canvas_id}/restore": {
+      "post": {
+        "operationId": "restore_canvas_api_v1_canvases__canvas_id__restore_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canvas_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Canvas Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanvasRevisionForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Restore Canvas Api V1 Canvases  Canvas Id  Restore Post"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Restore Canvas Api V1 Canvases  Canvas Id  Restore Post"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Restore Canvas Api V1 Canvases  Canvas Id  Restore Post"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_REVISION_CONFLICT",
+                    "message": "Canvas metadata revision conflict. Reload the latest canvas."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Restore Canvas",
+        "tags": [
+          "Canvases"
         ]
       }
     },

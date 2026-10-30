@@ -53,6 +53,7 @@ from app.routers.v1 import (
     billing,
     billing_webhook,
     board,
+    canvas,
     events,
     inbox,
     inquiry,
@@ -295,6 +296,7 @@ def create_app() -> FastAPI:
     app.include_router(billing.router, prefix="/api/v1/billing", tags=["Billing"])
     app.include_router(events.router, prefix="/api/v1/events", tags=["Events"])
     app.include_router(shelf.router, prefix="/api/v1", tags=["Shelves"])
+    app.include_router(canvas.router, prefix="/api/v1", tags=["Canvases"])
 
     if static_dist_dir.exists():
         frontend = RuntimeStaticFiles(

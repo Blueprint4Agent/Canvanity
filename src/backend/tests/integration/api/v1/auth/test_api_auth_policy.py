@@ -152,6 +152,12 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("PUT", "/api/v1/boards/{board_id}/policies"),
         ("GET", "/api/v1/shelves/{shelf_id}/policies"),
         ("PUT", "/api/v1/shelves/{shelf_id}/policies"),
+        ("POST", "/api/v1/boards/{board_id}/canvases"),
+        ("GET", "/api/v1/canvases/{canvas_id}"),
+        ("PATCH", "/api/v1/canvases/{canvas_id}"),
+        ("DELETE", "/api/v1/canvases/{canvas_id}"),
+        ("GET", "/api/v1/canvases/{canvas_id}/document"),
+        ("POST", "/api/v1/canvases/{canvas_id}/restore"),
     }
     assert actual == expected
 
@@ -364,5 +370,21 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
         assert client.request(method, target, headers=key, json=payload).status_code == 401
     assert client.get(path + "/shelves", headers=key).status_code == 404
     assert client.get(shelf_path, headers=key).status_code == 404
+    created_canvas = client.post(
+        path + "/canvases",
+        headers=bearer,
+        json={"shelf_id": shelves[0]["id"], "title": "키 인증 경계"},
+    )
+    assert created_canvas.status_code == 201
+    canvas_path = created_canvas.headers["location"]
+    for method, target, body in [
+        ("POST", path + "/canvases", {"shelf_id": shelves[0]["id"], "title": "키 거부"}),
+        ("GET", canvas_path, None),
+        ("GET", canvas_path + "/document", None),
+        ("PATCH", canvas_path, {"expected_revision": 0, "title": "키 거부"}),
+        ("DELETE", canvas_path, {"expected_revision": 0}),
+        ("POST", canvas_path + "/restore", {"expected_revision": 0}),
+    ]:
+        assert client.request(method, target, headers=key, json=body).status_code == 401
     schema = client.app.openapi()
     assert {} in schema["paths"]["/api/v1/boards"]["get"]["security"]

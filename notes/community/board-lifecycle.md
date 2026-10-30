@@ -12,6 +12,8 @@ DELETE /api/v1/boards/{board_id}는 기존 expected_revision/confirm_slug 계약
 
 Board 삭제는 User/전역 Interest/다른 Board를 삭제하지 않는다. 현재 Board에는 avatar/cover/Canvas/asset 파일 참조가 없어 물리 삭제할 Board 소유 파일이 없다. User 프로필 사진은 보존하고 prefix/레이아웃 JSON으로 파일 소유권을 추측하지 않는다. 기존 프로필 정리의 무보장 동작을 새 Board 파일 정리 보장으로 설명하지 않는다.
 
-#6/#8에서 실제 에셋/게시글을 연결하기 전에 Board 삭제 트랜잭션에 asset_deletion_outbox와 공유 draft/publication 참조 검사·원래 저장소 위치·재시도/운영 재처리를 통합해야 한다. outbox는 부모 Board 삭제 후에도 남아야 하며 그때 하위 Canvas/댓글/반응 등 전체 삭제와 active 빈 Board 판정도 확장한다. 현재 사용하지 않는 에셋/outbox/worker는 추가하지 않는다. #22 전체와 파일 수명주기는 미완료다.
+[Canvas 초안 기반](canvas-drafts.md) 연결 후에는 active 빈 Board 판정에 초안/휴지통을 모두 포함하고, archived 삭제는 CanvasDocument/Canvas를 Shelf보다 먼저 같은 트랜잭션에서 정리한다. 원래 #39 검증 당시에는 없던 참조를 확장한 범위다. 현재 에셋 파일 참조는 여전히 없어 파일 정리 outbox는 #6 에셋 연결 전 요구로 남는다.
+
+#6에서 실제 에셋을 연결하기 전에 Board 삭제 트랜잭션에 asset_deletion_outbox와 공유 draft/publication 참조 검사·원래 저장소 위치·재시도/운영 재처리를 통합해야 한다. outbox는 부모 Board 삭제 후에도 남아야 한다. 현재 Canvas/문서와 active 빈 Board 판정은 연결했고, 이후 공개본/댓글/반응 등 새 참조가 생길 때 전체 삭제를 확장한다. 현재 사용하지 않는 에셋/outbox/worker는 추가하지 않는다. #22 전체와 파일 수명주기는 미완료다.
 
 검증은 역할/상태/현재 권한·등급/가입 시각 보존·계정 삭제 소유 경계·동시 위임 단일 승자·Owner 유니크·감사/rollback·보관 삭제·active 빈 Board 호환성과 다른 Board/계정/프로필 파일 보존을 포함한다. 실제 PostgreSQL은 격리 schema에서 위임/삭제·제약/rollback·migration 왕복을 검증한다. worklog/0285-board-ownership-lifecycle.md와 #39에서 구현·검증·게시·main 병합을 구분한다. 기준은 선행 초안 PR #38이며 UI/운영 배포는 포함하지 않는다.

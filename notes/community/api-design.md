@@ -77,7 +77,7 @@ interest_ids 값은 설명용이며 실제 GET /interests의 활성 id만 수락
 
 Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/target_user_id/reason을 받는다. 기존 Owner→Admin, 대상 active 멤버→Owner, owner_id 변경과 감사를 원자적으로 처리한다. generic member PATCH의 role=owner는 422다. `DELETE /boards/{board_id}`는 Owner만 archived 상태에서 `{expected_revision,confirm_slug}`로 요청한다. 게시글 등 하위 DB 데이터 삭제와 파일 정리 outbox를 원자적으로 기록하고 204를 반환한다. sole Owner도 보관→명시적 영구 삭제로 계정 삭제 전제조건을 해소할 수 있다. 계정 삭제 소유 검사는 이 종료 경로와 함께 출시한다.
 
-현재 구현은 [소유권·종료 계약](board-lifecycle.md)을 따른다. 위임은 같은 Board의 다른 active 회원/활성 계정을 대상으로 하고 응답은 board_id/previous_owner_id/owner_id/board_revision이다. 삭제는 archived 전체 현재 데이터 정리와 기존 active 빈 Board 되돌리기를 지원한다. 현재 Board에는 파일 참조가 없어 파일 I/O/outbox는 없으며 User 프로필 파일을 보존한다. 위 문단의 Canvas/에셋/outbox는 #6/#8 연결 전 구현할 후속 범위다.
+현재 구현은 [소유권·종료 계약](board-lifecycle.md)을 따른다. 위임은 같은 Board의 다른 active 회원/활성 계정을 대상으로 하고 응답은 board_id/previous_owner_id/owner_id/board_revision이다. 삭제는 archived 전체 현재 데이터 정리와 기존 active 빈 Board 되돌리기를 지원하며 현재 Canvas/문서를 함께 정리한다. 에셋 파일 참조가 없어 파일 I/O/outbox는 없으며 User 프로필 파일을 보존한다. 에셋/outbox는 #6 연결 전 구현할 후속 범위다.
 
 ## Shelf — #23
 
@@ -93,7 +93,7 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 
 기존 예제의 `write_policy`는 독립 권한 원본으로 저장하지 않는다. 상세 응답에 본인 capabilities와 정책 요약을 제공한다. 목적(purpose=general/notice)과 분류 방식(classification=manual)을 분리한다. is_visible=false는 메뉴에서만 숨기며 직접 URL 접근은 실제 읽기 정책을 따른다. smart 입력은 422다.
 
-현재 #23의 [구현 계약](shelf-management.md)은 Shelf CRUD/정렬·일반/관리 목록·직접 조회와 GET/PUT Board 기본/Shelf 재정의 정책을 제공한다. 변경은 reason/expected_revision을 요구하고 최대 100개·동일 Board 전체 순서·기본/마지막 보호를 적용한다. manage=true 목록은 Owner/Admin 전용이다. policies PUT은 전체 4액션을 요구하고 Shelf의 null은 상속한다. DELETE 204는 X-Board-Revision을 반환한다. Canvas 모델이 아직 없어 게시글 목록/cursor·소속 FK·비어 있지 않은 Shelf 검사는 #8 연결 시 필수 후속이다. 현재 삭제에 콘텐츠 수명주기 보장을 확대하지 않는다.
+현재 #23의 [구현 계약](shelf-management.md)은 Shelf CRUD/정렬·일반/관리 목록·직접 조회와 GET/PUT Board 기본/Shelf 재정의 정책을 제공한다. 변경은 reason/expected_revision을 요구하고 최대 100개·동일 Board 전체 순서·기본/마지막 보호를 적용한다. manage=true 목록은 Owner/Admin 전용이다. policies PUT은 전체 4액션을 요구하고 Shelf의 null은 상속한다. DELETE 204는 X-Board-Revision을 반환한다. Canvas 초안/휴지통의 소속 FK·RESTRICT와 비어 있지 않음 검사를 연결했고 공개 게시글 목록/cursor는 게시 snapshot과 함께 #8에서 이어간다.
 
 ## Canvas 메타데이터·문서·게시 — #8/#7
 
@@ -113,6 +113,8 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 | GET    | /boards/{board_id}/my-canvases  | 로그인 본인 초안/공개/보관/휴지통, status 필터. 프로필 My Canvas와 별도 데이터                                   |
 
 author_id/board_id/published_at/publication_revision은 서버 전용 필드다. DTO extra='forbid'로 과다 필드를 422로 거부한다. metadata revision과 document revision을 혼용하지 않는다.
+
+현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/빈 본문 조회·title/summary/shelf_id/visibility PATCH·휴지통/복구만 제공한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. DELETE는 204와 X-Canvas-Revision이다. Tag/썸네일·본문 PUT·게시/공개 snapshot·목록/Plaza는 해당 후속 작업에서 계약을 확장한다.
 
 ```json
 {

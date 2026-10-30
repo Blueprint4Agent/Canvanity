@@ -1142,6 +1142,14 @@ class BoardTransaction:
             select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
         )
 
+    async def canvas_count(self, board_id: UUID, shelf_id: UUID | None = None) -> int:
+        from app.models.canvas import Canvas
+
+        statement = select(func.count()).select_from(Canvas).where(Canvas.board_id == board_id)
+        if shelf_id is not None:
+            statement = statement.where(Canvas.shelf_id == shelf_id)
+        return await self._db.scalar(statement)
+
     async def shelf_board_id(self, shelf_id: UUID) -> UUID | None:
         return await self._db.scalar(select(Shelf.board_id).where(Shelf.id == shelf_id))
 
@@ -1470,6 +1478,13 @@ class BoardTransaction:
         await self._db.flush()
 
     async def delete_board(self, board: Board) -> None:
+        from app.models.canvas import Canvas, CanvasDocument
+
+        canvas_ids = select(Canvas.id).where(Canvas.board_id == board.id)
+        await self._db.execute(
+            delete(CanvasDocument).where(CanvasDocument.canvas_id.in_(canvas_ids))
+        )
+        await self._db.execute(delete(Canvas).where(Canvas.board_id == board.id))
         for model in (
             ShelfPolicy,
             BoardPolicy,

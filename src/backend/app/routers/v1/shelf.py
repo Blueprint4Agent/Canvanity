@@ -104,7 +104,7 @@ async def change_shelf(
 @router.delete(
     "/shelves/{shelf_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=_responses(ShelfErrorCode.PROTECTED, write=True),
+    responses=_responses(ShelfErrorCode.PROTECTED, ShelfErrorCode.NOT_EMPTY, write=True),
 )
 async def delete_shelf(
     shelf_id: UUID,

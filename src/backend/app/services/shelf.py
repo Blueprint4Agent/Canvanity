@@ -212,6 +212,8 @@ class ShelfService:
             )
             if shelf.is_default or len(shelves) == 1:
                 raise ShelfException(ShelfErrorCode.PROTECTED)
+            if await tx.canvas_count(board.id, shelf.id):
+                raise ShelfException(ShelfErrorCode.NOT_EMPTY)
             await tx.delete_shelf(board, user_id, shelf, form.reason)
             revision = board.revision
         return revision

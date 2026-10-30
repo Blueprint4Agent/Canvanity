@@ -15,6 +15,7 @@ from app.models import (
     api_key,  # noqa: F401
     billing,  # noqa: F401
     board,  # noqa: F401
+    canvas,  # noqa: F401
     inbox,  # noqa: F401
     inquiry,  # noqa: F401
     interest,  # noqa: F401
