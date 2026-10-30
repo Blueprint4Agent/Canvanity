@@ -214,6 +214,41 @@
                 "title": "APIKeysResponse",
                 "type": "object"
             },
+            "ActionPolicy": {
+                "additionalProperties": false,
+                "properties": {
+                    "audience": {
+                        "enum": ["public", "members"],
+                        "title": "Audience",
+                        "type": "string"
+                    },
+                    "min_grade_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Min Grade Id"
+                    },
+                    "staff_bypass": {
+                        "default": true,
+                        "title": "Staff Bypass",
+                        "type": "boolean"
+                    },
+                    "staff_only": {
+                        "default": false,
+                        "title": "Staff Only",
+                        "type": "boolean"
+                    }
+                },
+                "required": ["audience"],
+                "title": "ActionPolicy",
+                "type": "object"
+            },
             "AdminConnection": {
                 "properties": {
                     "checked_at": {
@@ -2161,6 +2196,16 @@
                             }
                         ]
                     },
+                    "policy_change": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/PolicyAuditChange"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
                     "reason": {
                         "anyOf": [
                             {
@@ -2171,6 +2216,16 @@
                             }
                         ],
                         "title": "Reason"
+                    },
+                    "shelf_change": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ShelfAuditChange"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "target_user_id": {
                         "anyOf": [
@@ -2560,6 +2615,67 @@
                 },
                 "required": ["items"],
                 "title": "BoardPageResponse",
+                "type": "object"
+            },
+            "BoardPoliciesForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "actions": {
+                        "$ref": "#/components/schemas/BoardPolicyActions"
+                    },
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason", "actions"],
+                "title": "BoardPoliciesForm",
+                "type": "object"
+            },
+            "BoardPoliciesResponse": {
+                "properties": {
+                    "actions": {
+                        "$ref": "#/components/schemas/BoardPolicyActions"
+                    },
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": ["board_id", "actions", "board_revision"],
+                "title": "BoardPoliciesResponse",
+                "type": "object"
+            },
+            "BoardPolicyActions": {
+                "additionalProperties": false,
+                "properties": {
+                    "create_canvas": {
+                        "$ref": "#/components/schemas/ActionPolicy"
+                    },
+                    "create_comment": {
+                        "$ref": "#/components/schemas/ActionPolicy"
+                    },
+                    "react": {
+                        "$ref": "#/components/schemas/ActionPolicy"
+                    },
+                    "read_canvas": {
+                        "$ref": "#/components/schemas/ActionPolicy"
+                    }
+                },
+                "required": ["read_canvas", "create_canvas", "create_comment", "react"],
+                "title": "BoardPolicyActions",
                 "type": "object"
             },
             "BoardSettingsAuditChange": {
@@ -3974,6 +4090,50 @@
                 "title": "PingEvent",
                 "type": "object"
             },
+            "PolicyAuditChange": {
+                "properties": {
+                    "after": {
+                        "$ref": "#/components/schemas/ShelfPolicyActions"
+                    },
+                    "before": {
+                        "$ref": "#/components/schemas/ShelfPolicyActions"
+                    },
+                    "shelf_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Shelf Id"
+                    }
+                },
+                "required": ["shelf_id", "before", "after"],
+                "title": "PolicyAuditChange",
+                "type": "object"
+            },
+            "PolicyChangeForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason"],
+                "title": "PolicyChangeForm",
+                "type": "object"
+            },
             "ReadinessResponse": {
                 "properties": {
                     "checks": {
@@ -4125,6 +4285,583 @@
                 "title": "ResetPasswordResponse",
                 "type": "object"
             },
+            "ShelfAuditChange": {
+                "properties": {
+                    "after": {
+                        "items": {
+                            "$ref": "#/components/schemas/ShelfState"
+                        },
+                        "title": "After",
+                        "type": "array"
+                    },
+                    "before": {
+                        "items": {
+                            "$ref": "#/components/schemas/ShelfState"
+                        },
+                        "title": "Before",
+                        "type": "array"
+                    },
+                    "policies_after": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ShelfPolicyActions"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "policies_before": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ShelfPolicyActions"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": ["before", "after"],
+                "title": "ShelfAuditChange",
+                "type": "object"
+            },
+            "ShelfCreateForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "classification": {
+                        "const": "manual",
+                        "default": "manual",
+                        "title": "Classification",
+                        "type": "string"
+                    },
+                    "description": {
+                        "default": "",
+                        "maxLength": 2000,
+                        "title": "Description",
+                        "type": "string"
+                    },
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "icon": {
+                        "default": "messages-square",
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "title": "Icon",
+                        "type": "string"
+                    },
+                    "is_visible": {
+                        "default": true,
+                        "title": "Is Visible",
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "purpose": {
+                        "default": "general",
+                        "enum": ["general", "notice"],
+                        "title": "Purpose",
+                        "type": "string"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    },
+                    "slug": {
+                        "maxLength": 64,
+                        "minLength": 3,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                        "title": "Slug",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason", "name", "slug"],
+                "title": "ShelfCreateForm",
+                "type": "object"
+            },
+            "ShelfDetail": {
+                "properties": {
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "capabilities": {
+                        "additionalProperties": {
+                            "type": "boolean"
+                        },
+                        "propertyNames": {
+                            "enum": ["read_canvas", "create_canvas", "create_comment", "react"]
+                        },
+                        "title": "Capabilities",
+                        "type": "object"
+                    },
+                    "classification": {
+                        "const": "manual",
+                        "title": "Classification",
+                        "type": "string"
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string"
+                    },
+                    "icon": {
+                        "title": "Icon",
+                        "type": "string"
+                    },
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "is_default": {
+                        "title": "Is Default",
+                        "type": "boolean"
+                    },
+                    "is_visible": {
+                        "title": "Is Visible",
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "purpose": {
+                        "enum": ["general", "notice"],
+                        "title": "Purpose",
+                        "type": "string"
+                    },
+                    "slug": {
+                        "title": "Slug",
+                        "type": "string"
+                    },
+                    "sort_order": {
+                        "title": "Sort Order",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "slug",
+                    "name",
+                    "description",
+                    "icon",
+                    "purpose",
+                    "classification",
+                    "sort_order",
+                    "is_default",
+                    "capabilities",
+                    "board_id",
+                    "is_visible"
+                ],
+                "title": "ShelfDetail",
+                "type": "object"
+            },
+            "ShelfErrorDetail": {
+                "properties": {
+                    "details": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Details"
+                    },
+                    "error": {
+                        "enum": [
+                            "SHELF_NOT_FOUND",
+                            "SHELF_SLUG_TAKEN",
+                            "SHELF_LIMIT_REACHED",
+                            "SHELF_PROTECTED",
+                            "SHELF_INVALID_ORDER",
+                            "SHELF_INVALID_POLICY"
+                        ],
+                        "example": "SHELF_NOT_FOUND",
+                        "title": "Error",
+                        "type": "string"
+                    },
+                    "message": {
+                        "title": "Message",
+                        "type": "string"
+                    }
+                },
+                "required": ["error", "message"],
+                "title": "ShelfErrorDetail",
+                "type": "object"
+            },
+            "ShelfErrorResponse": {
+                "properties": {
+                    "detail": {
+                        "$ref": "#/components/schemas/ShelfErrorDetail"
+                    }
+                },
+                "required": ["detail"],
+                "title": "ShelfErrorResponse",
+                "type": "object"
+            },
+            "ShelfOrderForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    },
+                    "shelf_ids": {
+                        "items": {
+                            "format": "uuid",
+                            "type": "string"
+                        },
+                        "maxItems": 100,
+                        "minItems": 1,
+                        "title": "Shelf Ids",
+                        "type": "array"
+                    }
+                },
+                "required": ["expected_revision", "reason", "shelf_ids"],
+                "title": "ShelfOrderForm",
+                "type": "object"
+            },
+            "ShelfPatchForm": {
+                "additionalProperties": false,
+                "allOf": [
+                    {
+                        "anyOf": [
+                            {
+                                "properties": {
+                                    "name": {
+                                        "maxLength": 80,
+                                        "minLength": 1,
+                                        "title": "Name",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["name"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "slug": {
+                                        "maxLength": 64,
+                                        "minLength": 3,
+                                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                                        "title": "Slug",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["slug"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "description": {
+                                        "maxLength": 2000,
+                                        "title": "Description",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["description"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "icon": {
+                                        "maxLength": 40,
+                                        "minLength": 1,
+                                        "title": "Icon",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["icon"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "purpose": {
+                                        "enum": ["general", "notice"],
+                                        "title": "Purpose",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["purpose"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "classification": {
+                                        "const": "manual",
+                                        "title": "Classification",
+                                        "type": "string"
+                                    }
+                                },
+                                "required": ["classification"],
+                                "type": "object"
+                            },
+                            {
+                                "properties": {
+                                    "is_visible": {
+                                        "title": "Is Visible",
+                                        "type": "boolean"
+                                    }
+                                },
+                                "required": ["is_visible"],
+                                "type": "object"
+                            }
+                        ]
+                    }
+                ],
+                "properties": {
+                    "classification": {
+                        "const": "manual",
+                        "title": "Classification",
+                        "type": "string"
+                    },
+                    "description": {
+                        "maxLength": 2000,
+                        "title": "Description",
+                        "type": "string"
+                    },
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "icon": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "title": "Icon",
+                        "type": "string"
+                    },
+                    "is_visible": {
+                        "title": "Is Visible",
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "purpose": {
+                        "enum": ["general", "notice"],
+                        "title": "Purpose",
+                        "type": "string"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    },
+                    "slug": {
+                        "maxLength": 64,
+                        "minLength": 3,
+                        "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+                        "title": "Slug",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason"],
+                "title": "ShelfPatchForm",
+                "type": "object"
+            },
+            "ShelfPoliciesForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "actions": {
+                        "$ref": "#/components/schemas/ShelfPolicyActions"
+                    },
+                    "expected_revision": {
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason", "actions"],
+                "title": "ShelfPoliciesForm",
+                "type": "object"
+            },
+            "ShelfPoliciesResponse": {
+                "properties": {
+                    "actions": {
+                        "$ref": "#/components/schemas/ShelfPolicyActions"
+                    },
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "effective_actions": {
+                        "$ref": "#/components/schemas/BoardPolicyActions"
+                    },
+                    "shelf_id": {
+                        "format": "uuid",
+                        "title": "Shelf Id",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "board_id",
+                    "shelf_id",
+                    "actions",
+                    "effective_actions",
+                    "board_revision"
+                ],
+                "title": "ShelfPoliciesResponse",
+                "type": "object"
+            },
+            "ShelfPolicyActions": {
+                "additionalProperties": false,
+                "properties": {
+                    "create_canvas": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ActionPolicy"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "create_comment": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ActionPolicy"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "react": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ActionPolicy"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "read_canvas": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/ActionPolicy"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    }
+                },
+                "required": ["read_canvas", "create_canvas", "create_comment", "react"],
+                "title": "ShelfPolicyActions",
+                "type": "object"
+            },
+            "ShelfResponse": {
+                "properties": {
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "shelf": {
+                        "$ref": "#/components/schemas/ShelfDetail"
+                    }
+                },
+                "required": ["shelf", "board_revision"],
+                "title": "ShelfResponse",
+                "type": "object"
+            },
+            "ShelfState": {
+                "properties": {
+                    "classification": {
+                        "const": "manual",
+                        "title": "Classification",
+                        "type": "string"
+                    },
+                    "description": {
+                        "title": "Description",
+                        "type": "string"
+                    },
+                    "icon": {
+                        "title": "Icon",
+                        "type": "string"
+                    },
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "is_default": {
+                        "title": "Is Default",
+                        "type": "boolean"
+                    },
+                    "is_visible": {
+                        "title": "Is Visible",
+                        "type": "boolean"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    },
+                    "purpose": {
+                        "enum": ["general", "notice"],
+                        "title": "Purpose",
+                        "type": "string"
+                    },
+                    "slug": {
+                        "title": "Slug",
+                        "type": "string"
+                    },
+                    "sort_order": {
+                        "title": "Sort Order",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "slug",
+                    "description",
+                    "icon",
+                    "purpose",
+                    "classification",
+                    "is_visible",
+                    "is_default",
+                    "sort_order"
+                ],
+                "title": "ShelfState",
+                "type": "object"
+            },
             "ShelfSummary": {
                 "properties": {
                     "capabilities": {
@@ -4190,6 +4927,24 @@
                     "capabilities"
                 ],
                 "title": "ShelfSummary",
+                "type": "object"
+            },
+            "ShelvesResponse": {
+                "properties": {
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/ShelfDetail"
+                        },
+                        "title": "Items",
+                        "type": "array"
+                    }
+                },
+                "required": ["items", "board_revision"],
+                "title": "ShelvesResponse",
                 "type": "object"
             },
             "SignupForm": {
@@ -14336,6 +15091,773 @@
                 "tags": ["Boards"]
             }
         },
+        "/api/v1/boards/{board_id}/policies": {
+            "get": {
+                "operationId": "board_policies_api_v1_boards__board_id__policies_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardPoliciesResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Board Policies Api V1 Boards  Board Id  Policies Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Board Policies Api V1 Boards  Board Id  Policies Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Board Policies Api V1 Boards  Board Id  Policies Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Board Policies",
+                "tags": ["Shelves"]
+            },
+            "put": {
+                "operationId": "set_board_policies_api_v1_boards__board_id__policies_put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BoardPoliciesForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardPoliciesResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Set Board Policies Api V1 Boards  Board Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Set Board Policies Api V1 Boards  Board Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Set Board Policies Api V1 Boards  Board Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "Board revision conflict. Reload the latest board information."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_GRADE",
+                                        "message": "Select a member grade from the same board."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Set Board Policies",
+                "tags": ["Shelves"]
+            }
+        },
+        "/api/v1/boards/{board_id}/shelves": {
+            "get": {
+                "operationId": "list_shelves_api_v1_boards__board_id__shelves_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "manage",
+                        "required": false,
+                        "schema": {
+                            "default": false,
+                            "title": "Manage",
+                            "type": "boolean"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelvesResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 List Shelves Api V1 Boards  Board Id  Shelves Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 List Shelves Api V1 Boards  Board Id  Shelves Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 List Shelves Api V1 Boards  Board Id  Shelves Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "List Shelves",
+                "tags": ["Shelves"]
+            },
+            "post": {
+                "operationId": "create_shelf_api_v1_boards__board_id__shelves_post",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShelfCreateForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelfResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Create Shelf Api V1 Boards  Board Id  Shelves Post"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Create Shelf Api V1 Boards  Board Id  Shelves Post"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Create Shelf Api V1 Boards  Board Id  Shelves Post"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 409 Create Shelf Api V1 Boards  Board Id  Shelves Post"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_GRADE",
+                                        "message": "Select a member grade from the same board."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Create Shelf",
+                "tags": ["Shelves"]
+            }
+        },
+        "/api/v1/boards/{board_id}/shelves/order": {
+            "patch": {
+                "operationId": "reorder_shelves_api_v1_boards__board_id__shelves_order_patch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShelfOrderForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelvesResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Reorder Shelves Api V1 Boards  Board Id  Shelves Order Patch"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Reorder Shelves Api V1 Boards  Board Id  Shelves Order Patch"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Reorder Shelves Api V1 Boards  Board Id  Shelves Order Patch"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "Board revision conflict. Reload the latest board information."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Reorder Shelves Api V1 Boards  Board Id  Shelves Order Patch"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Reorder Shelves",
+                "tags": ["Shelves"]
+            }
+        },
         "/api/v1/events/stream": {
             "get": {
                 "operationId": "stream_events_api_v1_events_stream_get",
@@ -16302,6 +17824,756 @@
                 ],
                 "summary": "Update",
                 "tags": ["Interests"]
+            }
+        },
+        "/api/v1/shelves/{shelf_id}": {
+            "delete": {
+                "operationId": "delete_shelf_api_v1_shelves__shelf_id__delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "shelf_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Shelf Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PolicyChangeForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "204": {
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Delete Shelf Api V1 Shelves  Shelf Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Delete Shelf Api V1 Shelves  Shelf Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Delete Shelf Api V1 Shelves  Shelf Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 409 Delete Shelf Api V1 Shelves  Shelf Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_GRADE",
+                                        "message": "Select a member grade from the same board."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Delete Shelf",
+                "tags": ["Shelves"]
+            },
+            "get": {
+                "operationId": "get_shelf_api_v1_shelves__shelf_id__get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "shelf_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Shelf Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelfResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Get Shelf Api V1 Shelves  Shelf Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Get Shelf Api V1 Shelves  Shelf Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Get Shelf Api V1 Shelves  Shelf Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "Get Shelf",
+                "tags": ["Shelves"]
+            },
+            "patch": {
+                "operationId": "change_shelf_api_v1_shelves__shelf_id__patch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "shelf_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Shelf Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShelfPatchForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelfResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Change Shelf Api V1 Shelves  Shelf Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Change Shelf Api V1 Shelves  Shelf Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Change Shelf Api V1 Shelves  Shelf Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 409 Change Shelf Api V1 Shelves  Shelf Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_GRADE",
+                                        "message": "Select a member grade from the same board."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Change Shelf",
+                "tags": ["Shelves"]
+            }
+        },
+        "/api/v1/shelves/{shelf_id}/policies": {
+            "get": {
+                "operationId": "shelf_policies_api_v1_shelves__shelf_id__policies_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "shelf_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Shelf Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelfPoliciesResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Shelf Policies Api V1 Shelves  Shelf Id  Policies Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Shelf Policies Api V1 Shelves  Shelf Id  Policies Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Shelf Policies Api V1 Shelves  Shelf Id  Policies Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Shelf Policies",
+                "tags": ["Shelves"]
+            },
+            "put": {
+                "operationId": "set_shelf_policies_api_v1_shelves__shelf_id__policies_put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "shelf_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Shelf Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ShelfPoliciesForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShelfPoliciesResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Set Shelf Policies Api V1 Shelves  Shelf Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Set Shelf Policies Api V1 Shelves  Shelf Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Set Shelf Policies Api V1 Shelves  Shelf Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "Board revision conflict. Reload the latest board information."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/ShelfErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Set Shelf Policies Api V1 Shelves  Shelf Id  Policies Put"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Set Shelf Policies",
+                "tags": ["Shelves"]
             }
         },
         "/config": {

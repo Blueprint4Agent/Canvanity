@@ -13,6 +13,7 @@ from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
     GRADE_AUDIT_ACTIONS,
     MAX_BOARD_USER_ID,
+    SHELF_AUDIT_ACTIONS,
     BoardAuditPageResponse,
     BoardAuditQuery,
     BoardAuditState,
@@ -30,6 +31,8 @@ from app.models.board import (
     BoardRepository,
     BoardSettingsAuditChange,
     MembershipSummary,
+    PolicyAuditChange,
+    ShelfAuditChange,
 )
 from app.services.board_permission import BoardPermissionService
 
@@ -255,13 +258,16 @@ class BoardMembershipService:
 
         board_change = row.action == "board_updated"
         ownership_change = row.action == "ownership_transferred"
+        shelf_change = row.action in SHELF_AUDIT_ACTIONS
+        policy_change = row.action == "policies_updated"
+        structure_change = board_change or ownership_change or shelf_change or policy_change
         return BoardMemberAuditResponse(
             id=row.id,
             actor_user_id=row.actor_user_id,
             target_user_id=row.target_user_id,
             action=row.action,
-            before=state(before) if not (board_change or ownership_change) else None,
-            after=state(after) if not (board_change or ownership_change) else None,
+            before=state(before) if not structure_change else None,
+            after=state(after) if not structure_change else None,
             reason=changes.get("reason"),
             grade_change=(
                 BoardGradeAuditChange.model_validate(changes)
@@ -272,6 +278,8 @@ class BoardMembershipService:
             ownership_change=BoardOwnershipAuditChange.model_validate(changes)
             if ownership_change
             else None,
+            shelf_change=ShelfAuditChange.model_validate(changes) if shelf_change else None,
+            policy_change=PolicyAuditChange.model_validate(changes) if policy_change else None,
             created_at=cls._utc(row.created_at),
         )
 

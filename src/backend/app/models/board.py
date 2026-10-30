@@ -44,6 +44,11 @@ from app.models.user import User
 MAX_BOARD_USER_ID = 2**31 - 1
 MAX_BOARD_INTERESTS = 3
 MAX_BOARD_GRADES = 20
+MAX_BOARD_SHELVES = 100
+SHELF_FIELDS = ("name", "slug", "description", "icon", "purpose", "classification", "is_visible")
+SHELF_AUDIT_ACTIONS = frozenset(
+    {"shelf_created", "shelf_updated", "shelves_reordered", "shelf_deleted"}
+)
 BOARD_SETTING_FIELDS = (
     "name",
     "description",
@@ -400,6 +405,138 @@ class ShelfSummary(BaseModel):
     capabilities: dict[BoardAction, bool]
 
 
+class ShelfDetail(ShelfSummary):
+    board_id: UUID
+    is_visible: bool
+
+
+class ShelfResponse(BaseModel):
+    shelf: ShelfDetail
+    board_revision: int
+
+
+class ShelvesResponse(BaseModel):
+    items: list[ShelfDetail]
+    board_revision: int
+
+
+class ActionPolicy(BaseModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+    audience: Literal["public", "members"]
+    min_grade_id: UUID | None = None
+    staff_only: bool = Field(default=False, strict=True)
+    staff_bypass: bool = Field(default=True, strict=True)
+
+    @model_validator(mode="after")
+    def valid_shape(self):
+        if self.audience == "public":
+            valid = self.min_grade_id is None and not self.staff_only
+        else:
+            valid = (self.min_grade_id is None) == self.staff_only
+        if not valid:
+            raise ValueError("Use public reading, a minimum member grade, or staff-only access.")
+        return self
+
+
+class BoardPolicyActions(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    read_canvas: ActionPolicy
+    create_canvas: ActionPolicy
+    create_comment: ActionPolicy
+    react: ActionPolicy
+
+    @model_validator(mode="after")
+    def public_read_only(self):
+        for action in ("create_canvas", "create_comment", "react"):
+            value = getattr(self, action)
+            if value is not None and value.audience == "public":
+                raise ValueError("Only read_canvas may allow public access.")
+        return self
+
+
+class ShelfPolicyActions(BoardPolicyActions):
+    read_canvas: ActionPolicy | None
+    create_canvas: ActionPolicy | None
+    create_comment: ActionPolicy | None
+    react: ActionPolicy | None
+
+
+class PolicyChangeForm(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class BoardPoliciesForm(PolicyChangeForm):
+    actions: BoardPolicyActions
+
+
+class ShelfPoliciesForm(PolicyChangeForm):
+    actions: ShelfPolicyActions
+
+
+class BoardPoliciesResponse(BaseModel):
+    board_id: UUID
+    actions: BoardPolicyActions
+    board_revision: int
+
+
+class ShelfPoliciesResponse(BaseModel):
+    board_id: UUID
+    shelf_id: UUID
+    actions: ShelfPolicyActions
+    effective_actions: BoardPolicyActions
+    board_revision: int
+
+
+class ShelfCreateForm(PolicyChangeForm):
+    name: str = Field(min_length=1, max_length=80)
+    slug: str = Field(min_length=3, max_length=64, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+    description: str = Field(default="", max_length=2000)
+    icon: str = Field(default="messages-square", min_length=1, max_length=40)
+    purpose: Literal["general", "notice"] = "general"
+    classification: Literal["manual"] = "manual"
+    is_visible: bool = Field(default=True, strict=True)
+
+
+class ShelfOrderForm(PolicyChangeForm):
+    shelf_ids: list[UUID] = Field(min_length=1, max_length=MAX_BOARD_SHELVES)
+
+    @field_validator("shelf_ids")
+    @classmethod
+    def unique_shelves(cls, value: list[UUID]) -> list[UUID]:
+        if len(value) != len(set(value)):
+            raise ValueError("Provide each shelf exactly once.")
+        return value
+
+
+class ShelfState(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: UUID
+    name: str
+    slug: str
+    description: str
+    icon: str
+    purpose: Literal["general", "notice"]
+    classification: Literal["manual"]
+    is_visible: bool
+    is_default: bool
+    sort_order: int
+
+
+class ShelfAuditChange(BaseModel):
+    before: list[ShelfState]
+    after: list[ShelfState]
+    policies_before: ShelfPolicyActions | None = None
+    policies_after: ShelfPolicyActions | None = None
+
+
+class PolicyAuditChange(BaseModel):
+    shelf_id: UUID | None
+    before: ShelfPolicyActions
+    after: ShelfPolicyActions
+
+
 class BoardHomeResponse(BaseModel):
     board: BoardSummary
     rules: str
@@ -438,6 +575,31 @@ def _grade_patch_schema(schema: dict) -> None:
 
 def _board_patch_schema(schema: dict) -> None:
     _patch_schema(schema, BOARD_SETTING_FIELDS)
+
+
+def _shelf_patch_schema(schema: dict) -> None:
+    _patch_schema(schema, SHELF_FIELDS)
+
+
+class ShelfPatchForm(PolicyChangeForm):
+    model_config = ConfigDict(
+        extra="forbid", str_strip_whitespace=True, json_schema_extra=_shelf_patch_schema
+    )
+    name: str = Field(default=None, min_length=1, max_length=80)
+    slug: str = Field(
+        default=None, min_length=3, max_length=64, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    )
+    description: str = Field(default=None, max_length=2000)
+    icon: str = Field(default=None, min_length=1, max_length=40)
+    purpose: Literal["general", "notice"] = None
+    classification: Literal["manual"] = None
+    is_visible: bool = Field(default=None, strict=True)
+
+    @model_validator(mode="after")
+    def validate_changes(self):
+        if not self.model_fields_set.intersection(SHELF_FIELDS):
+            raise ValueError("Provide at least one shelf field to change.")
+        return self
 
 
 class BoardSettingsPatchForm(BaseModel):
@@ -633,6 +795,8 @@ class BoardMemberAuditResponse(BaseModel):
     grade_change: BoardGradeAuditChange | None = None
     board_change: BoardSettingsAuditChange | None = None
     ownership_change: BoardOwnershipAuditChange | None = None
+    shelf_change: ShelfAuditChange | None = None
+    policy_change: PolicyAuditChange | None = None
     created_at: datetime
 
 
@@ -977,6 +1141,222 @@ class BoardTransaction:
         return await self._db.scalar(
             select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
         )
+
+    async def shelf_board_id(self, shelf_id: UUID) -> UUID | None:
+        return await self._db.scalar(select(Shelf.board_id).where(Shelf.id == shelf_id))
+
+    async def shelves(self, board_id: UUID) -> list[Shelf]:
+        return list(
+            (
+                await self._db.scalars(
+                    select(Shelf)
+                    .where(Shelf.board_id == board_id)
+                    .order_by(Shelf.sort_order, Shelf.id)
+                )
+            ).all()
+        )
+
+    async def policy_rows(
+        self, board_id: UUID
+    ) -> tuple[dict[str, BoardPolicy], dict[tuple[UUID, str], ShelfPolicy]]:
+        policies = {
+            p.action: p
+            for p in (
+                await self._db.scalars(select(BoardPolicy).where(BoardPolicy.board_id == board_id))
+            ).all()
+        }
+        overrides = {
+            (p.shelf_id, p.action): p
+            for p in (
+                await self._db.scalars(select(ShelfPolicy).where(ShelfPolicy.board_id == board_id))
+            ).all()
+        }
+        return policies, overrides
+
+    async def _policy_rows_for(
+        self, board_id: UUID, shelf_id: UUID | None
+    ) -> dict[str, BoardPolicy | ShelfPolicy]:
+        statement = (
+            select(BoardPolicy).where(BoardPolicy.board_id == board_id)
+            if shelf_id is None
+            else select(ShelfPolicy).where(
+                ShelfPolicy.board_id == board_id, ShelfPolicy.shelf_id == shelf_id
+            )
+        )
+        return {p.action: p for p in (await self._db.scalars(statement)).all()}
+
+    @staticmethod
+    def _policy_state(rows: dict) -> dict:
+        return {
+            action: ActionPolicy.model_validate(rows[action]).model_dump(mode="json")
+            if action in rows
+            else None
+            for action in ACTIONS
+        }
+
+    async def _record_shelf_change(
+        self, board: Board, actor_id: int, action: str, reason: str, change: ShelfAuditChange
+    ) -> None:
+        self._touch(board)
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=actor_id,
+                action=action,
+                changes={**change.model_dump(mode="json"), "reason": reason},
+            )
+        )
+        await self._db.flush()
+
+    async def _notice_policies(self, board_id: UUID, shelf_id: UUID) -> None:
+        rows = await self._policy_rows_for(board_id, shelf_id)
+        for action in ("create_canvas", "create_comment"):
+            row = rows.get(action)
+            if row is None:
+                row = ShelfPolicy(board_id=board_id, shelf_id=shelf_id, action=action)
+                self._db.add(row)
+            row.audience, row.min_grade_id, row.staff_only, row.staff_bypass = (
+                "members",
+                None,
+                True,
+                False,
+            )
+        await self._db.flush()
+
+    async def create_shelf(
+        self, board: Board, actor_id: int, shelves: list[Shelf], form: ShelfCreateForm
+    ) -> Shelf:
+        shelf = Shelf(
+            board_id=board.id,
+            sort_order=max((s.sort_order for s in shelves), default=-1) + 1,
+            **{key: getattr(form, key) for key in SHELF_FIELDS},
+        )
+        self._db.add(shelf)
+        await self._db.flush()
+        if shelf.purpose == "notice":
+            await self._notice_policies(board.id, shelf.id)
+        after = self._policy_state(await self._policy_rows_for(board.id, shelf.id))
+        await self._record_shelf_change(
+            board,
+            actor_id,
+            "shelf_created",
+            form.reason,
+            ShelfAuditChange(
+                before=[],
+                after=[ShelfState.model_validate(shelf)],
+                policies_after=ShelfPolicyActions.model_validate(after),
+            ),
+        )
+        return shelf
+
+    async def change_shelf(
+        self, board: Board, actor_id: int, shelf: Shelf, form: ShelfPatchForm
+    ) -> None:
+        before = ShelfState.model_validate(shelf)
+        policies_before = self._policy_state(await self._policy_rows_for(board.id, shelf.id))
+        for key in form.model_fields_set.intersection(SHELF_FIELDS):
+            setattr(shelf, key, getattr(form, key))
+        if before.purpose != "notice" and shelf.purpose == "notice":
+            await self._notice_policies(board.id, shelf.id)
+        after = ShelfState.model_validate(shelf)
+        policies_after = self._policy_state(await self._policy_rows_for(board.id, shelf.id))
+        if before == after and policies_before == policies_after:
+            return
+        await self._record_shelf_change(
+            board,
+            actor_id,
+            "shelf_updated",
+            form.reason,
+            ShelfAuditChange(
+                before=[before],
+                after=[after],
+                policies_before=ShelfPolicyActions.model_validate(policies_before),
+                policies_after=ShelfPolicyActions.model_validate(policies_after),
+            ),
+        )
+
+    async def reorder_shelves(
+        self, board: Board, actor_id: int, shelves: list[Shelf], form: ShelfOrderForm
+    ) -> list[Shelf]:
+        by_id = {s.id: s for s in shelves}
+        ordered = [by_id[key] for key in form.shelf_ids]
+        if [s.id for s in shelves] == form.shelf_ids:
+            return ordered
+        before = [ShelfState.model_validate(s) for s in shelves]
+        for index, shelf in enumerate(ordered):
+            shelf.sort_order = index
+        await self._record_shelf_change(
+            board,
+            actor_id,
+            "shelves_reordered",
+            form.reason,
+            ShelfAuditChange(before=before, after=[ShelfState.model_validate(s) for s in ordered]),
+        )
+        return ordered
+
+    async def delete_shelf(self, board: Board, actor_id: int, shelf: Shelf, reason: str) -> None:
+        before = ShelfState.model_validate(shelf)
+        policies = self._policy_state(await self._policy_rows_for(board.id, shelf.id))
+        await self._db.execute(
+            delete(ShelfPolicy).where(
+                ShelfPolicy.board_id == board.id, ShelfPolicy.shelf_id == shelf.id
+            )
+        )
+        await self._db.delete(shelf)
+        await self._record_shelf_change(
+            board,
+            actor_id,
+            "shelf_deleted",
+            reason,
+            ShelfAuditChange(
+                before=[before],
+                after=[],
+                policies_before=ShelfPolicyActions.model_validate(policies),
+            ),
+        )
+
+    async def replace_policies(
+        self,
+        board: Board,
+        actor_id: int,
+        shelf_id: UUID | None,
+        form: BoardPoliciesForm | ShelfPoliciesForm,
+    ) -> None:
+        rows = await self._policy_rows_for(board.id, shelf_id)
+        before = self._policy_state(rows)
+        after = form.actions.model_dump(mode="json")
+        if before == after:
+            return
+        for action in ACTIONS:
+            desired, row = getattr(form.actions, action), rows.get(action)
+            if desired is None:
+                if row is not None:
+                    await self._db.delete(row)
+            elif row is None:
+                model, keys = (
+                    (BoardPolicy, {}) if shelf_id is None else (ShelfPolicy, {"shelf_id": shelf_id})
+                )
+                self._db.add(
+                    model(board_id=board.id, action=action, **keys, **desired.model_dump())
+                )
+            else:
+                for key, value in desired.model_dump().items():
+                    setattr(row, key, value)
+        self._touch(board)
+        change = PolicyAuditChange(
+            shelf_id=shelf_id,
+            before=ShelfPolicyActions.model_validate(before),
+            after=ShelfPolicyActions.model_validate(after),
+        )
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=actor_id,
+                action="policies_updated",
+                changes={**change.model_dump(mode="json"), "reason": form.reason},
+            )
+        )
+        await self._db.flush()
 
     async def lock_active_user(self, user_id: int) -> bool:
         # A shared row lock keeps deactivation/deletion from changing this decision before commit.

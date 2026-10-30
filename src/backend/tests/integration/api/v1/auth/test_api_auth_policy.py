@@ -144,6 +144,14 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("PATCH", "/api/v1/boards/{board_id}/grades/order"),
         ("PATCH", "/api/v1/boards/{board_id}/grades/{grade_id}"),
         ("DELETE", "/api/v1/boards/{board_id}/grades/{grade_id}"),
+        ("POST", "/api/v1/boards/{board_id}/shelves"),
+        ("PATCH", "/api/v1/boards/{board_id}/shelves/order"),
+        ("PATCH", "/api/v1/shelves/{shelf_id}"),
+        ("DELETE", "/api/v1/shelves/{shelf_id}"),
+        ("GET", "/api/v1/boards/{board_id}/policies"),
+        ("PUT", "/api/v1/boards/{board_id}/policies"),
+        ("GET", "/api/v1/shelves/{shelf_id}/policies"),
+        ("PUT", "/api/v1/shelves/{shelf_id}/policies"),
     }
     assert actual == expected
 
@@ -337,5 +345,24 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
         ).status_code
         == 401
     )
+    shelves = client.get(path + "/shelves", headers=bearer).json()["items"]
+    shelf_path = f"/api/v1/shelves/{shelves[0]['id']}"
+    policy = client.get(path + "/policies", headers=bearer).json()["actions"]
+    for method, target, body in [
+        ("POST", path + "/shelves", {"name": "키 거부", "slug": "key-denied"}),
+        ("PATCH", path + "/shelves/order", {"shelf_ids": [s["id"] for s in shelves]}),
+        ("PATCH", shelf_path, {"name": "키 거부"}),
+        ("DELETE", shelf_path, {}),
+        ("GET", path + "/policies", None),
+        ("PUT", path + "/policies", {"actions": policy}),
+        ("GET", shelf_path + "/policies", None),
+        ("PUT", shelf_path + "/policies", {"actions": policy}),
+    ]:
+        payload = (
+            {"expected_revision": 0, "reason": "키 거부", **body} if body is not None else None
+        )
+        assert client.request(method, target, headers=key, json=payload).status_code == 401
+    assert client.get(path + "/shelves", headers=key).status_code == 404
+    assert client.get(shelf_path, headers=key).status_code == 404
     schema = client.app.openapi()
     assert {} in schema["paths"]["/api/v1/boards"]["get"]["security"]

@@ -989,6 +989,59 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Board Policies */
+        get: operations["board_policies_api_v1_boards__board_id__policies_get"];
+        /** Set Board Policies */
+        put: operations["set_board_policies_api_v1_boards__board_id__policies_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{board_id}/shelves": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Shelves */
+        get: operations["list_shelves_api_v1_boards__board_id__shelves_get"];
+        put?: never;
+        /** Create Shelf */
+        post: operations["create_shelf_api_v1_boards__board_id__shelves_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{board_id}/shelves/order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Reorder Shelves */
+        patch: operations["reorder_shelves_api_v1_boards__board_id__shelves_order_patch"];
+        trace?: never;
+    };
     "/api/v1/events/stream": {
         parameters: {
             query?: never;
@@ -1246,6 +1299,43 @@ export interface paths {
         patch: operations["update_api_v1_interests_admin__interest_id__patch"];
         trace?: never;
     };
+    "/api/v1/shelves/{shelf_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Shelf */
+        get: operations["get_shelf_api_v1_shelves__shelf_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Shelf */
+        delete: operations["delete_shelf_api_v1_shelves__shelf_id__delete"];
+        options?: never;
+        head?: never;
+        /** Change Shelf */
+        patch: operations["change_shelf_api_v1_shelves__shelf_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/shelves/{shelf_id}/policies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Shelf Policies */
+        get: operations["shelf_policies_api_v1_shelves__shelf_id__policies_get"];
+        /** Set Shelf Policies */
+        put: operations["set_shelf_policies_api_v1_shelves__shelf_id__policies_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/config": {
         parameters: {
             query?: never;
@@ -1412,6 +1502,26 @@ export interface components {
         APIKeysResponse: {
             /** Items */
             items: components["schemas"]["APIKeyResponse"][];
+        };
+        /** ActionPolicy */
+        ActionPolicy: {
+            /**
+             * Audience
+             * @enum {string}
+             */
+            audience: "public" | "members";
+            /** Min Grade Id */
+            min_grade_id?: string | null;
+            /**
+             * Staff Bypass
+             * @default true
+             */
+            staff_bypass: boolean;
+            /**
+             * Staff Only
+             * @default false
+             */
+            staff_only: boolean;
         };
         /** AdminConnection */
         AdminConnection: {
@@ -2291,8 +2401,10 @@ export interface components {
              */
             id: string;
             ownership_change?: components["schemas"]["BoardOwnershipAuditChange"] | null;
+            policy_change?: components["schemas"]["PolicyAuditChange"] | null;
             /** Reason */
             reason?: string | null;
+            shelf_change?: components["schemas"]["ShelfAuditChange"] | null;
             /** Target User Id */
             target_user_id: number | null;
         };
@@ -2475,6 +2587,32 @@ export interface components {
             items: components["schemas"]["BoardSummary"][];
             /** Next Cursor */
             next_cursor?: string | null;
+        };
+        /** BoardPoliciesForm */
+        BoardPoliciesForm: {
+            actions: components["schemas"]["BoardPolicyActions"];
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+        };
+        /** BoardPoliciesResponse */
+        BoardPoliciesResponse: {
+            actions: components["schemas"]["BoardPolicyActions"];
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            /** Board Revision */
+            board_revision: number;
+        };
+        /** BoardPolicyActions */
+        BoardPolicyActions: {
+            create_canvas: components["schemas"]["ActionPolicy"];
+            create_comment: components["schemas"]["ActionPolicy"];
+            react: components["schemas"]["ActionPolicy"];
+            read_canvas: components["schemas"]["ActionPolicy"];
         };
         /** BoardSettingsAuditChange */
         BoardSettingsAuditChange: {
@@ -3140,6 +3278,20 @@ export interface components {
              */
             version: string;
         };
+        /** PolicyAuditChange */
+        PolicyAuditChange: {
+            after: components["schemas"]["ShelfPolicyActions"];
+            before: components["schemas"]["ShelfPolicyActions"];
+            /** Shelf Id */
+            shelf_id: string | null;
+        };
+        /** PolicyChangeForm */
+        PolicyChangeForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+        };
         /** ReadinessResponse */
         ReadinessResponse: {
             /** Checks */
@@ -3213,6 +3365,260 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** ShelfAuditChange */
+        ShelfAuditChange: {
+            /** After */
+            after: components["schemas"]["ShelfState"][];
+            /** Before */
+            before: components["schemas"]["ShelfState"][];
+            policies_after?: components["schemas"]["ShelfPolicyActions"] | null;
+            policies_before?: components["schemas"]["ShelfPolicyActions"] | null;
+        };
+        /** ShelfCreateForm */
+        ShelfCreateForm: {
+            /**
+             * Classification
+             * @default manual
+             * @constant
+             */
+            classification: "manual";
+            /**
+             * Description
+             * @default
+             */
+            description: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /**
+             * Icon
+             * @default messages-square
+             */
+            icon: string;
+            /**
+             * Is Visible
+             * @default true
+             */
+            is_visible: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Purpose
+             * @default general
+             * @enum {string}
+             */
+            purpose: "general" | "notice";
+            /** Reason */
+            reason: string;
+            /** Slug */
+            slug: string;
+        };
+        /** ShelfDetail */
+        ShelfDetail: {
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            /** Capabilities */
+            capabilities: {
+                [key: string]: boolean;
+            };
+            /**
+             * Classification
+             * @constant
+             */
+            classification: "manual";
+            /** Description */
+            description: string;
+            /** Icon */
+            icon: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Default */
+            is_default: boolean;
+            /** Is Visible */
+            is_visible: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "general" | "notice";
+            /** Slug */
+            slug: string;
+            /** Sort Order */
+            sort_order: number;
+        };
+        /** ShelfErrorDetail */
+        ShelfErrorDetail: {
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Error
+             * @example SHELF_NOT_FOUND
+             * @enum {string}
+             */
+            error:
+                | "SHELF_NOT_FOUND"
+                | "SHELF_SLUG_TAKEN"
+                | "SHELF_LIMIT_REACHED"
+                | "SHELF_PROTECTED"
+                | "SHELF_INVALID_ORDER"
+                | "SHELF_INVALID_POLICY";
+            /** Message */
+            message: string;
+        };
+        /** ShelfErrorResponse */
+        ShelfErrorResponse: {
+            detail: components["schemas"]["ShelfErrorDetail"];
+        };
+        /** ShelfOrderForm */
+        ShelfOrderForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+            /** Shelf Ids */
+            shelf_ids: string[];
+        };
+        /** ShelfPatchForm */
+        ShelfPatchForm: {
+            /**
+             * Classification
+             * @constant
+             */
+            classification?: "manual";
+            /** Description */
+            description?: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Icon */
+            icon?: string;
+            /** Is Visible */
+            is_visible?: boolean;
+            /** Name */
+            name?: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose?: "general" | "notice";
+            /** Reason */
+            reason: string;
+            /** Slug */
+            slug?: string;
+        } & (
+            | {
+                  /** Name */
+                  name: string;
+              }
+            | {
+                  /** Slug */
+                  slug: string;
+              }
+            | {
+                  /** Description */
+                  description: string;
+              }
+            | {
+                  /** Icon */
+                  icon: string;
+              }
+            | {
+                  /**
+                   * Purpose
+                   * @enum {string}
+                   */
+                  purpose: "general" | "notice";
+              }
+            | {
+                  /**
+                   * Classification
+                   * @constant
+                   */
+                  classification: "manual";
+              }
+            | {
+                  /** Is Visible */
+                  is_visible: boolean;
+              }
+        );
+        /** ShelfPoliciesForm */
+        ShelfPoliciesForm: {
+            actions: components["schemas"]["ShelfPolicyActions"];
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+        };
+        /** ShelfPoliciesResponse */
+        ShelfPoliciesResponse: {
+            actions: components["schemas"]["ShelfPolicyActions"];
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            /** Board Revision */
+            board_revision: number;
+            effective_actions: components["schemas"]["BoardPolicyActions"];
+            /**
+             * Shelf Id
+             * Format: uuid
+             */
+            shelf_id: string;
+        };
+        /** ShelfPolicyActions */
+        ShelfPolicyActions: {
+            create_canvas: components["schemas"]["ActionPolicy"] | null;
+            create_comment: components["schemas"]["ActionPolicy"] | null;
+            react: components["schemas"]["ActionPolicy"] | null;
+            read_canvas: components["schemas"]["ActionPolicy"] | null;
+        };
+        /** ShelfResponse */
+        ShelfResponse: {
+            /** Board Revision */
+            board_revision: number;
+            shelf: components["schemas"]["ShelfDetail"];
+        };
+        /** ShelfState */
+        ShelfState: {
+            /**
+             * Classification
+             * @constant
+             */
+            classification: "manual";
+            /** Description */
+            description: string;
+            /** Icon */
+            icon: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Default */
+            is_default: boolean;
+            /** Is Visible */
+            is_visible: boolean;
+            /** Name */
+            name: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "general" | "notice";
+            /** Slug */
+            slug: string;
+            /** Sort Order */
+            sort_order: number;
+        };
         /** ShelfSummary */
         ShelfSummary: {
             /** Capabilities */
@@ -3246,6 +3652,13 @@ export interface components {
             slug: string;
             /** Sort Order */
             sort_order: number;
+        };
+        /** ShelvesResponse */
+        ShelvesResponse: {
+            /** Board Revision */
+            board_revision: number;
+            /** Items */
+            items: components["schemas"]["ShelfDetail"][];
         };
         /** SignupForm */
         SignupForm: {
@@ -10934,6 +11347,543 @@ export interface operations {
             };
         };
     };
+    board_policies_api_v1_boards__board_id__policies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPoliciesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    set_board_policies_api_v1_boards__board_id__policies_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPoliciesForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardPoliciesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_GRADE",
+                     *         "message": "Select a member grade from the same board."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    list_shelves_api_v1_boards__board_id__shelves_get: {
+        parameters: {
+            query?: {
+                manage?: boolean;
+            };
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelvesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    create_shelf_api_v1_boards__board_id__shelves_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfCreateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_GRADE",
+                     *         "message": "Select a member grade from the same board."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    reorder_shelves_api_v1_boards__board_id__shelves_order_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfOrderForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelvesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
     stream_events_api_v1_events_stream_get: {
         parameters: {
             query?: never;
@@ -12294,6 +13244,533 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+        };
+    };
+    get_shelf_api_v1_shelves__shelf_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_shelf_api_v1_shelves__shelf_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PolicyChangeForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_GRADE",
+                     *         "message": "Select a member grade from the same board."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    change_shelf_api_v1_shelves__shelf_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfPatchForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_GRADE",
+                     *         "message": "Select a member grade from the same board."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    shelf_policies_api_v1_shelves__shelf_id__policies_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfPoliciesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    set_shelf_policies_api_v1_shelves__shelf_id__policies_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                shelf_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ShelfPoliciesForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShelfPoliciesResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["ShelfErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
                 };
             };
         };

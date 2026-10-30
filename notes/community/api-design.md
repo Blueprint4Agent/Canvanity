@@ -84,6 +84,7 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 | Method   | Path                             | 계약                                                                                                                          |
 | -------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | GET/POST | /boards/{board_id}/shelves       | GET 방문자가 읽을 수 있는 메뉴만, POST 운영자. 이름/slug/description/icon/purpose/classification/is_visible/expected_revision |
+| GET      | /shelves/{shelf_id}              | 숨김 여부와 별도로 현재 읽기 정책을 적용한 직접 조회 |
 | PATCH    | /shelves/{shelf_id}              | Owner/Admin, 같은 필드·expected_revision. board_id 변경 금지                                                                  |
 | DELETE   | /shelves/{shelf_id}              | expected_revision, 빈 비기본 Shelf만. 초안/휴지통도 비어 있지 않음으로 계산                                                   |
 | PATCH    | /boards/{board_id}/shelves/order | expected_revision/shelf_ids 전체. 운영자                                                                                      |
@@ -91,6 +92,8 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 | GET      | /shelves/{shelf_id}/canvases     | 현재 읽기 정책을 적용한 공개 snapshot 최신순 목록                                                                             |
 
 기존 예제의 `write_policy`는 독립 권한 원본으로 저장하지 않는다. 상세 응답에 본인 capabilities와 정책 요약을 제공한다. 목적(purpose=general/notice)과 분류 방식(classification=manual)을 분리한다. is_visible=false는 메뉴에서만 숨기며 직접 URL 접근은 실제 읽기 정책을 따른다. smart 입력은 422다.
+
+현재 #23의 [구현 계약](shelf-management.md)은 Shelf CRUD/정렬·일반/관리 목록·직접 조회와 GET/PUT Board 기본/Shelf 재정의 정책을 제공한다. 변경은 reason/expected_revision을 요구하고 최대 100개·동일 Board 전체 순서·기본/마지막 보호를 적용한다. manage=true 목록은 Owner/Admin 전용이다. policies PUT은 전체 4액션을 요구하고 Shelf의 null은 상속한다. DELETE 204는 X-Board-Revision을 반환한다. Canvas 모델이 아직 없어 게시글 목록/cursor·소속 FK·비어 있지 않은 Shelf 검사는 #8 연결 시 필수 후속이다. 현재 삭제에 콘텐츠 수명주기 보장을 확대하지 않는다.
 
 ## Canvas 메타데이터·문서·게시 — #8/#7
 

@@ -12,7 +12,6 @@ from fastapi import Depends
 from app.core.error import AuthErrorCode, AuthException
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
-    ACTIONS,
     Board,
     BoardCreateForm,
     BoardDeleteForm,
@@ -169,16 +168,9 @@ class BoardService:
         by_id = {grade.id: grade for grade in data.grades}
         shelves = []
         for shelf in data.shelves:
-            capabilities = {
-                action: self.permissions.allowed(
-                    board,
-                    member,
-                    data.overrides.get((shelf.id, action), data.policies.get(action)),
-                    by_id,
-                    action,
-                )
-                for action in ACTIONS
-            }
+            capabilities = self.permissions.shelf_capabilities(
+                board, member, shelf.id, by_id, data.policies, data.overrides
+            )
             if capabilities["read_canvas"]:
                 shelves.append(
                     ShelfSummary(
