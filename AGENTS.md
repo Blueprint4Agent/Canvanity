@@ -20,28 +20,29 @@ Canvanity는 B4FastAPI를 포크한 캔버스 기반 커뮤니티다. PROJECT_BR
 
 도메인 문서의 원본 템플릿에 남은 별도 저장소/서브모듈 설명보다 이 저장소의 단일 저장소 규칙을 우선한다. 과거 worklog는 수정하지 않는다.
 
-## 작업 순서와 검증
+## 작업 절차와 저장소 스킬
 
-1. git status --short로 사용자 변경을 확인하고 보존한다.
-2. 구현 전에 <type>/<short-kebab-title> 브랜치를 만든다.
-3. .github/WORKLOG_TEMPLATE.md로 다음 worklog/NNNN-description.md를 만들고 계획을 먼저 쓴다.
-4. 구현과 관련 한국어 문서·계약을 함께 수정한다. UI 변경은 기존 페이지/공용 UI를 먼저 확인한다.
-5. 루트에서 make verify-plan 다음 make verify를 실행한다. 브랜치 전체는 VERIFY_BASE=<기준 커밋>으로 지정한다. 불명확한 범위는 전체 검사로 확대하며 수동으로 강등하지 않는다. VERIFY_FULL=1은 receipt 재사용 없이 전체 검사한다.
-6. 결과와 생략 이유를 기록하고 대상 파일만 스테이징한 뒤 COMMIT_TITLE과 COMMIT_BODY_FILE을 지정해 make git-governance-check를 실행한다.
-7. 로컬 commit-msg/pre-push 훅을 우회하지 않는다. 푸시/PR이 작업 범위이면 리뷰 가능한 PR을 만들고 실제 메타데이터를 PR_NUMBER=<번호> make git-governance-pr-check로 검사한다.
-8. 기본 병합은 merge commit이다. squash/rebase는 사용자 명시 요청만 허용한다. 자동 병합 등록 시 실제 방식도 확인한다. 기본적으로 main 직접 푸시·삭제·이력 재작성은 금지한다. 사용자가 특정 리베이스의 원격 main 교체를 명시 승인한 경우에만 로컬 Git approvals 문서의 기존/새 SHA·최신 upstream 기반·원격 백업을 pre-push 훅이 검증한 뒤 정확한 기존 SHA의 force-with-lease로 교체한다. 삭제와 승인 없는 교체는 계속 금지하며 훅을 우회하지 않는다.
+운영 절차는 아래 저장소 스킬을 읽고 따른다. 클라이언트가 자동 발견하지 않아도 해당 작업 전에 직접 읽는다.
 
-make init은 환경 파일과 루트 Git 훅을 준비하며 make install은 잠금 의존성을 설치한다. frontend-init은 편입된 소스 존재만 확인한다. 성공한 내용 기반 검증은 24시간 내 동일 입력/환경/출력일 때만 재사용하며 CI와 VERIFY_FULL=1에서는 재사용하지 않는다. GitHub 워크플로는 수동 실행이며 로컬 훅을 서버 CI 보장으로 설명하지 않는다. 원격 보호 규칙 변경은 관리자 권한과 작업 승인이 있을 때만 한다.
+| 작업 | 절차 |
+| --- | --- |
+| 커밋 준비·생성 | [b4-commit](.agents/skills/b4-commit/SKILL.md) |
+| PR 생성·수정·요청된 병합 | [b4-pr](.agents/skills/b4-pr/SKILL.md) |
+| GitHub 이슈 생성·갱신 | [b4-issue](.agents/skills/b4-issue/SKILL.md) |
 
-## 커밋·PR·워크로그
+커밋만 요청받으면 PR·이슈·병합까지 범위를 늘리지 않는다. 구현 작업은 사용자가 게시를 제한하지 않았다면 커밋·푸시·ready PR까지 마무리한다. draft는 사용자 요청이나 명시적 차단 사유가 있을 때 사용한다. 리뷰만 요청한 경우 파일 게시를 요구하지 않는다.
 
-- 커밋 제목 예: chore: 프로젝트 기본 설정을 적용한다
-- 단순하지 않은 커밋 본문 필수 섹션: Changes:, Affected Files:, Verification:. 각 내용은 한국어로 쓴다.
-- PR 제목 예: [chore] Canvanity 기본 설정 적용
-- 이슈 제목도 [feat], [fix], [chore], [docs], [test], [perf] 등 영어 타입 접두사를 사용한다. [기능], [환경], [브랜드] 같은 한국어 분류 접두사는 사용하지 않는다. 제목 설명·본문·체크리스트는 한국어로 작성한다.
-- PR 본문 필수 섹션: Summary, Scope, Reason, Verification, Documentation, Risk / Impact. 각 내용은 한국어로 쓴다.
-- 각 작성 커밋은 제목이 정확히 일치하는 worklog를 포함한다. 필수 섹션: Commit Title, Changed File Scope, Reason, Design, Verification Plan, Impact, Loop Alignment, Verification. 통합 merge commit은 제외한다.
-- 프런트엔드 런타임 변경은 State Ownership, Memoization, Performance Evidence를 기록한다. UI 변경은 Page Family 비교와 실제 화면 검증도 기록한다.
+## 작업 불변 조건
+
+- 시작 시 git status --short로 기존 변경을 보존한다. 구현 전에 <type>/<short-kebab-title> 브랜치와 .github/WORKLOG_TEMPLATE.md 기반의 다음 worklog/NNNN-description.md를 만들고 계획·설계·루프 영향을 먼저 쓴다. 사후 기록을 사전 계획으로 표현하지 않는다.
+- 모든 작성 커밋은 Conventional Commit 제목과 비어 있지 않은 Changes:, Affected Files:, Verification: 본문을 갖는다. 한국어 설명과 자동화 토큰을 유지한다. 각 커밋은 Commit Title이 정확히 일치하는 완전한 worklog를 포함한다. 통합 merge commit은 제외한다.
+- 루트 make verify-plan → make verify를 따른다. 브랜치 전체는 VERIFY_BASE=<기준 커밋>으로 지정하고 범위·확대·receipt 정책은 [검증 문서](notes/verification.md)가 소유한다. 불명확한 범위를 수동 강등하지 않는다. 실제 결과와 작업별 생략 사유를 기록하고, 같은 성공 검증을 반복하지 않는다. 과거의 생략 요청을 이후 변경의 영구 면제로 해석하지 않는다.
+- make init은 env와 루트 훅을, make install은 잠금 의존성을 준비한다. 기존 환경·시크릿을 보존한다. commit-msg/pre-push 훅을 우회하지 않는다. 기존 custom hooksPath는 명시적으로 조정한다. [로컬 훅](notes/local-hooks.md)을 따른다.
+- PR 제목은 [type] 한국어 설명이다. 필수 본문 섹션은 Summary, Scope, Reason, Verification, Documentation, Risk / Impact이며 한국어로 작성한다. PR Type·실제 라벨·관련 이슈·base/head·draft 상태를 직접 확인하고 실제 메타데이터로 PR_NUMBER=<번호> make git-governance-pr-check를 실행한다. 검사 통과가 라벨이나 병합 상태를 보장하지는 않는다.
+- 이슈 제목은 [feat], [fix], [chore], [docs], [test], [perf] 등 영어 타입 접두사를 쓴다. 설명·본문·체크리스트는 한국어다. GitHub의 기존 양식을 사용하고 실제 완료 범위만 체크한다.
+- 기본 병합은 merge commit이다. squash/rebase는 사용자 명시 요청만 허용한다. 자동 병합 등록 뒤 실제 방식·결과를 확인한다. 원격 보호 규칙은 관리자 권한과 작업 승인이 있을 때만 바꾼다. 수동 Actions와 로컬 훅을 서버 CI 보장으로 설명하지 않는다.
+- 기본적으로 main 직접 푸시·삭제·이력 재작성은 금지한다. 사용자가 특정 리베이스의 원격 main 교체를 명시 승인한 경우에만 로컬 Git approvals의 기존/새 SHA·최신 upstream 기반·원격 백업을 pre-push 훅이 검증한 뒤 정확한 기존 SHA의 force-with-lease로 교체한다. 승인 없는 교체·삭제와 훅 우회는 계속 금지한다.
+- 소스·계약·문서를 같은 브랜치/커밋/PR에 반영한다. 변경된 구조·동작·규칙의 한국어 문서와 진입 링크를 동기화하고 과거 worklog는 수정하지 않는다.
 
 ## 설계 루프
 

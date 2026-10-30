@@ -1,3 +1,3 @@
-# Canvanity 한국어 개발 문서
+# Canvanity 프런트 통합
 
-현재 활성 한국어 문서는 [개발 문서](../frontend-submodule.md)를 따른다. 단일 저장소 구조와 한국어 작성 기준을 적용한다.
+[통합 프런트엔드 가이드](../frontend-submodule.md)를 따른다. src/frontend는 같은 저장소의 일반 디렉터리이며 작업·계약·게시를 루트에서 함께 관리한다.

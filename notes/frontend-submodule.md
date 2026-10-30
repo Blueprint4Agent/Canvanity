@@ -9,3 +9,5 @@ make frontend-init은 소스 존재 확인, make init은 루트 훅과 env 초�
 프런트엔드와 백엔드 변경은 같은 작업 브랜치·루트 워크로그·커밋·PR에서 검증한다.
 계약은 루트/프런트엔드 스냅샷을 명시적으로 갱신하며 make contract-check와 make frontend-api-check로 검증한다.
 원본 템플릿의 자식 PR 먼저 병합/부모 gitlink 갱신 절차는 이 프로젝트에 적용하지 않는다.
+
+작업 순서는 [b4-commit](../.agents/skills/b4-commit/SKILL.md)과 [b4-pr](../.agents/skills/b4-pr/SKILL.md)를 따른다. 새 API를 채택하면 양쪽 계약·생성 타입·호출부를 같은 작업에서 검증한다.
