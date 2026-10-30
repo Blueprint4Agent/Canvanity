@@ -42,6 +42,7 @@ make frontend-dev
 ## 개발 문서
 
 - [프로젝트 개요와 범위](PROJECT_BRIEF.md), [초기화 감사](PROJECT_INITIALIZATION_AUDIT.md)
+- [작업 절차 스킬](.agents/skills/b4-commit/SKILL.md) · [PR/병합](.agents/skills/b4-pr/SKILL.md) · [이슈](.agents/skills/b4-issue/SKILL.md)
 - [에이전트 규칙](AGENTS.md), [프로젝트 설정](PROJECT_SETUP.md), [배포](DEPLOY.md)
 - [백엔드 가이드](src/backend/BACKEND.md), [백엔드 빠른 시작](src/backend/README.md)
 - [프런트엔드 가이드](src/frontend/FRONTEND.md), [프런트엔드 빠른 시작](src/frontend/README.md)
