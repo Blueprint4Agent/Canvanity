@@ -1,5 +1,7 @@
 # B4 API 계약 기준
 
+Canvanity의 단일 저장소 계약과 CSRF 동기화는 [루트 계약 가이드](../../../contracts/README.md)와 [CSRF 가이드](../../csrf.md)를 우선한다.
+
 공통 React 프론트와 대체 백엔드 구현을 위한 현재 HTTP 계약입니다.
 기준 파일은 [`contracts/openapi.json`](../../../contracts/openapi.json)이며,
 영문 상세 문서는 [`contracts/README.md`](../../../contracts/README.md)입니다.

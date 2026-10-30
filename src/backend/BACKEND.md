@@ -789,3 +789,6 @@ Board 기본 정보·공개/가입 정책·보관/복원은 [Board 기본 설정
 
 
 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md)은 AssetService·CanvasAccessService·models/asset.py의 AssetRepository를 생성자 DI로 사용한다. 실제 이미지 검증/정규화·현재 작성자 권한은 서비스가, SQL·잠금·트랜잭션·ORM 쓰기·오류 변환은 모델이 소유한다. put 전 pending/outbox 예약과 성공 시 ready를 분리하고 파일 I/O는 SQL 잠금 밖에서 실행한다. 같은 Board/Canvas/ready 복합 FK가 draft/publication 참조를 보호한다. 0027 migration과 Board 삭제 연계, 주기적 AssetCleanupService·fenced lease/재시도/위치 검사·운영 CLI를 함께 제공한다. 원래 ObjectStorage 구현을 재사용하며 본문 저장/게시/편집기 UI는 후속이다.
+
+
+쿠키 기반 refresh는 세션에 연결된 CSRF proof를 요구한다. bootstrap 헤더·자격 분기·TTL·프런트 연동은 [CSRF 가이드](../../notes/csrf.md)를 따른다. 관계형 세션/SQL을 서비스로 옮기지 않는다.
