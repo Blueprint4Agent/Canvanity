@@ -1,5 +1,7 @@
 # MVP API 명세
 
+현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md)을 따른다. 본문 저장/게시 시 참조 동기화는 후속이며 아래 전체 목표 API와 구분한다.
+
 [도메인](domain-model.md) · [권한](membership-policy.md)
 
 ## 공통 계약

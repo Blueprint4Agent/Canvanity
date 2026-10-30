@@ -124,3 +124,8 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 ## 설계 근거
 
 [PostgreSQL 16 JSON 문서 설계](https://www.postgresql.org/docs/16/datatype-json.html)는 유연한 JSON과 관계형 구조를 함께 사용할 수 있으며 문서 갱신 시 행 잠금을 고려하도록 설명한다. 목록/권한/검색은 관계형 메타데이터로 처리하고 본문 전체 GIN 인덱스를 선행 생성하지 않는다.
+
+
+## Canvas 이미지 구현 경계 — #6
+
+0027_canvas_assets는 [이미지 에셋 계약](canvas-assets.md)의 assets/canvas_asset_refs/asset_deletion_outbox와 Canvas 복합 유니크 인덱스를 추가한다. 현재 에셋은 Board/Canvas 소속이 필수이고 프로필/Board avatar·cover와 통합하지 않는다. storage_fingerprint/object_key 조합이 고유하며 content_type/byte_size/frame_count, pending/ready/deleting, upload_deadline/expires_at을 사용한다. 참조 FK는 같은 Board/Canvas의 ready 상태만 허용한다. outbox는 부모 FK 없이 원래 위치와 키를 보존한다. 문서 저장/게시가 실제 JSON 참조를 추출하고 같은 트랜잭션에 동기화하는 경로는 #7/#8 후속이다. 위 전체 목표 스키마와 현재 구현의 경계를 구분한다.

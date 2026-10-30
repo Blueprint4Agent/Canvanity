@@ -33,7 +33,7 @@ Board archived는 작성자 조회만 허용하고 변경/휴지통/복구/새 �
 
 본문은 schema_version=1, engine(excalidraw 0.18.1/adapter 1), settings(배경 #F8F7F4·dots·3200×2100), 빈 nodes/edges/element_order로 초기화한다. 이는 기존 검증 어댑터의 포맷을 따른 초기값이며 제품 편집기의 채택·설치를 의미하지 않는다. 입력 문서를 받는 API는 아직 없고 요소/에셋 검증·편집 저장은 #7/#6에서 연결한다. 이 단계의 배열 출력 타입은 후속 요소 스키마를 담을 수 있지만 생성 데이터는 항상 비어 있다.
 
-세션·SQL·ORM 쓰기·트랜잭션·드라이버 오류 변환은 기존 패턴대로 models/canvas.py 안의 CanvasRepository/CanvasTransaction이 소유한다. 같은 세션에 BoardTransaction을 조합해 Board 권한 데이터를 읽고, CanvasService는 저장소와 BoardPermissionService를 생성자 DI로 사용한다. 별도 Repository 파일이나 다른 서비스 private 호출은 없다.
+세션·SQL·ORM 쓰기·트랜잭션·드라이버 오류 변환은 기존 패턴대로 models/canvas.py 안의 CanvasRepository/CanvasTransaction이 소유한다. 같은 세션에 BoardTransaction을 조합해 Board 권한 데이터를 읽고, CanvasService는 저장소와 공유 CanvasAccessService를 생성자 DI로 사용한다. 공유 가드는 BoardPermissionService로 정책을 평가하며 이미지 서비스도 같은 작성자 경계를 사용한다. 별도 Repository 파일이나 다른 서비스 private 호출은 없다.
 
 변경은 Board→활성 User 공유 잠금→Canvas 순서다. User 잠금은 Canvas 행보다 먼저 얻어 계정 삭제의 User→Canvas SET NULL 순서와 충돌하지 않게 한다. 정책/역할 변경과 같은 Board 잠금을 사용해 변경 commit 뒤의 새 쓰기가 오래된 권한을 사용하지 않도록 한다. 현재 읽기는 진행 중인 요청의 snapshot을 마칠 수 있다.
 
@@ -43,4 +43,4 @@ Board archived는 작성자 조회만 허용하고 변경/휴지통/복구/새 �
 
 Shelf 삭제는 초안·휴지통·작성자가 삭제된 문서를 모두 비어 있지 않음으로 계산해 SHELF_NOT_EMPTY 409다. 같은 Board의 다른 Shelf로 문서를 옮기면 비기본 빈 Shelf를 삭제할 수 있다. active 빈 Board 되돌리기도 Canvas가 하나라도 있으면 409다. 보관된 Board의 Owner 확인 삭제는 현재 모든 CanvasDocument/Canvas를 Shelf보다 먼저 같은 트랜잭션에서 정리하고 다른 Board/계정/프로필 파일을 보존한다.
 
-#7 문서 저장/CAS·요소 validator, #24 Tag, #6 에셋/삭제 outbox, #8 publish/publication/공개 목록·cursor·Plaza·UI가 후속이다. 현재 파일 참조가 없어 파일 정리/worker를 추가하지 않는다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.
+[이미지 에셋](canvas-assets.md)이 업로드/조회/미참조 삭제·참조 FK·Board 삭제 outbox/worker를 연결한다. #7 문서 저장/CAS·요소 validator·본문과 에셋 참조의 원자 동기화, #24 Tag, #8 publish/publication/공개 목록·cursor·Plaza·UI는 후속이다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.

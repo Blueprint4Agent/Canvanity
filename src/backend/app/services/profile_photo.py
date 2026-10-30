@@ -1,7 +1,5 @@
 """Private profile images; storage failure never replaces the last confirmed photo."""
 
-import hashlib
-import json
 from collections.abc import AsyncIterable
 from io import BytesIO
 from uuid import uuid4
@@ -10,9 +8,9 @@ from fastapi import Depends
 from PIL import Image, ImageOps, UnidentifiedImageError
 from starlette.concurrency import run_in_threadpool
 
-from app.core.config.settings import SETTINGS
 from app.core.error import AuthErrorCode, AuthException
 from app.core.object_storage import ObjectStorage, StorageError, StorageErrorCode
+from app.core.object_storage.identity import storage_identity
 from app.core.observability.logging import get_logger
 from app.deps import get_object_storage
 from app.models.profile_photo import PhotoPersistenceError, ProfilePhotos
@@ -21,24 +19,6 @@ from app.models.user import UserResponse, Users
 logger = get_logger(__name__)
 PHOTO_PATH = "/api/v1/auth/me/photo"
 MAX_UPLOAD_BYTES = 8 * 1024 * 1024
-
-
-def storage_identity() -> str:
-    """Nonsecret fingerprint prevents reading/deleting a key in a different location."""
-    source = [SETTINGS.OBJECT_STORAGE_PROVIDER]
-    if SETTINGS.OBJECT_STORAGE_PROVIDER == "local":
-        source.append(str(SETTINGS.OBJECT_STORAGE_LOCAL_ROOT.resolve()))
-    else:
-        source.extend(
-            [
-                SETTINGS.OBJECT_STORAGE_S3_ENDPOINT_URL.rstrip("/"),
-                SETTINGS.OBJECT_STORAGE_S3_BUCKET,
-                SETTINGS.OBJECT_STORAGE_S3_REGION
-                if SETTINGS.OBJECT_STORAGE_PROVIDER != "r2"
-                else "auto",
-            ]
-        )
-    return hashlib.sha256(json.dumps(source).encode()).hexdigest()
 
 
 def normalize_image(data: bytes) -> bytes:

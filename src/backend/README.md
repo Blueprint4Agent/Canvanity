@@ -1,5 +1,7 @@
 # 백엔드 빠른 가이드
 
+Canvanity 커뮤니티 구현은 [도메인 문서](../../notes/community/README.md), 이미지 API·삭제 outbox·정리 CLI는 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md)을 따른다. 문서 저장/게시와 신규 UI는 후속이다.
+
 > Canvanity 적용: 개발 문서·커밋·PR은 한국어이며, src/frontend는 같은 저장소의 일반 디렉터리입니다. 아래 기반 템플릿의 별도 저장소·서브모듈 절차는 적용하지 않습니다. 루트 AGENTS.md와 PROJECT_BRIEF.md를 우선합니다.
 
 이 문서는 `src/backend` 작업자를 위한 최소 참조 가이드입니다.

@@ -1478,7 +1478,10 @@ class BoardTransaction:
         await self._db.flush()
 
     async def delete_board(self, board: Board) -> None:
+        from app.models.asset import AssetTransaction
         from app.models.canvas import Canvas, CanvasDocument
+
+        await AssetTransaction(self._db).delete_board_assets(board.id)
 
         canvas_ids = select(Canvas.id).where(Canvas.board_id == board.id)
         await self._db.execute(

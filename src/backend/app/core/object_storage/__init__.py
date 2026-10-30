@@ -15,6 +15,7 @@ from app.core.object_storage.base import (
     StorageErrorCode,
     StoredObject,
 )
+from app.core.object_storage.identity import object_storage_location
 from app.core.object_storage.local import LocalObjectStorage
 from app.core.object_storage.s3 import S3ObjectStorage, create_s3_client
 from app.core.observability.logging import get_logger
@@ -55,6 +56,7 @@ async def create_object_storage(settings: Settings) -> ObjectStorage:
 async def object_storage_lifespan(app: FastAPI, settings: Settings) -> AsyncIterator[None]:
     storage: ObjectStorage | None = None
     provider = settings.OBJECT_STORAGE_PROVIDER
+    location = object_storage_location(settings)
     try:
         logger.info("Object storage startup check started (provider=%s).", provider)
         try:
@@ -69,6 +71,7 @@ async def object_storage_lifespan(app: FastAPI, settings: Settings) -> AsyncIter
             raise
         logger.info("Object storage startup check succeeded (provider=%s).", provider)
         app.state.object_storage = storage
+        app.state.object_storage_location = location
         yield
     finally:
         if storage is not None:
@@ -78,3 +81,4 @@ async def object_storage_lifespan(app: FastAPI, settings: Settings) -> AsyncIter
             finally:
                 if getattr(app.state, "object_storage", None) is storage:
                     del app.state.object_storage
+                    del app.state.object_storage_location

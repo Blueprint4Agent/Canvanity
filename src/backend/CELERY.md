@@ -1,5 +1,7 @@
 # Celery 백그라운드 실행
 
+Canvas 이미지 정리 task `canvanity.assets.cleanup`는 Beat가 60초마다 발행한다. API/worker는 같은 DB·스토리지 설정과 local 볼륨을 사용한다. 원래 위치 확인·lease·재시도/수동 CLI는 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md)을 따른다.
+
 Celery 5.6 worker와 Beat를 API와 별도 프로세스로 실행합니다.
 가입 인증·비밀번호 재설정 메일은 이제 Celery worker에서 실행합니다.
 메일 기능을 켜면 별도 worker가 필요합니다. API 계약·DB 스키마는 유지하며
