@@ -72,6 +72,16 @@ class BoardPermissionService:
             return "moderation"
         raise BoardException(BoardErrorCode.FORBIDDEN)
 
+    def check_owner_action(self, board: Board, actor: BoardMember | None) -> None:
+        self.check_read(board, actor)
+        if (
+            actor is None
+            or actor.status != "active"
+            or actor.role != "owner"
+            or actor.user_id != board.owner_id
+        ):
+            raise BoardException(BoardErrorCode.FORBIDDEN)
+
     def check_manage_grades(self, board: Board, actor: BoardMember | None) -> None:
         self.member_scope(board, actor, audit=True)
         if board.status != "active":

@@ -323,6 +323,37 @@ class BoardDeleteForm(BaseModel):
     confirm_slug: str = Field(min_length=3, max_length=64)
 
 
+class BoardOwnershipTransferForm(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    expected_revision: int = Field(ge=0)
+    target_user_id: int = Field(gt=0, le=MAX_BOARD_USER_ID, strict=True)
+    reason: str = Field(min_length=1, max_length=500)
+
+
+class BoardOwnershipTransferResponse(BaseModel):
+    board_id: UUID
+    previous_owner_id: int
+    owner_id: int
+    board_revision: int
+
+
+class BoardOwnershipMemberState(BaseModel):
+    user_id: int
+    role: BoardMemberRole
+    status: BoardMemberStatus
+    grade_id: UUID
+
+
+class BoardOwnershipState(BaseModel):
+    owner_id: int
+    members: list[BoardOwnershipMemberState]
+
+
+class BoardOwnershipAuditChange(BaseModel):
+    before: BoardOwnershipState
+    after: BoardOwnershipState
+
+
 class BoardSummary(BaseModel):
     id: UUID
     owner_id: int
@@ -601,6 +632,7 @@ class BoardMemberAuditResponse(BaseModel):
     reason: str | None = None
     grade_change: BoardGradeAuditChange | None = None
     board_change: BoardSettingsAuditChange | None = None
+    ownership_change: BoardOwnershipAuditChange | None = None
     created_at: datetime
 
 
@@ -946,7 +978,7 @@ class BoardTransaction:
             select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
         )
 
-    async def invitable_user(self, user_id: int) -> bool:
+    async def lock_active_user(self, user_id: int) -> bool:
         # A shared row lock keeps deactivation/deletion from changing this decision before commit.
         return (
             await self._db.scalar(
@@ -1019,6 +1051,43 @@ class BoardTransaction:
     def _touch(board: Board) -> None:
         board.revision += 1
         board.updated_at = utc_now()
+
+    @staticmethod
+    def _ownership_state(board: Board, members: list[BoardMember]) -> dict:
+        return BoardOwnershipState(
+            owner_id=board.owner_id,
+            members=[
+                BoardOwnershipMemberState(
+                    user_id=m.user_id, role=m.role, status=m.status, grade_id=m.grade_id
+                )
+                for m in sorted(members, key=lambda m: m.user_id)
+            ],
+        ).model_dump(mode="json")
+
+    async def transfer_ownership(
+        self, board: Board, owner: BoardMember, target: BoardMember, reason: str
+    ) -> None:
+        before = self._ownership_state(board, [owner, target])
+        owner.role = "admin"
+        # Free the immediate partial unique owner index before assigning the successor.
+        await self._db.flush()
+        target.role = "owner"
+        board.owner_id = target.user_id
+        self._touch(board)
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=owner.user_id,
+                target_user_id=target.user_id,
+                action="ownership_transferred",
+                changes={
+                    "before": before,
+                    "after": self._ownership_state(board, [owner, target]),
+                    "reason": reason,
+                },
+            )
+        )
+        await self._db.flush()
 
     async def delete_board(self, board: Board) -> None:
         for model in (

@@ -792,3 +792,5 @@ Board 등급 정의 설정은 [등급 설정 계약](../../notes/community/grade
 기존 계정의 [수동 초대](../../notes/community/member-invitations.md)는 BoardMembershipService/공유 가드와 기존 BoardTransaction을 사용한다. invite Board의 active Owner/Admin만 현재 활성 계정을 기본 등급의 일반 회원으로 등록한다. Board 잠금·대상 User 공유 잠금·현재 revision·회원/감사 저장을 한 트랜잭션으로 유지하고 제재/승인 상태 재등록은 409다. UI·메일·링크 초대는 포함하지 않는다.
 
 Board 기본 정보·공개/가입 정책·보관/복원은 [Board 기본 설정](../../notes/community/board-settings.md)을 따른다. 기존 BoardService/공유 권한 가드와 models/board.py의 잠금 트랜잭션을 재사용한다. visibility/status는 Owner 전용이고 혼합 요청의 필드 전체를 검사한다. 관심사 연결·revision·허용 필드의 board_updated 감사를 원자적으로 저장하며 보드 공개 범위를 기존 읽기 정책의 상위 경계로 적용한다. 새 migration·제품 UI·소유권 위임/영구 삭제는 포함하지 않는다.
+
+[소유권·종료](../../notes/community/board-lifecycle.md)는 기존 BoardService/Owner 가드와 BoardTransaction을 사용한다. 위임은 기존 Owner 역할을 먼저 해제한 뒤 새 Owner·owner_id·revision·감사를 원자적으로 갱신하고 대상 User 공유 잠금으로 계정 상태와 직렬화한다. DELETE는 보관 Board 전체 현재 데이터와 기존 active 빈 Board 정리를 지원한다. 현재 Board 파일 참조가 없어 프로필 파일을 건드리지 않고, 에셋 정리 outbox는 #6 연결 전 후속 통합한다. 세션·SQL·ORM 쓰기는 기존 모델에 유지한다.

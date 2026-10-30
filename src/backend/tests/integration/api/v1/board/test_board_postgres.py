@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from alembic import command
 from app.core.config.settings import SETTINGS
 from app.core.db.migrations import _build_alembic_config
+from app.core.error import AuthErrorCode, AuthException
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
     Board,
@@ -30,13 +31,14 @@ from app.models.board import (
     BoardMemberGrade,
     BoardMemberInviteForm,
     BoardMemberPatchForm,
+    BoardOwnershipTransferForm,
     BoardRepository,
     BoardSettingsPatchForm,
     BoardTransaction,
     Shelf,
     ShelfPolicy,
 )
-from app.models.user import User
+from app.models.user import User, Users
 from app.services.board import BoardService
 from app.services.board_grade import BoardGradeService
 from app.services.board_membership import BoardMembershipService
@@ -305,7 +307,7 @@ async def assert_member_invitations(test_db, user_id, board_id):
         before = await boards.home(user_id, board_id=board_id)
         entered = asyncio.Event()
         pids = []
-        original = BoardTransaction.invitable_user
+        original = BoardTransaction.lock_active_user
 
         async def observed(
             tx,
@@ -328,7 +330,7 @@ async def assert_member_invitations(test_db, user_id, board_id):
             else:
                 target.is_active = False
             await blocker.flush()
-            with patch.object(BoardTransaction, "invitable_user", new=observed):
+            with patch.object(BoardTransaction, "lock_active_user", new=observed):
                 pending = asyncio.create_task(
                     service.invite(
                         user_id,
@@ -512,6 +514,104 @@ async def assert_board_settings(test_db, user_id, board_id, member_id):
     assert repeated == private
 
 
+async def assert_board_lifecycle(test_db, owner_id, board_id, target_id):
+    service = BoardService(BoardPermissionService(), BoardRepository())
+    before = await service.home(owner_id, board_id=board_id)
+    form = BoardOwnershipTransferForm(
+        expected_revision=before.board.revision, target_user_id=target_id, reason="PG 소유권 위임"
+    )
+    with patch(
+        "sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=SQLAlchemyError("commit failed")
+    ):
+        with pytest.raises(BoardException) as rejected:
+            await service.transfer_ownership(owner_id, board_id, form)
+        assert rejected.value.code.error == BoardErrorCode.UNAVAILABLE.code.error
+    assert await service.home(owner_id, board_id=board_id) == before
+    results = await asyncio.gather(
+        service.transfer_ownership(owner_id, board_id, form),
+        service.transfer_ownership(owner_id, board_id, form),
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(item, Exception) for item in results) == 1
+    assert (
+        sum(
+            isinstance(item, BoardException)
+            and item.code.error == BoardErrorCode.FORBIDDEN.code.error
+            for item in results
+        )
+        == 1
+    )
+    result = next(item for item in results if not isinstance(item, Exception))
+    assert result.owner_id == target_id and result.board_revision == before.board.revision + 1
+    async with test_db() as db:
+        assert (await db.get(BoardMember, (board_id, owner_id))).role == "admin"
+        assert (await db.get(BoardMember, (board_id, target_id))).role == "owner"
+        assert (
+            await db.scalar(
+                select(func.count())
+                .select_from(BoardMember)
+                .where(BoardMember.board_id == board_id, BoardMember.role == "owner")
+            )
+            == 1
+        )
+        assert (
+            await db.scalar(
+                select(func.count())
+                .select_from(BoardMemberAudit)
+                .where(
+                    BoardMemberAudit.board_id == board_id,
+                    BoardMemberAudit.action == "ownership_transferred",
+                )
+            )
+            == 1
+        )
+        target_email = (await db.get(User, target_id)).email
+        with pytest.raises(IntegrityError):
+            await db.execute(
+                text(
+                    "UPDATE board_members SET role='owner' WHERE board_id=:board AND user_id=:user"
+                ),
+                {"board": board_id, "user": owner_id},
+            )
+        await db.rollback()
+    with pytest.raises(AuthException) as protected:
+        await Users.delete_account(target_id, target_email)
+    assert protected.value.code.error == AuthErrorCode.BOARD_OWNERSHIP_REQUIRED.code.error
+    archived = await service.update(
+        target_id,
+        board_id,
+        BoardSettingsPatchForm(
+            expected_revision=result.board_revision, reason="PG 보관", status="archived"
+        ),
+    )
+    delete_form = BoardDeleteForm(
+        expected_revision=archived.board_revision, confirm_slug=archived.board.slug
+    )
+    with pytest.raises(BoardException) as forbidden:
+        await service.delete_board(owner_id, board_id, delete_form)
+    assert forbidden.value.code.error == BoardErrorCode.FORBIDDEN.code.error
+    saved = await service.home(target_id, board_id=board_id)
+    with patch(
+        "sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=SQLAlchemyError("commit failed")
+    ):
+        with pytest.raises(BoardException) as rejected:
+            await service.delete_board(target_id, board_id, delete_form)
+        assert rejected.value.code.error == BoardErrorCode.UNAVAILABLE.code.error
+    assert await service.home(target_id, board_id=board_id) == saved
+    await service.delete_board(target_id, board_id, delete_form)
+    async with test_db() as db:
+        assert await db.get(Board, board_id) is None
+        assert (
+            await db.scalar(
+                select(func.count())
+                .select_from(BoardMember)
+                .where(BoardMember.board_id == board_id)
+            )
+            == 0
+        )
+        assert await db.get(User, target_id) is not None
+
+
 def test_real_migration_creation_race_and_downgrade(monkeypatch):
     url = make_url(SETTINGS.DATABASE_URL)
     assert url.drivername == "postgresql+asyncpg" and url.host in {"localhost", "127.0.0.1", "::1"}
@@ -540,6 +640,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
                 yield db
 
         monkeypatch.setattr("app.models.board.get_db", test_db)
+        monkeypatch.setattr("app.models.user.get_db", test_db)
         try:
             async with admin.begin() as connection:
                 await connection.execute(text(f'CREATE SCHEMA "{schema}"'))
@@ -714,12 +815,11 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
             await assert_grade_management(test_db, user_id, board.id)
             await assert_member_invitations(test_db, user_id, board.id)
             await assert_board_settings(test_db, user_id, board.id, newcomer_id)
-            await membership.leave(newcomer_id, board.id)
-            final = await service.home(user_id, board_id=board.id)
-            await service.delete_empty(
+            await assert_board_lifecycle(test_db, user_id, board.id, newcomer_id)
+            await service.delete_board(
                 user_id,
-                board.id,
-                BoardDeleteForm(expected_revision=final.board.revision, confirm_slug=board.slug),
+                other.id,
+                BoardDeleteForm(expected_revision=0, confirm_slug=other.slug),
             )
             async with test_db() as db:
                 assert await db.get(BoardLayout, board.id) is None

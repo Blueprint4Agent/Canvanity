@@ -2008,6 +2008,7 @@
               "BOARD_MEMBER_NOT_FOUND",
               "BOARD_INVITEE_NOT_FOUND",
               "BOARD_INVITATION_CONFLICT",
+              "BOARD_INVALID_OWNERSHIP_TARGET",
               "BOARD_INVALID_GRADE",
               "BOARD_GRADE_NOT_FOUND",
               "BOARD_GRADE_NAME_TAKEN",
@@ -2421,6 +2422,16 @@
             "title": "Id",
             "type": "string"
           },
+          "ownership_change": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BoardOwnershipAuditChange"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "reason": {
             "anyOf": [
               {
@@ -2748,6 +2759,142 @@
           "board_revision"
         ],
         "title": "BoardMemberUpdateResponse",
+        "type": "object"
+      },
+      "BoardOwnershipAuditChange": {
+        "properties": {
+          "after": {
+            "$ref": "#/components/schemas/BoardOwnershipState"
+          },
+          "before": {
+            "$ref": "#/components/schemas/BoardOwnershipState"
+          }
+        },
+        "required": [
+          "before",
+          "after"
+        ],
+        "title": "BoardOwnershipAuditChange",
+        "type": "object"
+      },
+      "BoardOwnershipMemberState": {
+        "properties": {
+          "grade_id": {
+            "format": "uuid",
+            "title": "Grade Id",
+            "type": "string"
+          },
+          "role": {
+            "enum": [
+              "owner",
+              "admin",
+              "moderator",
+              "member"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "active",
+              "pending",
+              "suspended",
+              "banned"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "user_id": {
+            "title": "User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "user_id",
+          "role",
+          "status",
+          "grade_id"
+        ],
+        "title": "BoardOwnershipMemberState",
+        "type": "object"
+      },
+      "BoardOwnershipState": {
+        "properties": {
+          "members": {
+            "items": {
+              "$ref": "#/components/schemas/BoardOwnershipMemberState"
+            },
+            "title": "Members",
+            "type": "array"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "owner_id",
+          "members"
+        ],
+        "title": "BoardOwnershipState",
+        "type": "object"
+      },
+      "BoardOwnershipTransferForm": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "target_user_id": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 2147483647.0,
+            "title": "Target User Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "target_user_id",
+          "reason"
+        ],
+        "title": "BoardOwnershipTransferForm",
+        "type": "object"
+      },
+      "BoardOwnershipTransferResponse": {
+        "properties": {
+          "board_id": {
+            "format": "uuid",
+            "title": "Board Id",
+            "type": "string"
+          },
+          "board_revision": {
+            "title": "Board Revision",
+            "type": "integer"
+          },
+          "owner_id": {
+            "title": "Owner Id",
+            "type": "integer"
+          },
+          "previous_owner_id": {
+            "title": "Previous Owner Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "board_id",
+          "previous_owner_id",
+          "owner_id",
+          "board_revision"
+        ],
+        "title": "BoardOwnershipTransferResponse",
         "type": "object"
       },
       "BoardPageResponse": {
@@ -14828,6 +14975,169 @@
           }
         ],
         "summary": "Leave Board",
+        "tags": [
+          "Boards"
+        ]
+      }
+    },
+    "/api/v1/boards/{board_id}/ownership-transfer": {
+      "post": {
+        "operationId": "transfer_board_ownership_api_v1_boards__board_id__ownership_transfer_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "board_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Board Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BoardOwnershipTransferForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoardOwnershipTransferResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Transfer Board Ownership Api V1 Boards  Board Id  Ownership Transfer Post"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Transfer Board Ownership Api V1 Boards  Board Id  Ownership Transfer Post"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/BoardErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Transfer Board Ownership Api V1 Boards  Board Id  Ownership Transfer Post"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_REVISION_CONFLICT",
+                    "message": "Board revision conflict. Reload the latest board information."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_INVALID_OWNERSHIP_TARGET",
+                    "message": "Select another active member of this board with an active account."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "BOARD_UNAVAILABLE",
+                    "message": "Unable to complete the board operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/BoardErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Transfer Board Ownership",
         "tags": [
           "Boards"
         ]

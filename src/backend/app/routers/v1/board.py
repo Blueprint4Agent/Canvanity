@@ -22,6 +22,8 @@ from app.models.board import (
     BoardMemberPatchForm,
     BoardMembersQuery,
     BoardMemberUpdateResponse,
+    BoardOwnershipTransferForm,
+    BoardOwnershipTransferResponse,
     BoardPageResponse,
     BoardSettingsPatchForm,
     BoardSummary,
@@ -174,7 +176,31 @@ async def delete_empty_board(
     user: UserResponse = Depends(get_current_session_user),
     service: BoardService = Depends(),
 ) -> None:
-    await service.delete_empty(user.id, board_id, form)
+    await service.delete_board(user.id, board_id, form)
+
+
+@router.post(
+    "/{board_id}/ownership-transfer",
+    response_model=BoardOwnershipTransferResponse,
+    responses=current_user_error_responses(
+        board_error_responses(
+            BoardErrorCode.NOT_FOUND,
+            BoardErrorCode.FORBIDDEN,
+            BoardErrorCode.CONFLICT,
+            BoardErrorCode.INVALID_OWNERSHIP_TARGET,
+            BoardErrorCode.UNAVAILABLE,
+        )
+    ),
+)
+async def transfer_board_ownership(
+    board_id: UUID,
+    form: BoardOwnershipTransferForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardService = Depends(),
+) -> BoardOwnershipTransferResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.transfer_ownership(user.id, board_id, form)
 
 
 MEMBERSHIP_ERRORS = current_user_error_responses(

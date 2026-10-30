@@ -17,6 +17,8 @@ from app.models.board import (
     BoardCreateForm,
     BoardDeleteForm,
     BoardHomeResponse,
+    BoardOwnershipTransferForm,
+    BoardOwnershipTransferResponse,
     BoardPageResponse,
     BoardRepository,
     BoardSettingsPatchForm,
@@ -217,25 +219,47 @@ class BoardService:
             layout_revision=data.layout.revision,
         )
 
-    async def delete_empty(self, user_id: int, board_id: UUID, form: BoardDeleteForm) -> None:
+    async def transfer_ownership(
+        self, user_id: int, board_id: UUID, form: BoardOwnershipTransferForm
+    ) -> BoardOwnershipTransferResponse:
+        async with self.repository.transaction() as tx:
+            board = await tx.locked_board(board_id)
+            if board is None:
+                raise BoardException(BoardErrorCode.NOT_FOUND)
+            owner = await tx.member(board_id, user_id)
+            self.permissions.check_owner_action(board, owner)
+            if board.revision != form.expected_revision:
+                raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
+            target = await tx.member(board_id, form.target_user_id)
+            if (
+                target is None
+                or target.user_id == user_id
+                or target.status != "active"
+                or target.role == "owner"
+            ):
+                raise BoardException(BoardErrorCode.INVALID_OWNERSHIP_TARGET)
+            if not await tx.lock_active_user(target.user_id):
+                raise BoardException(BoardErrorCode.INVALID_OWNERSHIP_TARGET)
+            await tx.transfer_ownership(board, owner, target, form.reason)
+            result = BoardOwnershipTransferResponse(
+                board_id=board_id,
+                previous_owner_id=user_id,
+                owner_id=target.user_id,
+                board_revision=board.revision,
+            )
+        return result
+
+    async def delete_board(self, user_id: int, board_id: UUID, form: BoardDeleteForm) -> None:
         async with self.repository.transaction(deleting=True) as tx:
             board = await tx.locked_board(board_id)
             if board is None:
                 raise BoardException(BoardErrorCode.NOT_FOUND)
             member = await tx.member(board_id, user_id)
-            self.permissions.check_read(board, member)
-            if (
-                board.owner_id != user_id
-                or member is None
-                or member.role != "owner"
-                or member.status != "active"
-                or board.status == "suspended"
-            ):
-                raise BoardException(BoardErrorCode.FORBIDDEN)
+            self.permissions.check_owner_action(board, member)
             if board.revision != form.expected_revision:
                 raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
             if board.slug != form.confirm_slug:
                 raise BoardException(BoardErrorCode.DELETE_CONFIRMATION)
-            if await tx.member_count(board_id) != 1:
+            if board.status != "archived" and await tx.member_count(board_id) != 1:
                 raise BoardException(BoardErrorCode.NOT_EMPTY)
             await tx.delete_board(board)

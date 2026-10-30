@@ -26,6 +26,7 @@ from app.models.board import (
     BoardMemberPublic,
     BoardMembersQuery,
     BoardMemberUpdateResponse,
+    BoardOwnershipAuditChange,
     BoardRepository,
     BoardSettingsAuditChange,
     MembershipSummary,
@@ -98,7 +99,7 @@ class BoardMembershipService:
             self.permissions.check_invite(board, actor)
             if board.revision != form.expected_revision:
                 raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
-            if not await tx.invitable_user(form.user_id):
+            if not await tx.lock_active_user(form.user_id):
                 raise BoardException(BoardErrorCode.INVITEE_NOT_FOUND)
             existing = await tx.member_details(board_id, form.user_id)
             if existing is not None:
@@ -253,13 +254,14 @@ class BoardMembershipService:
             return BoardAuditState.model_validate(value) if isinstance(value, dict) else None
 
         board_change = row.action == "board_updated"
+        ownership_change = row.action == "ownership_transferred"
         return BoardMemberAuditResponse(
             id=row.id,
             actor_user_id=row.actor_user_id,
             target_user_id=row.target_user_id,
             action=row.action,
-            before=state(before) if not board_change else None,
-            after=state(after) if not board_change else None,
+            before=state(before) if not (board_change or ownership_change) else None,
+            after=state(after) if not (board_change or ownership_change) else None,
             reason=changes.get("reason"),
             grade_change=(
                 BoardGradeAuditChange.model_validate(changes)
@@ -267,6 +269,9 @@ class BoardMembershipService:
                 else None
             ),
             board_change=BoardSettingsAuditChange.model_validate(changes) if board_change else None,
+            ownership_change=BoardOwnershipAuditChange.model_validate(changes)
+            if ownership_change
+            else None,
             created_at=cls._utc(row.created_at),
         )
 
