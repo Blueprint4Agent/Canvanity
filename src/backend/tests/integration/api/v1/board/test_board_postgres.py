@@ -28,8 +28,10 @@ from app.models.board import (
     BoardMember,
     BoardMemberAudit,
     BoardMemberGrade,
+    BoardMemberInviteForm,
     BoardMemberPatchForm,
     BoardRepository,
+    BoardTransaction,
     Shelf,
     ShelfPolicy,
 )
@@ -226,6 +228,154 @@ async def assert_grade_management(test_db, user_id, board_id):
             audit.changes["reassigned_board_policies"] > 0
             and audit.changes["reassigned_shelf_policies"] == 1
         )
+
+
+async def assert_member_invitations(test_db, user_id, board_id):
+    service = BoardMembershipService(BoardPermissionService(), BoardRepository())
+    boards = BoardService(BoardPermissionService(), BoardRepository())
+    async with test_db() as db:
+        board = await db.get(Board, board_id)
+        board.visibility, board.join_policy = "private", "invite"
+        target = User(
+            email="pg-invite@example.com",
+            name="Invitee",
+            role="admin",
+            is_active=True,
+            is_verified=True,
+        )
+        db.add(target)
+        await db.commit()
+        target_id = target.id
+    home = await boards.home(user_id, board_id=board_id)
+    default_id = next(g.id for g in home.grades if g.is_default)
+    form = BoardMemberInviteForm(
+        user_id=target_id, expected_revision=home.board.revision, reason="동시 수동 초대"
+    )
+    results = await asyncio.gather(
+        service.invite(user_id, board_id, form),
+        service.invite(user_id, board_id, form),
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(item, Exception) for item in results) == 1
+    assert (
+        sum(
+            isinstance(item, BoardException)
+            and item.code.error == BoardErrorCode.CONFLICT.code.error
+            for item in results
+        )
+        == 1
+    )
+    result = next(item for item in results if not isinstance(item, Exception))
+    assert result.member.role == "member" and result.member.grade_id == default_id
+    assert result.board_revision == home.board.revision + 1
+    repeated = await service.invite(
+        user_id, board_id, form.model_copy(update={"expected_revision": result.board_revision})
+    )
+    assert repeated == result
+    async with test_db() as db:
+        rows = (
+            await db.scalars(
+                select(BoardMemberAudit).where(
+                    BoardMemberAudit.board_id == board_id,
+                    BoardMemberAudit.action == "member_invited",
+                )
+            )
+        ).all()
+        assert (
+            len(rows) == 1
+            and rows[0].actor_user_id == user_id
+            and rows[0].target_user_id == target_id
+        )
+    await service.leave(target_id, board_id)
+
+    # Observe PostgreSQL's actual blocker PID rather than infer locking from a delay.
+    for operation in ("deactivate", "delete"):
+        async with test_db() as db:
+            target = User(
+                email=f"pg-invite-{operation}@example.com",
+                name="Racing target",
+                role="user",
+                is_active=True,
+                is_verified=True,
+            )
+            db.add(target)
+            await db.commit()
+            target_id = target.id
+        before = await boards.home(user_id, board_id=board_id)
+        entered = asyncio.Event()
+        pids = []
+        original = BoardTransaction.invitable_user
+
+        async def observed(
+            tx,
+            target_user_id,
+            *,
+            observed_pids=pids,
+            observed_entered=entered,
+            observed_original=original,
+        ):
+            observed_pids.append(await tx._db.scalar(text("SELECT pg_backend_pid()")))
+            observed_entered.set()
+            return await observed_original(tx, target_user_id)
+
+        async with test_db() as blocker:
+            target = await blocker.scalar(
+                select(User).where(User.id == target_id).with_for_update()
+            )
+            if operation == "delete":
+                await blocker.delete(target)
+            else:
+                target.is_active = False
+            await blocker.flush()
+            with patch.object(BoardTransaction, "invitable_user", new=observed):
+                pending = asyncio.create_task(
+                    service.invite(
+                        user_id,
+                        board_id,
+                        BoardMemberInviteForm(
+                            user_id=target_id,
+                            expected_revision=before.board.revision,
+                            reason="계정 상태 경쟁",
+                        ),
+                    )
+                )
+                try:
+                    async with asyncio.timeout(5):
+                        await entered.wait()
+                        while True:
+                            async with test_db() as observer:
+                                blocked = await observer.scalar(
+                                    text("SELECT cardinality(pg_blocking_pids(:pid)) > 0"),
+                                    {"pid": pids[0]},
+                                )
+                            if blocked:
+                                break
+                            assert not pending.done(), (
+                                "Invitee check did not wait for the account row lock"
+                            )
+                            await asyncio.sleep(0.01)
+                    await blocker.commit()
+                    with pytest.raises(BoardException) as rejected:
+                        await asyncio.wait_for(pending, timeout=5)
+                    assert rejected.value.code.error == BoardErrorCode.INVITEE_NOT_FOUND.code.error
+                finally:
+                    if not pending.done():
+                        pending.cancel()
+                    await asyncio.gather(pending, return_exceptions=True)
+        async with test_db() as db:
+            assert await db.get(BoardMember, (board_id, target_id)) is None
+            assert (await db.get(Board, board_id)).revision == before.board.revision
+            assert (
+                await db.scalar(
+                    select(func.count())
+                    .select_from(BoardMemberAudit)
+                    .where(
+                        BoardMemberAudit.board_id == board_id,
+                        BoardMemberAudit.target_user_id == target_id,
+                    )
+                )
+                == 0
+            )
 
 
 def test_real_migration_creation_race_and_downgrade(monkeypatch):
@@ -428,6 +578,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
                 assert (await db.get(BoardMember, (board.id, newcomer_id))).status == "active"
                 assert (await db.get(Board, board.id)).revision == 3
             await assert_grade_management(test_db, user_id, board.id)
+            await assert_member_invitations(test_db, user_id, board.id)
             await membership.leave(newcomer_id, board.id)
             final = await service.home(user_id, board_id=board.id)
             await service.delete_empty(

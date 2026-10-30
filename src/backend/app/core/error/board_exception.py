@@ -60,6 +60,14 @@ class BoardErrorCode(Enum):
     MEMBER_NOT_FOUND = ServiceErrorCode(
         "BOARD_MEMBER_NOT_FOUND", "Board member not found.", status.HTTP_404_NOT_FOUND
     )
+    INVITEE_NOT_FOUND = ServiceErrorCode(
+        "BOARD_INVITEE_NOT_FOUND", "Active invitee account not found.", status.HTTP_404_NOT_FOUND
+    )
+    INVITATION_CONFLICT = ServiceErrorCode(
+        "BOARD_INVITATION_CONFLICT",
+        "Use member management to update an existing inactive membership.",
+        status.HTTP_409_CONFLICT,
+    )
     INVALID_GRADE = ServiceErrorCode(
         "BOARD_INVALID_GRADE",
         "Select a member grade from the same board.",

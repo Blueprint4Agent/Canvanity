@@ -13,7 +13,7 @@
 
 `board_member_grades.rank`는 큰 값이 높은 등급이다. 기본값은 뉴커머(Newcomer) 0, 피너(Pinner) 10, 큐레이터(Curator) 20이다. 등급 이름이 같아도 Board 간 동일 권한을 의미하지 않는다. Owner에게도 grade_id가 있지만 등급을 높여 운영 권한을 주지 않는다.
 
-MVP는 public/open 또는 private/invite Board를 지원한다. private/open은 가입 즉시 비공개 자료를 열람하는 모순을 피하려고 422로 거부한다. private/invite는 Owner가 존재하는 사용자 ID를 직접 등록하는 수동 초대만 제공한다. 사용자 지정 이메일 발송·초대 URL/토큰·승인 워크플로는 후속이다. private Board의 join 요청은 403으로 거부한다. approval 입력도 422다.
+MVP는 public/open, public/invite 또는 private/invite Board를 지원한다. private/open은 422로 거부한다. invite 정책에서는 현재 active Owner/Admin이 기존 활성 사용자 ID를 직접 등록하는 [수동 초대](member-invitations.md)를 제공한다. 현재 기본 등급의 active Member를 부여하고 기존 pending/suspended/banned는 재초대로 초기화하지 않는다. 사용자 지정 이메일 발송·초대 URL/토큰·승인 워크플로는 후속이다. 비회원 self join은 public/open만 허용한다. approval 입력도 422다.
 
 ## Board별 변경 가능 범위
 

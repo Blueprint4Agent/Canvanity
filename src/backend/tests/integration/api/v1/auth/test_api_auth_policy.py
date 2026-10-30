@@ -135,6 +135,7 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("POST", "/api/v1/boards/{board_id}/join"),
         ("DELETE", "/api/v1/boards/{board_id}/membership"),
         ("GET", "/api/v1/boards/{board_id}/members"),
+        ("POST", "/api/v1/boards/{board_id}/members"),
         ("PATCH", "/api/v1/boards/{board_id}/members/{user_id}"),
         ("GET", "/api/v1/boards/{board_id}/member-audit"),
         ("POST", "/api/v1/boards/{board_id}/grades"),
@@ -283,6 +284,14 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
             == 401
         )
     assert client.get(path + "/members", headers=key).status_code == 401
+    assert (
+        client.post(
+            path + "/members",
+            headers=key,
+            json={"user_id": 1, "expected_revision": 0, "reason": "키 거부"},
+        ).status_code
+        == 401
+    )
     assert (
         client.patch(
             path + "/members/1",

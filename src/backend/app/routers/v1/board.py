@@ -17,6 +17,7 @@ from app.models.board import (
     BoardGradeResponse,
     BoardGradesResponse,
     BoardHomeResponse,
+    BoardMemberInviteForm,
     BoardMemberListResponse,
     BoardMemberPatchForm,
     BoardMembersQuery,
@@ -326,6 +327,31 @@ MEMBER_PATCH_ERRORS = current_user_error_responses(
 MEMBER_AUDIT_ERRORS = current_user_error_responses(
     board_error_responses(*MEMBER_READ_CODES, BoardErrorCode.INVALID_AUDIT_WINDOW)
 )
+
+
+@router.post(
+    "/{board_id}/members",
+    response_model=BoardMemberUpdateResponse,
+    responses=current_user_error_responses(
+        board_error_responses(
+            BoardErrorCode.NOT_FOUND,
+            BoardErrorCode.FORBIDDEN,
+            BoardErrorCode.CONFLICT,
+            BoardErrorCode.INVITEE_NOT_FOUND,
+            BoardErrorCode.INVITATION_CONFLICT,
+            BoardErrorCode.UNAVAILABLE,
+        )
+    ),
+)
+async def invite_member(
+    board_id: UUID,
+    form: BoardMemberInviteForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardMembershipService = Depends(),
+) -> BoardMemberUpdateResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.invite(user.id, board_id, form)
 
 
 @router.get(

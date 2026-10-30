@@ -48,7 +48,7 @@
 | GET     | /boards/{board_id}/membership        | 본인 role/status/grade/board_revision/capabilities                                                                     |
 | DELETE  | /boards/{board_id}/membership        | 활성 비Owner 탈퇴. repeated absent 204. banned/suspended 기록은 탈퇴로 제거하지 않음                                   |
 | GET     | /boards/{board_id}/members           | Owner/Admin은 전체, Moderator는 제재 대상용 공개 필드만. 일반 회원은 이 경로 403                                       |
-| POST    | /boards/{board_id}/members           | user_id/expected_revision/reason. private 수동 초대 Owner/Admin, 기본 뉴커머 등급 active로 등록. 기존 banned 우회 금지 |
+| POST    | /boards/{board_id}/members           | user_id/expected_revision/reason. invite Board의 Owner/Admin이 현재 기본 등급의 active Member로 등록. inactive 멤버 재초대 409, 성공 200 |
 | PATCH   | /boards/{board_id}/members/{user_id} | expected_revision/reason + role/status/grade_id. 각 필드별 위계 검사                                                   |
 | GET     | /boards/{board_id}/grades            | 조회 가능한 Board의 이름·순위·기본 등급, 사용자 개인정보 없음                                                          |
 | POST    | /boards/{board_id}/grades            | expected_revision/reason/name/rank. Owner/Admin, 최대 20개. 201 grade/board_revision                                   |

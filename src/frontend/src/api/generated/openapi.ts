@@ -929,7 +929,8 @@ export interface paths {
         /** Members */
         get: operations["members_api_v1_boards__board_id__members_get"];
         put?: never;
-        post?: never;
+        /** Invite Member */
+        post: operations["invite_member_api_v1_boards__board_id__members_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2118,6 +2119,8 @@ export interface components {
                 | "BOARD_NOT_EMPTY"
                 | "BOARD_OWNER_CANNOT_LEAVE"
                 | "BOARD_MEMBER_NOT_FOUND"
+                | "BOARD_INVITEE_NOT_FOUND"
+                | "BOARD_INVITATION_CONFLICT"
                 | "BOARD_INVALID_GRADE"
                 | "BOARD_GRADE_NOT_FOUND"
                 | "BOARD_GRADE_NAME_TAKEN"
@@ -2301,6 +2304,15 @@ export interface components {
              * @enum {string}
              */
             status: "active" | "pending" | "suspended" | "banned";
+            /** User Id */
+            user_id: number;
+        };
+        /** BoardMemberInviteForm */
+        BoardMemberInviteForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
             /** User Id */
             user_id: number;
         };
@@ -10129,6 +10141,118 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    invite_member_api_v1_boards__board_id__members_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardMemberInviteForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMemberUpdateResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
             /** @description Unexpected server error */

@@ -467,6 +467,13 @@ class BoardMemberPatchForm(BaseModel):
         return self
 
 
+class BoardMemberInviteForm(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    user_id: int = Field(gt=0, le=MAX_BOARD_USER_ID, strict=True)
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class BoardMembersQuery(BaseModel):
     limit: int = Field(default=20, ge=1, le=100)
     cursor: str | None = Field(default=None, max_length=2048)
@@ -809,11 +816,26 @@ class BoardTransaction:
             select(func.count()).select_from(BoardMember).where(BoardMember.board_id == board_id)
         )
 
-    async def join_member(self, board: Board, user_id: int, grade_id: UUID) -> BoardMember:
+    async def invitable_user(self, user_id: int) -> bool:
+        # A shared row lock keeps deactivation/deletion from changing this decision before commit.
+        return (
+            await self._db.scalar(
+                select(User.id)
+                .where(User.id == user_id, User.is_active.is_(True))
+                .with_for_update(read=True)
+            )
+            is not None
+        )
+
+    def _new_member(self, board: Board, user_id: int, grade_id: UUID) -> BoardMember:
         member = BoardMember(
             board_id=board.id, user_id=user_id, grade_id=grade_id, role="member", status="active"
         )
         self._db.add(member)
+        return member
+
+    async def join_member(self, board: Board, user_id: int, grade_id: UUID) -> BoardMember:
+        member = self._new_member(board, user_id, grade_id)
         self._db.add(
             BoardMemberAudit(
                 board_id=board.id,
@@ -825,6 +847,26 @@ class BoardTransaction:
         )
         self._touch(board)
         return member
+
+    async def invite_member(
+        self, board: Board, actor_user_id: int, user_id: int, grade_id: UUID, reason: str
+    ) -> BoardMemberData:
+        member = self._new_member(board, user_id, grade_id)
+        self._db.add(
+            BoardMemberAudit(
+                board_id=board.id,
+                actor_user_id=actor_user_id,
+                target_user_id=user_id,
+                action="member_invited",
+                changes={"before": None, "after": self._member_state(member), "reason": reason},
+            )
+        )
+        self._touch(board)
+        await self._db.flush()
+        result = await self.member_details(board.id, user_id)
+        if result is None:
+            raise BoardException(BoardErrorCode.UNAVAILABLE)
+        return result
 
     async def leave_member(self, board: Board, member: BoardMember) -> None:
         self._db.add(
