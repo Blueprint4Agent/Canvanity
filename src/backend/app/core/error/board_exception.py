@@ -30,6 +30,11 @@ class BoardErrorCode(Enum):
         "Select active official interests.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
+    INVALID_SETTINGS = ServiceErrorCode(
+        "BOARD_INVALID_SETTINGS",
+        "Private boards require invite membership; include it when making a board private.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
     INVALID_CURSOR = ServiceErrorCode(
         "BOARD_INVALID_CURSOR",
         "Invalid board cursor. Reload the list.",

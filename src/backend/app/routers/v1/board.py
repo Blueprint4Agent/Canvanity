@@ -23,7 +23,9 @@ from app.models.board import (
     BoardMembersQuery,
     BoardMemberUpdateResponse,
     BoardPageResponse,
+    BoardSettingsPatchForm,
     BoardSummary,
+    BoardUpdateResponse,
     MembershipSummary,
 )
 from app.models.user import UserResponse
@@ -125,6 +127,31 @@ async def board_home(
 ) -> BoardHomeResponse:
     response.headers["Cache-Control"] = "private, no-store"
     return await service.home(user.id if user else None, board_id=board_id)
+
+
+@router.patch(
+    "/{board_id}",
+    response_model=BoardUpdateResponse,
+    responses=current_user_error_responses(
+        board_error_responses(
+            BoardErrorCode.NOT_FOUND,
+            BoardErrorCode.FORBIDDEN,
+            BoardErrorCode.CONFLICT,
+            BoardErrorCode.INVALID_INTEREST,
+            BoardErrorCode.INVALID_SETTINGS,
+            BoardErrorCode.UNAVAILABLE,
+        )
+    ),
+)
+async def update_board(
+    board_id: UUID,
+    form: BoardSettingsPatchForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardService = Depends(),
+) -> BoardUpdateResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.update(user.id, board_id, form)
 
 
 @router.delete(

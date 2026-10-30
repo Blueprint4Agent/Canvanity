@@ -790,3 +790,5 @@ Board 회원 목록·역할/등급·제재 변경·감사 API는 [회원 운영 
 Board 등급 정의 설정은 [등급 설정 계약](../../notes/community/grade-management.md)의 `BoardGradeService`를 DI로 사용한다. 이름·기본값·순서·삭제 대체의 DB 작업과 감사/revision은 기존 BoardTransaction이 소유한다. 기존 테이블/제약을 재사용하며 별도 migration은 추가하지 않는다. 역할 부여와 등급 정의는 분리한다. Board 예외의 기본 메시지는 다른 도메인과 같은 영어이고, UI 번역은 error 코드 기반 i18n이 담당한다. 전역 핸들러에 언어 분기를 추가하지 않는다.
 
 기존 계정의 [수동 초대](../../notes/community/member-invitations.md)는 BoardMembershipService/공유 가드와 기존 BoardTransaction을 사용한다. invite Board의 active Owner/Admin만 현재 활성 계정을 기본 등급의 일반 회원으로 등록한다. Board 잠금·대상 User 공유 잠금·현재 revision·회원/감사 저장을 한 트랜잭션으로 유지하고 제재/승인 상태 재등록은 409다. UI·메일·링크 초대는 포함하지 않는다.
+
+Board 기본 정보·공개/가입 정책·보관/복원은 [Board 기본 설정](../../notes/community/board-settings.md)을 따른다. 기존 BoardService/공유 권한 가드와 models/board.py의 잠금 트랜잭션을 재사용한다. visibility/status는 Owner 전용이고 혼합 요청의 필드 전체를 검사한다. 관심사 연결·revision·허용 필드의 board_updated 감사를 원자적으로 저장하며 보드 공개 범위를 기존 읽기 정책의 상위 경계로 적용한다. 새 migration·제품 UI·소유권 위임/영구 삭제는 포함하지 않는다.

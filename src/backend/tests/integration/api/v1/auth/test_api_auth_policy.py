@@ -132,6 +132,7 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
     expected |= {
         ("POST", "/api/v1/boards"),
         ("DELETE", "/api/v1/boards/{board_id}"),
+        ("PATCH", "/api/v1/boards/{board_id}"),
         ("POST", "/api/v1/boards/{board_id}/join"),
         ("DELETE", "/api/v1/boards/{board_id}/membership"),
         ("GET", "/api/v1/boards/{board_id}/members"),
@@ -266,6 +267,12 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
     created = client.post("/api/v1/boards", json=payload, headers=bearer)
     assert created.status_code == 201
     path = f"/api/v1/boards/{created.json()['id']}"
+    assert (
+        client.patch(
+            path, headers=key, json={"expected_revision": 0, "reason": "키 거부", "name": "불가"}
+        ).status_code
+        == 401
+    )
     grade_ids = [g["id"] for g in client.get(path + "/grades", headers=bearer).json()["items"]]
     assert client.get(path + "/grades", headers=key).status_code == 404
     for method, suffix, changes in [

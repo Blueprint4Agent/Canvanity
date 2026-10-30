@@ -9,6 +9,7 @@
 | [API 명세](api-design.md)                | 요청/응답·권한·동시성·목록·오류·화면 경로       |
 | [등급 설정 API](grade-management.md)     | 이름·순서·기본값·삭제 대체·감사·예외 기본 메시지 |
 | [기존 계정 수동 초대](member-invitations.md) | invite Board의 등록·기본 등급·제재 보호·감사 |
+| [Board 기본 설정](board-settings.md) | 소개·규칙·관심사·공개/가입 정책·보관/복원 |
 | [개발과 검증](development-validation.md) | 현행 환경 감사·독립 fixture·실행·정리·검증 결과 |
 | [편집 엔진 검토](editor-decision.md)     | 후보·선정 근거·문서 어댑터·브라우저 실험과 한계 |
 
@@ -41,4 +42,4 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)는 PR #30으로 main에 반영했다. 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
 
 
-회원 운영 [#31](https://github.com/Blueprint4Agent/Canvanity/issues/31)/PR #33과 등급 설정 [#32](https://github.com/Blueprint4Agent/Canvanity/issues/32)/PR #34는 merge commit으로 main에 반영했다. 현재 [#35 기존 계정 수동 초대](https://github.com/Blueprint4Agent/Canvanity/issues/35)를 진행하며 UI는 제외한다. 각 구현 계약과 이슈에서 구현·검증·게시·main 병합을 구분한다.
+회원 운영 [#31](https://github.com/Blueprint4Agent/Canvanity/issues/31)/PR #33과 등급 설정 [#32](https://github.com/Blueprint4Agent/Canvanity/issues/32)/PR #34는 merge commit으로 main에 반영했다. [#35 기존 계정 수동 초대](https://github.com/Blueprint4Agent/Canvanity/issues/35)는 초안 PR #36에 있으며 현재 [#37 Board 기본 설정](https://github.com/Blueprint4Agent/Canvanity/issues/37)을 해당 브랜치에서 분리해 진행한다. 두 작업은 main 미병합이며 UI는 제외한다. 각 이슈에서 구현·검증·게시·main 병합을 구분한다.

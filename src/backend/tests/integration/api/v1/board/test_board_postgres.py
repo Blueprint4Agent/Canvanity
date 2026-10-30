@@ -31,6 +31,7 @@ from app.models.board import (
     BoardMemberInviteForm,
     BoardMemberPatchForm,
     BoardRepository,
+    BoardSettingsPatchForm,
     BoardTransaction,
     Shelf,
     ShelfPolicy,
@@ -378,6 +379,139 @@ async def assert_member_invitations(test_db, user_id, board_id):
             )
 
 
+async def assert_board_settings(test_db, user_id, board_id, member_id):
+    service = BoardService(BoardPermissionService(), BoardRepository())
+    before = await service.home(user_id, board_id=board_id)
+    member_before = await service.home(member_id, board_id=board_id)
+    assert len(member_before.shelves) == 2
+    results = await asyncio.gather(
+        *[
+            service.update(
+                user_id,
+                board_id,
+                BoardSettingsPatchForm(
+                    expected_revision=before.board.revision,
+                    reason="동시 보드 설정",
+                    name=f"설정 {index}",
+                    interest_ids=ids,
+                ),
+            )
+            for index, ids in enumerate((["ai"], ["development", "ai"]))
+        ],
+        return_exceptions=True,
+    )
+    assert sum(not isinstance(item, Exception) for item in results) == 1
+    assert (
+        sum(
+            isinstance(item, BoardException)
+            and item.code.error == BoardErrorCode.CONFLICT.code.error
+            for item in results
+        )
+        == 1
+    )
+    winner = next(item for item in results if not isinstance(item, Exception))
+    saved = await service.home(user_id, board_id=board_id)
+    assert saved.board == winner.board and saved.board.revision == before.board.revision + 1
+    async with test_db() as db:
+        audits = (
+            await db.scalars(
+                select(BoardMemberAudit).where(
+                    BoardMemberAudit.board_id == board_id,
+                    BoardMemberAudit.action == "board_updated",
+                )
+            )
+        ).all()
+        assert (
+            len(audits) == 1
+            and audits[0].changes["after"]["interest_ids"] == winner.board.interest_ids
+        )
+    with patch(
+        "sqlalchemy.ext.asyncio.AsyncSession.commit", side_effect=SQLAlchemyError("commit failed")
+    ):
+        with pytest.raises(BoardException) as rejected:
+            await service.update(
+                user_id,
+                board_id,
+                BoardSettingsPatchForm(
+                    expected_revision=winner.board_revision,
+                    reason="설정 롤백",
+                    name="저장 실패",
+                    interest_ids=[],
+                    visibility="public",
+                    status="archived",
+                ),
+            )
+        assert rejected.value.code.error == BoardErrorCode.UNAVAILABLE.code.error
+    assert await service.home(user_id, board_id=board_id) == saved
+    async with test_db() as db:
+        assert (
+            await db.scalar(
+                select(func.count())
+                .select_from(BoardMemberAudit)
+                .where(
+                    BoardMemberAudit.board_id == board_id,
+                    BoardMemberAudit.action == "board_updated",
+                )
+            )
+            == 1
+        )
+    archived = await service.update(
+        user_id,
+        board_id,
+        BoardSettingsPatchForm(
+            expected_revision=winner.board_revision,
+            reason="보관",
+            status="archived",
+        ),
+    )
+    with pytest.raises(BoardException) as rejected:
+        await service.update(
+            user_id,
+            board_id,
+            BoardSettingsPatchForm(
+                expected_revision=archived.board_revision,
+                reason="복원 없는 변경",
+                name="거부",
+            ),
+        )
+    assert rejected.value.code.error == BoardErrorCode.FORBIDDEN.code.error
+    public = await service.update(
+        user_id,
+        board_id,
+        BoardSettingsPatchForm(
+            expected_revision=archived.board_revision,
+            reason="명시적 복원/공개",
+            status="active",
+            visibility="public",
+        ),
+    )
+    # The general Shelf has an explicit members read policy from the grade probe.
+    anonymous = await service.home(None, board_id=board_id)
+    assert len(anonymous.shelves) == 1 and anonymous.shelves[0].slug == "notice"
+    private = await service.update(
+        user_id,
+        board_id,
+        BoardSettingsPatchForm(
+            expected_revision=public.board_revision,
+            reason="비공개",
+            visibility="private",
+            join_policy="invite",
+        ),
+    )
+    member_after = await service.home(member_id, board_id=board_id)
+    assert len(member_after.shelves) == 2 and member_after.membership == member_before.membership
+    repeated = await service.update(
+        user_id,
+        board_id,
+        BoardSettingsPatchForm(
+            expected_revision=private.board_revision,
+            reason="동일 값",
+            name=private.board.name,
+        ),
+    )
+    assert repeated == private
+
+
 def test_real_migration_creation_race_and_downgrade(monkeypatch):
     url = make_url(SETTINGS.DATABASE_URL)
     assert url.drivername == "postgresql+asyncpg" and url.host in {"localhost", "127.0.0.1", "::1"}
@@ -579,6 +713,7 @@ def test_real_migration_creation_race_and_downgrade(monkeypatch):
                 assert (await db.get(Board, board.id)).revision == 3
             await assert_grade_management(test_db, user_id, board.id)
             await assert_member_invitations(test_db, user_id, board.id)
+            await assert_board_settings(test_db, user_id, board.id, newcomer_id)
             await membership.leave(newcomer_id, board.id)
             final = await service.home(user_id, board_id=board.id)
             await service.delete_empty(

@@ -42,7 +42,17 @@ from app.models.interest import Interest
 from app.models.user import User
 
 MAX_BOARD_USER_ID = 2**31 - 1
+MAX_BOARD_INTERESTS = 3
 MAX_BOARD_GRADES = 20
+BOARD_SETTING_FIELDS = (
+    "name",
+    "description",
+    "rules",
+    "interest_ids",
+    "visibility",
+    "join_policy",
+    "status",
+)
 MAX_GRADE_RANK = 2**31 - 1
 GRADE_AUDIT_ACTIONS = frozenset(
     {"grade_created", "grade_updated", "grades_reordered", "grade_deleted"}
@@ -273,12 +283,18 @@ class BoardMemberAudit(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+def _unique_interest_ids(value: list[str]) -> list[str]:
+    if len(set(value)) != len(value) or any(not item or len(item) > 40 for item in value):
+        raise ValueError("Select distinct official interests.")
+    return value
+
+
 class BoardCreateForm(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str = Field(min_length=1, max_length=80)
     slug: str = Field(min_length=3, max_length=64, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
     description: str = Field(default="", max_length=2000)
-    interest_ids: list[str] = Field(default_factory=list, max_length=3)
+    interest_ids: list[str] = Field(default_factory=list, max_length=MAX_BOARD_INTERESTS)
     visibility: BoardVisibility = "public"
     join_policy: BoardJoinPolicy = "open"
 
@@ -292,9 +308,7 @@ class BoardCreateForm(BaseModel):
     @field_validator("interest_ids")
     @classmethod
     def unique_interests(cls, value: list[str]) -> list[str]:
-        if len(set(value)) != len(value) or any(not item or len(item) > 40 for item in value):
-            raise ValueError("Select up to three distinct official interests.")
-        return value
+        return _unique_interest_ids(value)
 
     @model_validator(mode="after")
     def private_join(self):
@@ -389,6 +403,60 @@ def _member_patch_schema(schema: dict) -> None:
 
 def _grade_patch_schema(schema: dict) -> None:
     _patch_schema(schema, ("name", "is_default"))
+
+
+def _board_patch_schema(schema: dict) -> None:
+    _patch_schema(schema, BOARD_SETTING_FIELDS)
+
+
+class BoardSettingsPatchForm(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid", str_strip_whitespace=True, json_schema_extra=_board_patch_schema
+    )
+    expected_revision: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=500)
+    name: Annotated[str, Field(min_length=1, max_length=80)] | SkipJsonSchema[None] = None
+    description: Annotated[str, Field(max_length=2000)] | SkipJsonSchema[None] = None
+    rules: Annotated[str, Field(max_length=10000)] | SkipJsonSchema[None] = None
+    interest_ids: (
+        Annotated[list[str], Field(max_length=MAX_BOARD_INTERESTS)] | SkipJsonSchema[None]
+    ) = None
+    visibility: BoardVisibility | SkipJsonSchema[None] = None
+    join_policy: BoardJoinPolicy | SkipJsonSchema[None] = None
+    status: Literal["active", "archived"] | SkipJsonSchema[None] = None
+
+    @field_validator("interest_ids")
+    @classmethod
+    def unique_interests(cls, value: list[str] | None) -> list[str] | None:
+        return _unique_interest_ids(value) if value is not None else None
+
+    @model_validator(mode="after")
+    def validate_changes(self):
+        fields = self.model_fields_set & set(BOARD_SETTING_FIELDS)
+        if not fields or any(getattr(self, field) is None for field in fields):
+            raise ValueError("Provide at least one non-null board setting.")
+        return self
+
+
+class BoardSettingsState(BaseModel):
+    name: str
+    description: str
+    rules: str
+    interest_ids: list[str]
+    visibility: BoardVisibility
+    join_policy: BoardJoinPolicy
+    status: Literal["active", "archived", "suspended"]
+
+
+class BoardSettingsAuditChange(BaseModel):
+    before: BoardSettingsState
+    after: BoardSettingsState
+
+
+class BoardUpdateResponse(BaseModel):
+    board: BoardSummary
+    rules: str
+    board_revision: int
 
 
 class BoardGradeChangeForm(BaseModel):
@@ -532,6 +600,7 @@ class BoardMemberAuditResponse(BaseModel):
     after: BoardAuditState | None = None
     reason: str | None = None
     grade_change: BoardGradeAuditChange | None = None
+    board_change: BoardSettingsAuditChange | None = None
     created_at: datetime
 
 
@@ -602,6 +671,67 @@ class BoardTransaction:
             )
         ).all()
         return {row.slug: row for row in rows}
+
+    async def interest_slugs(self, board_id: UUID, *, active_only: bool = False) -> list[str]:
+        statement = (
+            select(Interest.slug)
+            .join(BoardInterest, BoardInterest.interest_id == Interest.id)
+            .where(BoardInterest.board_id == board_id)
+        )
+        if active_only:
+            statement = statement.where(Interest.active.is_(True))
+        return list((await self._db.scalars(statement.order_by(BoardInterest.position))).all())
+
+    @staticmethod
+    def _settings_state(board: Board, interest_ids: list[str]) -> dict:
+        return BoardSettingsState(
+            **{
+                field: getattr(board, field)
+                for field in BOARD_SETTING_FIELDS
+                if field != "interest_ids"
+            },
+            interest_ids=interest_ids,
+        ).model_dump(mode="json")
+
+    async def update_settings(
+        self,
+        board: Board,
+        actor_user_id: int,
+        form: BoardSettingsPatchForm,
+        interests: list[Interest] | None,
+    ) -> list[str]:
+        previous_ids = await self.interest_slugs(board.id)
+        before = self._settings_state(board, previous_ids)
+        for field in BOARD_SETTING_FIELDS:
+            if field != "interest_ids" and field in form.model_fields_set:
+                setattr(board, field, getattr(form, field))
+        current_ids = previous_ids
+        if interests is not None:
+            current_ids = [interest.slug for interest in interests]
+            if previous_ids != current_ids:
+                await self._db.execute(
+                    delete(BoardInterest).where(BoardInterest.board_id == board.id)
+                )
+                self._db.add_all(
+                    [
+                        BoardInterest(board_id=board.id, interest_id=interest.id, position=position)
+                        for position, interest in enumerate(interests)
+                    ]
+                )
+        after = self._settings_state(board, current_ids)
+        if before != after:
+            self._db.add(
+                BoardMemberAudit(
+                    board_id=board.id,
+                    actor_user_id=actor_user_id,
+                    target_user_id=None,
+                    action="board_updated",
+                    changes={"before": before, "after": after, "reason": form.reason},
+                )
+            )
+            self._touch(board)
+            await self._db.flush()
+        return await self.interest_slugs(board.id, active_only=True)
 
     async def create_board(self, user_id: int, form: BoardCreateForm) -> Board:
         board = Board(
