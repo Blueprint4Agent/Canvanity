@@ -132,3 +132,6 @@ bootstrap 관리자도 같은 권한 검사를 적용합니다. `page`(1 이상)
 구독 관리 POST /billing/subscription/change는 expected_version과 기간 종료 시 free/monthly/annual/keep 변경을 사용합니다. 구독 응답에 can_manage/change_version/pending_plan/pending_effective_at을 추가합니다. 결제 정보·최근 청구서 4개·제한된 포털 세션은 인증이 필요하며 고객·주소·가격은 서버가 결정합니다.
 
 HTTP 413·422 도메인 오류 설명은 `Content Too Large`, `Unprocessable Content`로 고정합니다. Python 3.12·3.13 표준 라이브러리의 문구 차이로 공유 OpenAPI 기준 파일이 달라지면 안 됩니다.
+
+
+쿠키 refresh는 GET /api/v1/auth/csrf의 X-CSRF-Bootstrap과 POST /api/v1/auth/refresh의 X-CSRF-Token을 함께 채택한다. [CSRF 계약과 배포](../notes/csrf.md)를 따르며 양쪽 snapshot·생성 타입·클라이언트를 같은 커밋에서 동기화한다.
