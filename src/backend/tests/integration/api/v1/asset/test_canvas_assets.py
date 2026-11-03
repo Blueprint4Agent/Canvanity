@@ -144,7 +144,7 @@ def test_private_normalized_image_lifecycle_and_deferred_idempotent_cleanup(imag
         assert r.client.get(url, headers=r.headers[actor]).status_code == 404
         assert r.client.delete(url, headers=r.headers[actor]).status_code == 404
         assert upload(r, actor=actor).status_code == 404
-    assert r.client.get(url).status_code == 401
+    assert r.client.get(url).status_code == 404
     other = create(r).headers["location"]
     assert (
         r.client.get(other + "/assets/" + result["id"], headers=r.headers["member"]).status_code

@@ -177,7 +177,6 @@ def test_lifespan_waits_for_stripe_before_migrations(configured, transport, monk
     monkeypatch.setattr(main.MAIL_SERVICE, "initialize", AsyncMock())
     migrations = AsyncMock()
     monkeypatch.setattr(main, "run_startup_schema_migrations", migrations)
-    monkeypatch.setattr(main, "init_db", AsyncMock())
     monkeypatch.setattr(main, "dispose_db", AsyncMock())
     monkeypatch.setattr(main.RedisManager, "close", AsyncMock())
     monkeypatch.setattr(main.RedisManager, "verify_startup", AsyncMock())

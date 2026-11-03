@@ -184,11 +184,22 @@ class AssetService:
             raise
         return result
 
-    async def read(self, user_id: int, canvas_id: UUID, asset_id: UUID) -> bytes:
+    async def read(
+        self,
+        user_id: int | None,
+        canvas_id: UUID,
+        asset_id: UUID,
+        *,
+        view: str | None = None,
+    ) -> bytes:
         async with self.repository.transaction(write=False) as tx:
-            _, _, canvas = await self.access.context(tx.context, user_id, canvas_id)
+            _, _, canvas, publication = await self.access.read_context(
+                tx.context, user_id, canvas_id, view=view
+            )
             asset = await tx.asset(asset_id)
             if asset is None or asset.canvas_id != canvas.id or asset.state != "ready":
+                raise AssetException(AssetErrorCode.NOT_FOUND)
+            if publication is not None and not await tx.publication_ref(canvas.id, asset.id):
                 raise AssetException(AssetErrorCode.NOT_FOUND)
             key, fingerprint, size, digest = (
                 asset.object_key,

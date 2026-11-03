@@ -75,3 +75,8 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 ## Canvas 자유 태그 후속 작업
 
 2026-11-03: #47/PR #48의 main 반영 뒤 #24의 백엔드 완료 단위 [#49 자유 Tag](notes/community/canvas-tags.md)를 연결한다. 공식 Interest와 별도 NFC/casefold 고유 사전·공개 검색·세션 생성/재사용과 Canvas 초안 생성/metadata PATCH의 최대10개 태그를 제공한다. 태그와 일반 metadata는 같은 권한/revision 트랜잭션에서 변경하고 본문/이미지 참조를 보존한다. 태그 UI·추천·Board Tag·공개 게시/목록은 후속이며 실제 검증·게시·병합 상태는 worklog/0293-canvas-tags.md와 이슈/PR에서 구분한다.
+
+
+## Canvas 게시·공개본 단건 열람 후속 작업
+
+2026-11-03: [#51 게시 계약](notes/community/canvas-publication.md)은 작성자의 명시적 publish/unpublish와 마지막 공개본 metadata/document/이미지 단건 읽기를 연결한다. 편집 draft/trashed와 공개 snapshot을 분리하고 현재 Board/Shelf/회원 정책·공개 상태 CAS·snapshot 태그/이미지 참조를 적용한다. startup은 Alembic만 스키마를 관리해 개발 reload 중 create_all의 선행 테이블 생성을 방지한다. 실제 검증/PR 게시·main 병합과 개발 DB 사고/복구는 worklog0294와 이슈/PR을 따른다. 목록/Plaza·썸네일·moderation·개인 draft 목록·archive/자동 purge·제품 UI/운영 배포는 후속이다.

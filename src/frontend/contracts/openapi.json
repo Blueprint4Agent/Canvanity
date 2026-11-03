@@ -3216,6 +3216,11 @@
                         "title": "Edit Metadata",
                         "type": "boolean"
                     },
+                    "publish": {
+                        "default": false,
+                        "title": "Publish",
+                        "type": "boolean"
+                    },
                     "read_document": {
                         "title": "Read Document",
                         "type": "boolean"
@@ -3226,6 +3231,11 @@
                     },
                     "trash": {
                         "title": "Trash",
+                        "type": "boolean"
+                    },
+                    "unpublish": {
+                        "default": false,
+                        "title": "Unpublish",
                         "type": "boolean"
                     }
                 },
@@ -5349,6 +5359,8 @@
                             "CANVAS_INVALID_TAGS",
                             "CANVAS_REVISION_CONFLICT",
                             "CANVAS_DOCUMENT_REVISION_CONFLICT",
+                            "CANVAS_PUBLICATION_REVISION_CONFLICT",
+                            "CANVAS_DOCUMENT_INVALID",
                             "CANVAS_DOCUMENT_TOO_LARGE",
                             "CANVAS_INVALID_STATE",
                             "CANVAS_RESTORE_EXPIRED",
@@ -5692,6 +5704,254 @@
                 "title": "CanvasPosition",
                 "type": "object"
             },
+            "CanvasPublicationDocumentResponse": {
+                "properties": {
+                    "document": {
+                        "$ref": "#/components/schemas/CanvasContent-Output"
+                    },
+                    "publication_revision": {
+                        "title": "Publication Revision",
+                        "type": "integer"
+                    },
+                    "published_at": {
+                        "format": "date-time",
+                        "title": "Published At",
+                        "type": "string"
+                    },
+                    "revision": {
+                        "title": "Revision",
+                        "type": "integer"
+                    },
+                    "source_document_revision": {
+                        "title": "Source Document Revision",
+                        "type": "integer"
+                    },
+                    "source_metadata_revision": {
+                        "title": "Source Metadata Revision",
+                        "type": "integer"
+                    },
+                    "view": {
+                        "const": "publication",
+                        "default": "publication",
+                        "title": "View",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "publication_revision",
+                    "source_metadata_revision",
+                    "source_document_revision",
+                    "published_at",
+                    "document",
+                    "revision"
+                ],
+                "title": "CanvasPublicationDocumentResponse",
+                "type": "object"
+            },
+            "CanvasPublicationInfo": {
+                "properties": {
+                    "publication_revision": {
+                        "title": "Publication Revision",
+                        "type": "integer"
+                    },
+                    "published_at": {
+                        "format": "date-time",
+                        "title": "Published At",
+                        "type": "string"
+                    },
+                    "source_document_revision": {
+                        "title": "Source Document Revision",
+                        "type": "integer"
+                    },
+                    "source_metadata_revision": {
+                        "title": "Source Metadata Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "publication_revision",
+                    "source_metadata_revision",
+                    "source_document_revision",
+                    "published_at"
+                ],
+                "title": "CanvasPublicationInfo",
+                "type": "object"
+            },
+            "CanvasPublicationMetadata": {
+                "properties": {
+                    "author_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Author Id"
+                    },
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "shelf_id": {
+                        "format": "uuid",
+                        "title": "Shelf Id",
+                        "type": "string"
+                    },
+                    "status": {
+                        "const": "published",
+                        "default": "published",
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "summary": {
+                        "title": "Summary",
+                        "type": "string"
+                    },
+                    "tags": {
+                        "items": {
+                            "$ref": "#/components/schemas/TagResponse"
+                        },
+                        "title": "Tags",
+                        "type": "array"
+                    },
+                    "title": {
+                        "title": "Title",
+                        "type": "string"
+                    },
+                    "visibility": {
+                        "enum": ["public", "members"],
+                        "title": "Visibility",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "board_id",
+                    "shelf_id",
+                    "author_id",
+                    "title",
+                    "summary",
+                    "visibility",
+                    "tags"
+                ],
+                "title": "CanvasPublicationMetadata",
+                "type": "object"
+            },
+            "CanvasPublicationMutationResponse": {
+                "properties": {
+                    "document_revision": {
+                        "title": "Document Revision",
+                        "type": "integer"
+                    },
+                    "metadata_revision": {
+                        "title": "Metadata Revision",
+                        "type": "integer"
+                    },
+                    "publication": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasPublicationInfo"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "publication_revision": {
+                        "title": "Publication Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "metadata_revision",
+                    "document_revision",
+                    "publication_revision",
+                    "publication"
+                ],
+                "title": "CanvasPublicationMutationResponse",
+                "type": "object"
+            },
+            "CanvasPublicationResponse": {
+                "properties": {
+                    "canvas": {
+                        "$ref": "#/components/schemas/CanvasPublicationMetadata"
+                    },
+                    "capabilities": {
+                        "$ref": "#/components/schemas/CanvasCapabilities"
+                    },
+                    "publication_revision": {
+                        "title": "Publication Revision",
+                        "type": "integer"
+                    },
+                    "published_at": {
+                        "format": "date-time",
+                        "title": "Published At",
+                        "type": "string"
+                    },
+                    "source_document_revision": {
+                        "title": "Source Document Revision",
+                        "type": "integer"
+                    },
+                    "source_metadata_revision": {
+                        "title": "Source Metadata Revision",
+                        "type": "integer"
+                    },
+                    "view": {
+                        "const": "publication",
+                        "default": "publication",
+                        "title": "View",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "publication_revision",
+                    "source_metadata_revision",
+                    "source_document_revision",
+                    "published_at",
+                    "canvas",
+                    "capabilities"
+                ],
+                "title": "CanvasPublicationResponse",
+                "type": "object"
+            },
+            "CanvasPublishForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "expected_document_revision": {
+                        "maximum": 9.223372036854776e18,
+                        "minimum": 0.0,
+                        "title": "Expected Document Revision",
+                        "type": "integer"
+                    },
+                    "expected_metadata_revision": {
+                        "maximum": 9.223372036854776e18,
+                        "minimum": 0.0,
+                        "title": "Expected Metadata Revision",
+                        "type": "integer"
+                    },
+                    "expected_publication_revision": {
+                        "maximum": 9.223372036854776e18,
+                        "minimum": 0.0,
+                        "title": "Expected Publication Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "expected_publication_revision",
+                    "expected_metadata_revision",
+                    "expected_document_revision"
+                ],
+                "title": "CanvasPublishForm",
+                "type": "object"
+            },
             "CanvasResponse": {
                 "properties": {
                     "canvas": {
@@ -5702,6 +5962,21 @@
                     },
                     "document_revision": {
                         "title": "Document Revision",
+                        "type": "integer"
+                    },
+                    "publication": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasPublicationInfo"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "publication_revision": {
+                        "default": 0,
+                        "title": "Publication Revision",
                         "type": "integer"
                     },
                     "view": {
@@ -5892,6 +6167,20 @@
                 },
                 "required": ["id", "position", "size", "engine_element", "type"],
                 "title": "CanvasTextNode",
+                "type": "object"
+            },
+            "CanvasUnpublishForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "expected_publication_revision": {
+                        "maximum": 9.223372036854776e18,
+                        "minimum": 0.0,
+                        "title": "Expected Publication Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": ["expected_publication_revision"],
+                "title": "CanvasUnpublishForm",
                 "type": "object"
             },
             "ChangePasswordForm": {
@@ -19196,10 +19485,16 @@
                         "name": "view",
                         "required": false,
                         "schema": {
-                            "const": "draft",
-                            "default": "draft",
-                            "title": "View",
-                            "type": "string"
+                            "anyOf": [
+                                {
+                                    "enum": ["draft", "publication"],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "View"
                         }
                     }
                 ],
@@ -19208,7 +19503,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/CanvasResponse"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasPublicationResponse"
+                                        }
+                                    ],
+                                    "title": "Response Get Canvas Api V1 Canvases  Canvas Id  Get"
                                 }
                             }
                         },
@@ -19308,7 +19611,8 @@
                 "security": [
                     {
                         "OAuth2PasswordBearer": []
-                    }
+                    },
+                    {}
                 ],
                 "summary": "Get Canvas",
                 "tags": ["Canvases"]
@@ -19832,6 +20136,23 @@
                             "title": "Asset Id",
                             "type": "string"
                         }
+                    },
+                    {
+                        "in": "query",
+                        "name": "view",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "enum": ["draft", "publication"],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "View"
+                        }
                     }
                 ],
                 "responses": {
@@ -19964,7 +20285,8 @@
                 "security": [
                     {
                         "OAuth2PasswordBearer": []
-                    }
+                    },
+                    {}
                 ],
                 "summary": "Read Asset",
                 "tags": ["Assets"]
@@ -19989,10 +20311,16 @@
                         "name": "view",
                         "required": false,
                         "schema": {
-                            "const": "draft",
-                            "default": "draft",
-                            "title": "View",
-                            "type": "string"
+                            "anyOf": [
+                                {
+                                    "enum": ["draft", "publication"],
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "View"
                         }
                     }
                 ],
@@ -20001,7 +20329,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/CanvasDocumentResponse"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasDocumentResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasPublicationDocumentResponse"
+                                        }
+                                    ],
+                                    "title": "Response Get Canvas Document Api V1 Canvases  Canvas Id  Document Get"
                                 }
                             }
                         },
@@ -20101,7 +20437,8 @@
                 "security": [
                     {
                         "OAuth2PasswordBearer": []
-                    }
+                    },
+                    {}
                 ],
                 "summary": "Get Canvas Document",
                 "tags": ["Canvases"]
@@ -20284,6 +20621,169 @@
                 "tags": ["Canvases"]
             }
         },
+        "/api/v1/canvases/{canvas_id}/publish": {
+            "post": {
+                "operationId": "publish_canvas_api_v1_canvases__canvas_id__publish_post",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CanvasPublishForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasPublicationMutationResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Publish Canvas Api V1 Canvases  Canvas Id  Publish Post"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Publish Canvas Api V1 Canvases  Canvas Id  Publish Post"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Publish Canvas Api V1 Canvases  Canvas Id  Publish Post"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_REVISION_CONFLICT",
+                                        "message": "Canvas metadata revision conflict. Reload the latest canvas."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AssetErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasDocumentValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Publish Canvas Api V1 Canvases  Canvas Id  Publish Post"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Publish Canvas",
+                "tags": ["Canvases"]
+            }
+        },
         "/api/v1/canvases/{canvas_id}/restore": {
             "post": {
                 "operationId": "restore_canvas_api_v1_canvases__canvas_id__restore_post",
@@ -20436,6 +20936,161 @@
                     }
                 ],
                 "summary": "Restore Canvas",
+                "tags": ["Canvases"]
+            }
+        },
+        "/api/v1/canvases/{canvas_id}/unpublish": {
+            "post": {
+                "operationId": "unpublish_canvas_api_v1_canvases__canvas_id__unpublish_post",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CanvasUnpublishForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasPublicationMutationResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Unpublish Canvas Api V1 Canvases  Canvas Id  Unpublish Post"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Unpublish Canvas Api V1 Canvases  Canvas Id  Unpublish Post"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Unpublish Canvas Api V1 Canvases  Canvas Id  Unpublish Post"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_PUBLICATION_REVISION_CONFLICT",
+                                        "message": "Canvas publication state revision conflict. Reload the latest canvas."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Unpublish Canvas",
                 "tags": ["Canvases"]
             }
         },

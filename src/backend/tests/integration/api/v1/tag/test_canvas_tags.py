@@ -295,7 +295,7 @@ def test_populated_sqlite_tag_migration_preserves_all_content_and_checks_foreign
     assert state() == before
     with sqlite3.connect(clone) as db:
         assert db.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "0028_canvas_tags",
+            "0029_canvas_publications",
         )
         assert db.execute("PRAGMA foreign_key_check").fetchall() == []
     command.downgrade(config, "0027_canvas_assets")

@@ -10,12 +10,13 @@ from fastapi.testclient import TestClient
 
 from app.core.error.asset_exception import AssetErrorCode, AssetException
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
-from app.deps import get_current_session_user
+from app.deps import get_current_session_user, get_current_token_user
 from app.main import register_exception_handlers
 from app.models.canvas import (
     CanvasContent,
     CanvasDocumentResponse,
     CanvasDocumentSaveResponse,
+    CanvasPublicationMutationResponse,
     CanvasResponse,
 )
 from app.routers.v1.canvas import MAX_CANVAS_DOCUMENT_REQUEST_BYTES, router
@@ -68,6 +69,18 @@ OPERATIONS = [
     ("PATCH", PATH, {"expected_revision": 0, "title": "수정"}, "change", 200),
     ("DELETE", PATH, {"expected_revision": 0}, "trash", 204),
     ("POST", PATH + "/restore", {"expected_revision": 0}, "restore", 200),
+    (
+        "POST",
+        PATH + "/publish",
+        {
+            "expected_metadata_revision": 0,
+            "expected_document_revision": 0,
+            "expected_publication_revision": 0,
+        },
+        "publish",
+        200,
+    ),
+    ("POST", PATH + "/unpublish", {"expected_publication_revision": 0}, "unpublish", 200),
 ]
 
 
@@ -77,6 +90,7 @@ def canvas_api(sample_user):
     register_exception_handlers(app)
     app.include_router(router, prefix="/api/v1")
     app.dependency_overrides[get_current_session_user] = lambda: sample_user
+    app.dependency_overrides[get_current_token_user] = lambda: sample_user
     service = AsyncMock(spec=CanvasService)
     app.dependency_overrides[CanvasService] = lambda: service
     return TestClient(app), service
@@ -92,6 +106,10 @@ def test_canvas_router_success_contract(canvas_api, method, path, body, operatio
         if operation == "document"
         else CanvasDocumentSaveResponse(revision=1)
         if operation == "save_document"
+        else CanvasPublicationMutationResponse(
+            metadata_revision=0, document_revision=0, publication_revision=0, publication=None
+        )
+        if operation in {"publish", "unpublish"}
         else CanvasResponse(**DATA)
     )
     getattr(service, operation).return_value = result
@@ -120,10 +138,13 @@ def test_document_route_serializes_typed_engine_objects_and_layer_order(canvas_a
     assert response.headers["cache-control"] == "private, no-store"
 
 
-@pytest.mark.parametrize("method,path,body,operation,status", OPERATIONS)
+@pytest.mark.parametrize(
+    "method,path,body,operation,status", [op for op in OPERATIONS if op[0] != "GET"]
+)
 def test_all_draft_routes_require_session(canvas_api, method, path, body, operation, status):
     client, service = canvas_api
     client.app.dependency_overrides.pop(get_current_session_user)
+    client.app.dependency_overrides.pop(get_current_token_user)
     assert client.request(method, path, json=body).status_code == 401
     getattr(service, operation).assert_not_awaited()
 
@@ -230,10 +251,59 @@ def test_creation_and_metadata_patch_accept_tag_ids_and_return_tag_summaries(
 
 
 @pytest.mark.parametrize("suffix,operation", [("", "get"), ("/document", "document")])
-def test_unimplemented_publication_view_is_not_exposed(canvas_api, suffix, operation):
+def test_unknown_view_is_not_exposed(canvas_api, suffix, operation):
     client, service = canvas_api
-    assert client.get(PATH + suffix, params={"view": "publication"}).status_code == 422
+    assert client.get(PATH + suffix, params={"view": "invalid"}).status_code == 422
     getattr(service, operation).assert_not_awaited()
+
+
+@pytest.mark.parametrize("suffix,operation", [("", "get"), ("/document", "document")])
+@pytest.mark.parametrize("view", [None, "draft", "publication"])
+def test_optional_reads_forward_identity_and_explicit_view(canvas_api, suffix, operation, view):
+    client, service = canvas_api
+    client.app.dependency_overrides.pop(get_current_token_user)
+    getattr(service, operation).side_effect = CanvasException(CanvasErrorCode.NOT_FOUND)
+    response = client.get(PATH + suffix, params={"view": view} if view else {})
+    assert response.status_code == 404
+    assert getattr(service, operation).await_args.args[0] is None
+    assert getattr(service, operation).await_args.kwargs == {"view": view}
+
+
+@pytest.mark.parametrize("revision", [-1, 2**63, True, 1.5, "1", None])
+@pytest.mark.parametrize(
+    "field",
+    ["expected_metadata_revision", "expected_document_revision", "expected_publication_revision"],
+)
+def test_publish_revision_clocks_are_strict_and_independent(canvas_api, revision, field):
+    client, service = canvas_api
+    fields = dict.fromkeys(
+        [
+            "expected_metadata_revision",
+            "expected_document_revision",
+            "expected_publication_revision",
+        ],
+        0,
+    )
+    fields[field] = revision
+    assert client.post(PATH + "/publish", json=fields).status_code == 422
+    service.publish.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "suffix,fields",
+    [
+        ("publish", {}),
+        ("publish", {"expected_document_revision": 0, "expected_metadata_revision": 0}),
+        ("publish", {"expected_revision": 0}),
+        ("unpublish", {"expected_revision": 0}),
+        ("unpublish", {"expected_publication_revision": True}),
+        ("unpublish", {"expected_publication_revision": 0, "status": "draft"}),
+    ],
+)
+def test_publication_actions_reject_missing_wrong_and_extra_fields(canvas_api, suffix, fields):
+    client, service = canvas_api
+    assert client.post(PATH + "/" + suffix, json=fields).status_code == 422
+    getattr(service, suffix).assert_not_awaited()
 
 
 @pytest.mark.parametrize("revision", [-1, 2**63, True, 1.5, "1", None])

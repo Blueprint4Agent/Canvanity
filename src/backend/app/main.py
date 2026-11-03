@@ -16,7 +16,7 @@ from app.core.config.base_path import PrefixPathMiddleware, validate_frontend_pa
 from app.core.config.frontend import RuntimeStaticFiles
 from app.core.config.settings import SETTINGS
 from app.core.db.migrations import run_startup_schema_migrations
-from app.core.db.session import dispose_db, init_db
+from app.core.db.session import dispose_db
 from app.core.error import ServiceException, service_exception_to_http
 from app.core.mail.service import MAIL_SERVICE
 from app.core.object_storage import object_storage_lifespan
@@ -163,9 +163,6 @@ async def application_lifespan(_app: FastAPI) -> AsyncIterator[None]:
             startup_phase("database", "Migrating…")
             await run_startup_schema_migrations(SETTINGS.DATABASE_URL)
             logger.info("Database schema migration check complete (target=head).")
-            startup_phase("database", "Initializing…")
-            await init_db()
-            logger.info("Database initialization complete.")
             BOOTSTRAP_USER = None
             if not SETTINGS.LOGIN_ENABLED:
                 BOOTSTRAP_USER = await BootstrapService().initialize()
