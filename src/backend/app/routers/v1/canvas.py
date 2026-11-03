@@ -16,6 +16,7 @@ from app.models.canvas import (
     CanvasDocumentSaveForm,
     CanvasDocumentSaveResponse,
     CanvasDocumentValidationErrorResponse,
+    CanvasMetadataValidationErrorResponse,
     CanvasPatchForm,
     CanvasResponse,
     CanvasRevisionForm,
@@ -64,8 +65,12 @@ WRITE_CODES = (*READ_CODES, CanvasErrorCode.FORBIDDEN, CanvasErrorCode.CONFLICT)
     status_code=status.HTTP_201_CREATED,
     responses=current_user_error_responses(
         canvas_error_responses(
-            *READ_CODES, CanvasErrorCode.FORBIDDEN, CanvasErrorCode.INVALID_SHELF
-        )
+            *READ_CODES,
+            CanvasErrorCode.FORBIDDEN,
+            CanvasErrorCode.INVALID_SHELF,
+            CanvasErrorCode.INVALID_TAGS,
+        ),
+        {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
     ),
 )
 async def create_canvas(
@@ -143,8 +148,12 @@ async def save_canvas_document(
     response_model=CanvasResponse,
     responses=current_user_error_responses(
         canvas_error_responses(
-            *WRITE_CODES, CanvasErrorCode.INVALID_SHELF, CanvasErrorCode.INVALID_STATE
-        )
+            *WRITE_CODES,
+            CanvasErrorCode.INVALID_SHELF,
+            CanvasErrorCode.INVALID_STATE,
+            CanvasErrorCode.INVALID_TAGS,
+        ),
+        {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
     ),
 )
 async def change_canvas(

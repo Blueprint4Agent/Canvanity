@@ -8,9 +8,9 @@
 
 | Method | Path | 계약 |
 | --- | --- | --- |
-| POST | /boards/{board_id}/canvases | shelf_id/title, 선택 summary/visibility. 현재 읽기/작성 가능한 같은 Board Manual Shelf에 초안과 빈 본문을 원자 생성 |
+| POST | /boards/{board_id}/canvases | shelf_id/title, 선택 summary/visibility/tag_ids. 현재 읽기/작성 가능한 같은 Board Manual Shelf에 초안·빈 본문·태그 연결을 원자 생성 |
 | GET | /canvases/{canvas_id} | 현재 active 멤버인 작성자의 초안 메타데이터·본문 revision·capabilities |
-| PATCH | /canvases/{canvas_id} | expected_revision + title/summary/shelf_id/visibility의 제공 필드. 현재 원본/대상 Shelf 읽기·작성 권한 요구 |
+| PATCH | /canvases/{canvas_id} | expected_revision + title/summary/shelf_id/visibility/tag_ids의 제공 필드. 현재 원본/대상 Shelf 읽기·작성 권한 요구 |
 | DELETE | /canvases/{canvas_id} | expected_revision. 작성자 휴지통 이동, 204와 X-Canvas-Revision |
 | POST | /canvases/{canvas_id}/restore | expected_revision. 현재 작성 권한과 30일 복구 기간을 검사해 draft 복원 |
 | GET | /canvases/{canvas_id}/document | 작성자의 현재 초안 본문과 document revision |
@@ -18,7 +18,7 @@
 
 생성은 201과 Location: /api/v1/canvases/{id}를 반환한다. 생성/메타데이터 조회·수정/복구 응답은 {canvas, document_revision, view:"draft", capabilities}다. canvas.revision은 메타데이터 revision이다. 본문 조회 응답은 {document, revision, view:"draft"}이며 여기의 revision은 본문 버전이다. GET의 view는 현재 draft만 허용하고 publication은 422다.
 
-title은 공백 제거 후 1~200자, summary는 최대 500자다. visibility=members가 기본이고 public도 설정할 수 있으나 **게시 API/공개본이 없어 모든 현재 문서는 작성자 전용 초안**이다. id/author_id/board_id/status/게시 시각·Tag/에셋·본문 등 지원하지 않는 필드는 extra=forbid로 422다. PATCH는 최소 한 필드를 요구하고 명시적 null은 거부한다. expected_revision은 JSON 정수 0~2^63-1이며 문자열/소수/bool은 거부한다.
+title은 공백 제거 후 1~200자, summary는 최대 500자다. visibility=members가 기본이고 public도 설정할 수 있으나 **게시 API/공개본이 없어 모든 현재 문서는 작성자 전용 초안**이다. [자유 Tag](canvas-tags.md)의 tag_ids는 최대10개 고유 UUID이며 생성 시 기본 빈 배열, PATCH 생략은 유지/빈 배열은 해제다. 응답 canvas.tags는 정렬한 ID/표시명 요약이다. id/author_id/board_id/status/게시 시각·에셋·본문 등 지원하지 않는 필드는 extra=forbid로 422다. PATCH는 최소 한 필드를 요구하고 명시적 null은 거부한다. expected_revision은 JSON 정수 0~2^63-1이며 문자열/소수/bool은 거부한다.
 
 ## 작성자와 현재 권한
 
@@ -44,4 +44,4 @@ Board archived는 작성자 조회만 허용하고 변경/휴지통/복구/새 �
 
 Shelf 삭제는 초안·휴지통·작성자가 삭제된 문서를 모두 비어 있지 않음으로 계산해 SHELF_NOT_EMPTY 409다. 같은 Board의 다른 Shelf로 문서를 옮기면 비기본 빈 Shelf를 삭제할 수 있다. active 빈 Board 되돌리기도 Canvas가 하나라도 있으면 409다. 보관된 Board의 Owner 확인 삭제는 현재 모든 CanvasDocument/Canvas를 Shelf보다 먼저 같은 트랜잭션에서 정리하고 다른 Board/계정/프로필 파일을 보존한다.
 
-[이미지 에셋](canvas-assets.md)이 업로드/조회/미참조 삭제·참조 FK·Board 삭제 outbox/worker를 연결한다. 객체 타입·문서 내부 validator는 [객체 스키마](canvas-content-schema.md), 문서 PUT/CAS·본문과 draft 참조의 원자 동기화는 [#47 저장 계약](canvas-document-save.md)을 따른다. #7 자동 저장/복구 UI, #24 Tag, #8 publish/publication/공개 목록·cursor·Plaza·UI는 후속이다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.
+[이미지 에셋](canvas-assets.md)이 업로드/조회/미참조 삭제·참조 FK·Board 삭제 outbox/worker를 연결한다. 객체 타입·문서 내부 validator는 [객체 스키마](canvas-content-schema.md), 문서 PUT/CAS·본문과 draft 참조의 원자 동기화는 [#47 저장 계약](canvas-document-save.md), 사전 검색/생성과 metadata 태그 연결은 [#49 태그 계약](canvas-tags.md)을 따른다. #7 자동 저장/복구 UI, #24 태그 UI/발견, #8 publish/publication/공개 목록·cursor·Plaza·UI는 후속이다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.

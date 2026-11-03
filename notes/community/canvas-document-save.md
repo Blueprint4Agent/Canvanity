@@ -20,7 +20,7 @@ Bearer 세션 전용이며 API Key는 허용하지 않는다. 요청은 `expecte
 }
 ```
 
-성공은 200 `{ "revision": 1, "view": "draft" }`와 `Cache-Control: private, no-store`다. 본문을 응답에 다시 넣지 않는다. GET `/document`로 동일 객체·레이어 순서와 최신 revision을 읽고, 메타데이터 GET의 `document_revision`도 같은 버전을 반환한다. 같은 내용의 재저장도 현재 기대 revision을 확인하고 본문 revision을 1 증가시킨다. 제목·상태·소속·메타데이터 revision/updated_at은 변경하지 않는다.
+성공은 200 `{ "revision": 1, "view": "draft" }`와 `Cache-Control: private, no-store`다. 본문을 응답에 다시 넣지 않는다. GET `/document`로 동일 객체·레이어 순서와 최신 revision을 읽고, 메타데이터 GET의 `document_revision`도 같은 버전을 반환한다. 같은 내용의 재저장도 현재 기대 revision을 확인하고 본문 revision을 1 증가시킨다. 제목·상태·소속·[태그 연결](canvas-tags.md)·메타데이터 revision/updated_at은 변경하지 않는다. 반대로 태그 PATCH도 본문 revision/본문·이미지 참조/outbox를 보존한다.
 
 | 실패 | 상태·계약 |
 | --- | --- |

@@ -3381,6 +3381,15 @@
                         "title": "Summary",
                         "type": "string"
                     },
+                    "tag_ids": {
+                        "items": {
+                            "format": "uuid",
+                            "type": "string"
+                        },
+                        "maxItems": 10,
+                        "title": "Tag Ids",
+                        "type": "array"
+                    },
                     "title": {
                         "maxLength": 200,
                         "minLength": 1,
@@ -5337,6 +5346,7 @@
                             "CANVAS_NOT_FOUND",
                             "CANVAS_FORBIDDEN",
                             "CANVAS_INVALID_SHELF",
+                            "CANVAS_INVALID_TAGS",
                             "CANVAS_REVISION_CONFLICT",
                             "CANVAS_DOCUMENT_REVISION_CONFLICT",
                             "CANVAS_DOCUMENT_TOO_LARGE",
@@ -5532,6 +5542,13 @@
                         "title": "Summary",
                         "type": "string"
                     },
+                    "tags": {
+                        "items": {
+                            "$ref": "#/components/schemas/TagResponse"
+                        },
+                        "title": "Tags",
+                        "type": "array"
+                    },
                     "title": {
                         "title": "Title",
                         "type": "string"
@@ -5576,6 +5593,20 @@
                 "title": "CanvasMetadata",
                 "type": "object"
             },
+            "CanvasMetadataValidationErrorResponse": {
+                "properties": {
+                    "detail": {
+                        "items": {
+                            "$ref": "#/components/schemas/CanvasDocumentValidationErrorDetail"
+                        },
+                        "title": "Detail",
+                        "type": "array"
+                    }
+                },
+                "required": ["detail"],
+                "title": "CanvasMetadataValidationErrorResponse",
+                "type": "object"
+            },
             "CanvasPatchForm": {
                 "additionalProperties": false,
                 "allOf": [
@@ -5592,6 +5623,9 @@
                             },
                             {
                                 "required": ["visibility"]
+                            },
+                            {
+                                "required": ["tag_ids"]
                             }
                         ]
                     }
@@ -5612,6 +5646,15 @@
                         "maxLength": 500,
                         "title": "Summary",
                         "type": "string"
+                    },
+                    "tag_ids": {
+                        "items": {
+                            "format": "uuid",
+                            "type": "string"
+                        },
+                        "maxItems": 10,
+                        "title": "Tag Ids",
+                        "type": "array"
                     },
                     "title": {
                         "maxLength": 200,
@@ -7788,6 +7831,89 @@
                 },
                 "required": ["status"],
                 "title": "StartupCheck",
+                "type": "object"
+            },
+            "TagCatalogResponse": {
+                "properties": {
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/TagResponse"
+                        },
+                        "title": "Items",
+                        "type": "array"
+                    }
+                },
+                "required": ["items"],
+                "title": "TagCatalogResponse",
+                "type": "object"
+            },
+            "TagCreateForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "name": {
+                        "maxLength": 40,
+                        "minLength": 1,
+                        "title": "Name",
+                        "type": "string"
+                    }
+                },
+                "required": ["name"],
+                "title": "TagCreateForm",
+                "type": "object"
+            },
+            "TagErrorDetail": {
+                "properties": {
+                    "details": {
+                        "anyOf": [
+                            {
+                                "additionalProperties": true,
+                                "type": "object"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Details"
+                    },
+                    "error": {
+                        "enum": ["TAG_UNAVAILABLE"],
+                        "example": "TAG_UNAVAILABLE",
+                        "title": "Error",
+                        "type": "string"
+                    },
+                    "message": {
+                        "title": "Message",
+                        "type": "string"
+                    }
+                },
+                "required": ["error", "message"],
+                "title": "TagErrorDetail",
+                "type": "object"
+            },
+            "TagErrorResponse": {
+                "properties": {
+                    "detail": {
+                        "$ref": "#/components/schemas/TagErrorDetail"
+                    }
+                },
+                "required": ["detail"],
+                "title": "TagErrorResponse",
+                "type": "object"
+            },
+            "TagResponse": {
+                "properties": {
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "name": {
+                        "title": "Name",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "name"],
+                "title": "TagResponse",
                 "type": "object"
             },
             "UpdateProfileForm": {
@@ -16023,14 +16149,16 @@
                     "422": {
                         "content": {
                             "application/json": {
-                                "example": {
-                                    "detail": {
-                                        "error": "CANVAS_INVALID_SHELF",
-                                        "message": "Select a manual shelf in the same board."
-                                    }
-                                },
                                 "schema": {
-                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Create Canvas Api V1 Boards  Board Id  Canvases Post"
                                 }
                             }
                         },
@@ -19296,14 +19424,16 @@
                     "422": {
                         "content": {
                             "application/json": {
-                                "example": {
-                                    "detail": {
-                                        "error": "CANVAS_INVALID_SHELF",
-                                        "message": "Select a manual shelf in the same board."
-                                    }
-                                },
                                 "schema": {
-                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Change Canvas Api V1 Canvases  Canvas Id  Patch"
                                 }
                             }
                         },
@@ -23025,6 +23155,216 @@
                 ],
                 "summary": "Set Shelf Policies",
                 "tags": ["Shelves"]
+            }
+        },
+        "/api/v1/tags": {
+            "get": {
+                "operationId": "search_tags_api_v1_tags_get",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "required": false,
+                        "schema": {
+                            "default": "",
+                            "maxLength": 40,
+                            "title": "Q",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "maximum": 50,
+                            "minimum": 1,
+                            "title": "Limit",
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagCatalogResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "TAG_UNAVAILABLE",
+                                        "message": "Unable to complete the tag operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "summary": "Search Tags",
+                "tags": ["Tags"]
+            },
+            "post": {
+                "operationId": "create_tag_api_v1_tags_post",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TagCreateForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagResponse"
+                                }
+                            }
+                        },
+                        "description": "Existing normalized tag reused."
+                    },
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Create Tag Api V1 Tags Post"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Create Tag Api V1 Tags Post"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "USER_NOT_FOUND",
+                                        "message": "User not found."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AuthErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "TAG_UNAVAILABLE",
+                                        "message": "Unable to complete the tag operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/TagErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Create Tag",
+                "tags": ["Tags"]
             }
         },
         "/config": {

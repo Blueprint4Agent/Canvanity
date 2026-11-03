@@ -60,6 +60,7 @@ from app.routers.v1 import (
     inquiry,
     interest,
     shelf,
+    tag,
 )
 from app.services.admin import DEMO_SNAPSHOTS
 from app.services.billing import BillingService
@@ -299,6 +300,7 @@ def create_app() -> FastAPI:
     app.include_router(shelf.router, prefix="/api/v1", tags=["Shelves"])
     app.include_router(canvas.router, prefix="/api/v1", tags=["Canvases"])
     app.include_router(asset.router, prefix="/api/v1", tags=["Assets"])
+    app.include_router(tag.router, prefix="/api/v1/tags", tags=["Tags"])
 
     if static_dist_dir.exists():
         frontend = RuntimeStaticFiles(

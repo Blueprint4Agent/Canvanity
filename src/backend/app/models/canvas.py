@@ -30,11 +30,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.db.session import Base, get_db
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
 from app.models.board import BoardTransaction, Shelf
+from app.models.tag import MAX_CANVAS_TAGS, TagResponse, TagTransaction
 from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_BYTES
 
 MAX_CANVAS_REVISION = 2**63 - 1
 CANVAS_TRASH_RETENTION_DAYS = 30
 CANVAS_FIELDS = ("title", "summary", "shelf_id", "visibility")
+CANVAS_PATCH_FIELDS = (*CANVAS_FIELDS, "tag_ids")
 CanvasStatus = Literal["draft", "trashed"]
 CanvasVisibility = Literal["public", "members"]
 
@@ -466,7 +468,18 @@ class CanvasContent(CanvasSchema):
         return self
 
 
-class CanvasCreateForm(BaseModel):
+class CanvasTagFields(BaseModel):
+    tag_ids: list[UUID] = Field(default_factory=list, max_length=MAX_CANVAS_TAGS)
+
+    @field_validator("tag_ids")
+    @classmethod
+    def unique_tag_ids(cls, value: list[UUID]) -> list[UUID]:
+        if len(set(value)) != len(value):
+            raise ValueError("Canvas tag IDs must be unique.")
+        return value
+
+
+class CanvasCreateForm(CanvasTagFields):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     shelf_id: UUID
     title: str = Field(min_length=1, max_length=200)
@@ -486,12 +499,12 @@ class CanvasDocumentSaveForm(CanvasRevisionForm):
 
 
 def _patch_schema(schema: dict) -> None:
-    for field in CANVAS_FIELDS:
+    for field in CANVAS_PATCH_FIELDS:
         schema["properties"][field].pop("default", None)
-    schema["allOf"] = [{"anyOf": [{"required": [field]} for field in CANVAS_FIELDS]}]
+    schema["allOf"] = [{"anyOf": [{"required": [field]} for field in CANVAS_PATCH_FIELDS]}]
 
 
-class CanvasPatchForm(CanvasRevisionForm):
+class CanvasPatchForm(CanvasRevisionForm, CanvasTagFields):
     model_config = ConfigDict(
         extra="forbid", str_strip_whitespace=True, json_schema_extra=_patch_schema
     )
@@ -502,7 +515,7 @@ class CanvasPatchForm(CanvasRevisionForm):
 
     @model_validator(mode="after")
     def at_least_one_change(self):
-        if not self.model_fields_set.intersection(CANVAS_FIELDS):
+        if not self.model_fields_set.intersection(CANVAS_PATCH_FIELDS):
             raise ValueError("Provide at least one canvas metadata field to change.")
         return self
 
@@ -521,6 +534,7 @@ class CanvasMetadata(BaseModel):
     trashed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+    tags: list[TagResponse] = Field(default_factory=list)
 
     @field_validator("created_at", "updated_at", "trashed_at")
     @classmethod
@@ -565,6 +579,10 @@ class CanvasDocumentValidationErrorResponse(BaseModel):
     detail: list[CanvasDocumentValidationErrorDetail]
 
 
+class CanvasMetadataValidationErrorResponse(BaseModel):
+    detail: list[CanvasDocumentValidationErrorDetail]
+
+
 class CanvasTransaction:
     def __init__(self, db: AsyncSession):
         self._db = db
@@ -579,6 +597,9 @@ class CanvasTransaction:
 
     async def document(self, canvas_id: UUID) -> CanvasDocument | None:
         return await self._db.get(CanvasDocument, canvas_id)
+
+    async def tags(self, canvas_id: UUID) -> list[TagResponse]:
+        return await TagTransaction(self._db).canvas_tags(canvas_id)
 
     async def save_document(self, canvas: Canvas, form: CanvasDocumentSaveForm) -> int:
         # Same-session composition avoids a second transaction and circular initialization.
@@ -628,13 +649,16 @@ class CanvasTransaction:
         )
 
     async def create(self, board_id: UUID, user_id: int, form: CanvasCreateForm) -> Canvas:
-        canvas = Canvas(board_id=board_id, author_id=user_id, **form.model_dump())
+        canvas = Canvas(
+            board_id=board_id, author_id=user_id, **form.model_dump(exclude={"tag_ids"})
+        )
         self._db.add(canvas)
         await self._db.flush()
         self._db.add(
             CanvasDocument(canvas_id=canvas.id, document=CanvasContent().model_dump(mode="json"))
         )
         await self._db.flush()
+        await TagTransaction(self._db).replace_canvas_tags(canvas.id, form.tag_ids)
         return canvas
 
     async def patch(self, canvas: Canvas, form: CanvasPatchForm) -> None:
@@ -643,7 +667,10 @@ class CanvasTransaction:
             for key in form.model_fields_set.intersection(CANVAS_FIELDS)
             if getattr(canvas, key) != getattr(form, key)
         }
-        if not changes:
+        tags_changed = "tag_ids" in form.model_fields_set and await TagTransaction(
+            self._db
+        ).replace_canvas_tags(canvas.id, form.tag_ids)
+        if not changes and not tags_changed:
             return
         for key, value in changes.items():
             setattr(canvas, key, value)

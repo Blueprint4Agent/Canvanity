@@ -11,6 +11,7 @@ from tests.fixtures.payload_data import build_login_payload, build_signup_payloa
 pytestmark = pytest.mark.primary_data
 
 SESSION_ONLY = [
+    ("POST", "/api/v1/tags", {"name": "session-only-tag"}),
     ("POST", "/api/v1/auth/me/password/code/verify", {"code": "123456"}),
     ("POST", "/api/v1/auth/me/deletion-code/verify", {"code": "123456"}),
     ("POST", "/api/v1/auth/me/password/code", None),
@@ -47,8 +48,8 @@ def test_issued_api_key_cannot_substitute_for_session(
     assert rejected.status_code == 401
     assert rejected.json()["detail"]["error"] == "INVALID_TOKEN"
     accepted = integration_client.request(method, path, json=body, headers=bearer)
-    assert accepted.status_code in {200, 400, 403, 404, 503}
-    if accepted.status_code != 200:
+    assert accepted.status_code in {200, 201, 400, 403, 404, 503}
+    if accepted.status_code not in {200, 201}:
         assert accepted.json()["detail"]["error"] not in {"INVALID_TOKEN", "API_KEY_INVALID"}
     template = path.replace("cs_test_fixture", "{session_id}")
     template = template.replace("pm_fixture", "{method_id}").replace("seti_fixture", "{intent_id}")

@@ -56,7 +56,9 @@ class CanvasService:
             raise CanvasException(CanvasErrorCode.UNAVAILABLE)
         can_write = await self.access.can_write(tx, board, member, canvas.shelf_id)
         return CanvasResponse(
-            canvas=CanvasMetadata.model_validate(canvas),
+            canvas=CanvasMetadata.model_validate(canvas).model_copy(
+                update={"tags": await tx.tags(canvas.id)}
+            ),
             document_revision=document.revision,
             capabilities=CanvasCapabilities(
                 read_document=True,
