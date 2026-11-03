@@ -1,3 +1,5 @@
+import json
+from pathlib import Path
 from unittest.mock import AsyncMock
 
 import pytest
@@ -78,6 +80,19 @@ def test_canvas_router_success_contract(canvas_api, method, path, body, operatio
     if status == 201:
         assert response.headers["location"] == PATH
     getattr(service, operation).assert_awaited_once()
+
+
+def test_document_route_serializes_typed_engine_objects_and_layer_order(canvas_api):
+    client, service = canvas_api
+    fixture = Path(__file__).parents[3] / "fixtures" / "canvas_content_v1.json"
+    raw = json.loads(fixture.read_text(encoding="utf-8"))
+    service.document.return_value = CanvasDocumentResponse(
+        document=CanvasContent.model_validate(raw), revision=0
+    )
+    response = client.get(PATH + "/document")
+    assert response.status_code == 200
+    assert response.json() == {"document": raw, "revision": 0, "view": "draft"}
+    assert response.headers["cache-control"] == "private, no-store"
 
 
 @pytest.mark.parametrize("method,path,body,operation,status", OPERATIONS)

@@ -7,12 +7,14 @@
 | [도메인과 데이터](domain-model.md)       | ERD·필드·제약·트랜잭션·게시 상태·마이그레이션   |
 | [멤버십과 권한](membership-policy.md)    | 역할·등급·상태·Shelf 정책·허용/거부 행렬        |
 | [API 명세](api-design.md)                | 요청/응답·권한·동시성·목록·오류·화면 경로       |
+| [Board API 구현 범위](board-api-status.md) | 현재 기본 운영 API와 미디어/레이아웃/공개 목록의 남은 범위 |
 | [등급 설정 API](grade-management.md)     | 이름·순서·기본값·삭제 대체·감사·예외 기본 메시지 |
 | [기존 계정 수동 초대](member-invitations.md) | invite Board의 등록·기본 등급·제재 보호·감사 |
 | [Board 기본 설정](board-settings.md) | 소개·규칙·관심사·공개/가입 정책·보관/복원 |
 | [소유권·종료](board-lifecycle.md) | Owner 위임·보관 Board 삭제·계정/파일 경계 |
 | [Shelf 관리·정책](shelf-management.md) | 분류 CRUD/정렬·직접 조회·기본/재정의 등급 정책·현재 구현 경계 |
 | [Canvas 초안 기반](canvas-drafts.md) | 작성자 전용 메타데이터·JSONB 초기 문서·Shelf 이동·휴지통/복구·삭제 경계 |
+| [Canvas 객체 스키마](canvas-content-schema.md) | Text/Image/Drawing/Shape/Edge·고정 버전 필드·참조/순서·문서 검증과 저장 후속 경계 |
 | [Canvas 이미지 에셋](canvas-assets.md) | 이미지 API·참조 보호·업로드 예약·Board 삭제 outbox·운영 재처리 |
 | [개발과 검증](development-validation.md) | 현행 환경 감사·독립 fixture·실행·정리·검증 결과 |
 | [편집 엔진 검토](editor-decision.md)     | 후보·선정 근거·문서 어댑터·브라우저 실험과 한계 |
@@ -46,4 +48,6 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)는 PR #30으로 main에 반영했다. 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
 
 
-회원 운영 #31/PR #33과 등급 설정 #32/PR #34는 main에 반영했다. 초대 #35/초안 PR #36, 기본 설정 #37/초안 PR #38, #39 소유권·종료/초안 PR #40, #23 Shelf 관리/초안 PR #41, #8 Canvas 초안/초안 PR #42는 main 미병합이다. #6 이미지 API·참조 보호·파일 정리 outbox를 feat/canvas-draft-foundation 기준으로 분리한다. UI는 제외하며 각 이슈에서 구현·검증·게시·main 병합을 구분한다. 다음은 #7 본문 저장/CAS·에셋 참조 원자 동기화, #24 Tag, #8 공개 목록/게시다.
+회원 운영 #31/PR #33, 등급 설정 #32/PR #34, 초대 #35/PR #36, 기본 설정 #37/PR #38, 소유권·종료 #39/PR #40, Shelf 관리 #23/PR #41, Canvas 초안 #8/PR #42와 이미지 API/삭제 outbox #6/PR #43은 main에 반영했다. 기본 Board 운영 API는 있지만 avatar/cover 연결, 공식 홈 레이아웃 저장 #25, 공개 Canvas 목록/게시 #8은 후속이다. 자동 승급·가입 승인·이메일/토큰 초대도 별도 후속 범위다.
+
+다음 작업은 #5의 [객체 스키마](canvas-content-schema.md) 확정과 #7의 선행 타입/검증 모델이다. 문서 PUT/CAS·에셋 참조 원자 동기화 → #24 Tag → #8 공개 목록/게시 순서로 이어간다. UI는 계속 보류하며 각 이슈에서 구현·검증·게시·main 병합을 구분한다.

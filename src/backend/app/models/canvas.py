@@ -3,10 +3,11 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
+from pydantic_core import PydanticSerializationError
 from sqlalchemy import (
     JSON,
     BigInteger,
@@ -91,27 +92,377 @@ class CanvasDocument(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
-class CanvasEngine(BaseModel):
+MAX_CANVAS_ELEMENTS = 2_000
+MAX_CANVAS_DOCUMENT_BYTES = 2 * 1024 * 1024
+MAX_CANVAS_TEXT_LENGTH = 20_000
+MAX_CANVAS_POINTS = 20_000
+MAX_CANVAS_COORDINATE = 100_000
+MAX_SAFE_JSON_INTEGER = 2**53 - 1
+CANVAS_FONT_FAMILIES = (1, 2, 3, 5, 6, 7, 8, 9)
+
+CanvasElementId = Annotated[str, Field(min_length=1, max_length=80)]
+CanvasCoordinate = Annotated[float, Field(ge=-MAX_CANVAS_COORDINATE, le=MAX_CANVAS_COORDINATE)]
+CanvasLength = Annotated[float, Field(ge=0, le=MAX_CANVAS_COORDINATE)]
+CanvasPositiveLength = Annotated[float, Field(gt=0, le=MAX_CANVAS_COORDINATE)]
+CanvasPoint = Annotated[list[CanvasCoordinate], Field(min_length=2, max_length=2)]
+CanvasColor = Annotated[
+    str, Field(pattern=r"^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$")
+]
+CanvasImageFlip = Annotated[int, Field(json_schema_extra={"enum": [-1, 1]})]
+
+
+def _version_one(value: object) -> int:
+    if type(value) is not int or value != 1:
+        raise ValueError("Only integer version 1 is supported.")
+    return value
+
+
+def _false_only(value: object) -> bool:
+    if value is not False:
+        raise ValueError("Only boolean false is supported.")
+    return value
+
+
+CanvasVersionOne = Annotated[Literal[1], BeforeValidator(_version_one)]
+CanvasFalse = Annotated[Literal[False], BeforeValidator(_false_only)]
+
+
+class CanvasSchema(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, allow_inf_nan=False)
+
+
+class CanvasEngine(CanvasSchema):
     name: Literal["excalidraw"] = "excalidraw"
     version: Literal["0.18.1"] = "0.18.1"
-    adapter_version: Literal[1] = 1
+    adapter_version: CanvasVersionOne = 1
 
 
-class CanvasSettings(BaseModel):
-    background: str = "#F8F7F4"
+class CanvasSettings(CanvasSchema):
+    background: CanvasColor = "#F8F7F4"
     grid: Literal["none", "dots"] = "dots"
-    width: int = 3200
-    height: int = 2100
+    width: int = Field(default=3200, gt=0, le=MAX_CANVAS_COORDINATE)
+    height: int = Field(default=2100, gt=0, le=MAX_CANVAS_COORDINATE)
 
 
-class CanvasContent(BaseModel):
-    schema_version: Literal[1] = 1
+class CanvasPosition(CanvasSchema):
+    x: CanvasCoordinate
+    y: CanvasCoordinate
+
+
+class CanvasSize(CanvasSchema):
+    width: CanvasLength
+    height: CanvasLength
+
+
+class CanvasEngineRoundness(CanvasSchema):
+    type: int = Field(ge=1, le=3)
+    value: CanvasLength | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class CanvasEngineBoundElement(CanvasSchema):
+    id: CanvasElementId
+    type: Literal["arrow", "text"]
+
+
+class CanvasEngineElement(CanvasSchema):
+    """Pinned engine field names are preserved inside engine_element only."""
+
+    id: CanvasElementId
+    type: str
+    x: CanvasCoordinate
+    y: CanvasCoordinate
+    width: CanvasLength
+    height: CanvasLength
+    angle: CanvasCoordinate
+    strokeColor: CanvasColor
+    backgroundColor: CanvasColor
+    fillStyle: Literal["hachure", "cross-hatch", "solid", "zigzag"]
+    strokeWidth: float = Field(ge=0, le=1_000)
+    strokeStyle: Literal["solid", "dashed", "dotted"]
+    roundness: CanvasEngineRoundness | None
+    roughness: float = Field(ge=0, le=10)
+    opacity: float = Field(ge=0, le=100)
+    seed: int = Field(ge=0, le=2**31 - 1)
+    version: int = Field(ge=1, le=MAX_SAFE_JSON_INTEGER)
+    versionNonce: int = Field(ge=0, le=2**31 - 1)
+    index: Annotated[str, Field(min_length=1, max_length=128)] | None
+    isDeleted: CanvasFalse
+    groupIds: list[CanvasElementId] = Field(max_length=0)
+    frameId: None
+    boundElements: (
+        Annotated[list[CanvasEngineBoundElement], Field(max_length=MAX_CANVAS_ELEMENTS)] | None
+    )
+    updated: int = Field(ge=0, le=MAX_SAFE_JSON_INTEGER)
+    locked: bool
+
+
+class CanvasEngineText(CanvasEngineElement):
+    type: Literal["text"]
+    text: str = Field(max_length=MAX_CANVAS_TEXT_LENGTH)
+    originalText: str = Field(max_length=MAX_CANVAS_TEXT_LENGTH)
+    fontSize: float = Field(gt=0, le=10_000)
+    fontFamily: int = Field(json_schema_extra={"enum": list(CANVAS_FONT_FAMILIES)})
+    textAlign: Literal["left", "center", "right"]
+    verticalAlign: Literal["top", "middle", "bottom"]
+    containerId: CanvasElementId | None
+    autoResize: bool
+    lineHeight: float = Field(gt=0, le=10)
+
+    @field_validator("fontFamily")
+    @classmethod
+    def supported_font(cls, value: int) -> int:
+        if value not in CANVAS_FONT_FAMILIES:
+            raise ValueError("Unsupported pinned engine font family.")
+        return value
+
+
+class CanvasEngineShape(CanvasEngineElement):
+    type: Literal["rectangle", "ellipse", "diamond"]
+
+
+class CanvasImageCrop(CanvasSchema):
+    x: CanvasLength
+    y: CanvasLength
+    width: CanvasPositiveLength
+    height: CanvasPositiveLength
+    naturalWidth: CanvasPositiveLength
+    naturalHeight: CanvasPositiveLength
+
+    @model_validator(mode="after")
+    def crop_bounds(self):
+        if self.x + self.width > self.naturalWidth or self.y + self.height > self.naturalHeight:
+            raise ValueError("Image crop must fit within its natural dimensions.")
+        return self
+
+
+class CanvasEngineImage(CanvasEngineElement):
+    type: Literal["image"]
+    status: Literal["saved"]
+    scale: list[CanvasImageFlip] = Field(min_length=2, max_length=2)
+    crop: CanvasImageCrop | None
+
+    @field_validator("scale")
+    @classmethod
+    def flip_axes(cls, value: list[int]) -> list[int]:
+        if any(axis not in (-1, 1) for axis in value):
+            raise ValueError("Image scale must contain only -1 or 1.")
+        return value
+
+
+class CanvasEngineDrawing(CanvasEngineElement):
+    type: Literal["freedraw"]
+    points: list[CanvasPoint] = Field(min_length=1, max_length=MAX_CANVAS_POINTS)
+    pressures: list[Annotated[float, Field(ge=0, le=1)]] = Field(max_length=MAX_CANVAS_POINTS)
+    simulatePressure: bool
+    lastCommittedPoint: None
+
+    @model_validator(mode="after")
+    def pressure_points(self):
+        if len(self.pressures) != len(self.points) and not (
+            self.simulatePressure and not self.pressures
+        ):
+            raise ValueError("Drawing pressures must match points or be empty when simulated.")
+        return self
+
+
+class CanvasEnginePointBinding(CanvasSchema):
+    elementId: CanvasElementId
+    focus: float = Field(ge=-1, le=1)
+    gap: CanvasLength
+
+
+CanvasArrowhead = Literal[
+    "arrow",
+    "bar",
+    "dot",
+    "circle",
+    "circle_outline",
+    "triangle",
+    "triangle_outline",
+    "diamond",
+    "diamond_outline",
+    "crowfoot_one",
+    "crowfoot_many",
+    "crowfoot_one_or_many",
+]
+
+
+class CanvasEngineLinear(CanvasEngineElement):
+    points: list[CanvasPoint] = Field(min_length=2, max_length=MAX_CANVAS_POINTS)
+    lastCommittedPoint: None
+    startBinding: CanvasEnginePointBinding | None
+    endBinding: CanvasEnginePointBinding | None
+    startArrowhead: CanvasArrowhead | None
+    endArrowhead: CanvasArrowhead | None
+
+
+class CanvasEngineLine(CanvasEngineLinear):
+    type: Literal["line"]
+
+    @model_validator(mode="after")
+    def unbound_line(self):
+        if self.startBinding is not None or self.endBinding is not None:
+            raise ValueError("Only arrows support node bindings in version 1.")
+        return self
+
+
+class CanvasEngineArrow(CanvasEngineLinear):
+    type: Literal["arrow"]
+    elbowed: CanvasFalse
+
+
+class CanvasObject(CanvasSchema):
+    id: CanvasElementId
+    position: CanvasPosition
+    size: CanvasSize
+    engine_element: CanvasEngineElement
+
+    @model_validator(mode="after")
+    def matching_geometry(self):
+        element = self.engine_element
+        if (self.id, self.position.x, self.position.y, self.size.width, self.size.height) != (
+            element.id,
+            element.x,
+            element.y,
+            element.width,
+            element.height,
+        ):
+            raise ValueError("Canonical and engine object identity/geometry must match.")
+        if self.size.width == 0 and self.size.height == 0:
+            raise ValueError("An object must have a non-zero extent.")
+        if isinstance(element, (CanvasEngineText, CanvasEngineShape, CanvasEngineImage)) and (
+            self.size.width == 0 or self.size.height == 0
+        ):
+            raise ValueError("Text, shape and image dimensions must be positive.")
+        return self
+
+
+class CanvasTextNode(CanvasObject):
+    type: Literal["text"]
+    engine_element: CanvasEngineText
+
+
+class CanvasShapeNode(CanvasObject):
+    type: Literal["shape"]
+    engine_element: CanvasEngineShape
+
+
+class CanvasImageContent(CanvasSchema):
+    # JSON/ORM dictionaries carry UUID strings, including model_validate() read paths.
+    asset_id: UUID = Field(strict=False)
+
+
+class CanvasImageNode(CanvasObject):
+    type: Literal["image"]
+    content: CanvasImageContent
+    engine_element: CanvasEngineImage
+
+
+class CanvasDrawingNode(CanvasObject):
+    type: Literal["drawing"]
+    engine_element: CanvasEngineDrawing
+
+
+class CanvasEdge(CanvasObject):
+    type: Literal["edge"]
+    source_node_id: CanvasElementId | None
+    target_node_id: CanvasElementId | None
+    engine_element: Annotated[CanvasEngineLine | CanvasEngineArrow, Field(discriminator="type")]
+
+
+CanvasNode = Annotated[
+    CanvasTextNode | CanvasShapeNode | CanvasImageNode | CanvasDrawingNode,
+    Field(discriminator="type"),
+]
+
+
+class CanvasContent(CanvasSchema):
+    schema_version: CanvasVersionOne = 1
     engine: CanvasEngine = Field(default_factory=CanvasEngine)
     settings: CanvasSettings = Field(default_factory=CanvasSettings)
-    # Creation only produces empty arrays. Element input validators belong to document saving (#7).
-    nodes: list[dict] = Field(default_factory=list)
-    edges: list[dict] = Field(default_factory=list)
-    element_order: list[str] = Field(default_factory=list)
+    nodes: list[CanvasNode] = Field(default_factory=list, max_length=MAX_CANVAS_ELEMENTS)
+    edges: list[CanvasEdge] = Field(default_factory=list, max_length=MAX_CANVAS_ELEMENTS)
+    element_order: list[CanvasElementId] = Field(
+        default_factory=list, max_length=MAX_CANVAS_ELEMENTS
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def total_elements(cls, data):
+        if isinstance(data, dict):
+            nodes, edges = data.get("nodes", []), data.get("edges", [])
+            if isinstance(nodes, list) and isinstance(edges, list):
+                if len(nodes) + len(edges) > MAX_CANVAS_ELEMENTS:
+                    raise ValueError("Canvas document exceeds the total element limit.")
+        return data
+
+    @model_validator(mode="after")
+    def document_integrity(self):
+        objects = [*self.nodes, *self.edges]
+        by_id = {item.id: item for item in objects}
+        if len(by_id) != len(objects):
+            raise ValueError("Canvas object IDs must be unique across nodes and edges.")
+        if len(self.element_order) != len(by_id) or set(self.element_order) != set(by_id):
+            raise ValueError("Element order must contain every object ID exactly once.")
+
+        for item in objects:
+            references = item.engine_element.boundElements or []
+            if len({ref.id for ref in references}) != len(references):
+                raise ValueError("Bound element references must be unique.")
+            if sum(ref.type == "text" for ref in references) > 1:
+                raise ValueError("A container can have at most one bound text object.")
+            for ref in references:
+                target = by_id.get(ref.id)
+                if ref.type == "text":
+                    if not isinstance(target, CanvasTextNode) or (
+                        target.engine_element.containerId != item.id
+                    ):
+                        raise ValueError("Bound text must refer back to its container.")
+                elif not isinstance(target, CanvasEdge) or (
+                    target.engine_element.type != "arrow"
+                    or item.id not in (target.source_node_id, target.target_node_id)
+                ):
+                    raise ValueError("Bound arrows must refer back to their node.")
+
+            if isinstance(item, CanvasTextNode) and item.engine_element.containerId is not None:
+                container = by_id.get(item.engine_element.containerId)
+                if not isinstance(container, CanvasShapeNode) and not (
+                    isinstance(container, CanvasEdge) and container.engine_element.type == "arrow"
+                ):
+                    raise ValueError("Text containers must be a shape or arrow in this document.")
+                if not any(
+                    ref.id == item.id and ref.type == "text"
+                    for ref in container.engine_element.boundElements or []
+                ):
+                    raise ValueError("Text containers must list their bound text.")
+
+            if isinstance(item, CanvasEdge):
+                for target_id, binding in (
+                    (item.source_node_id, item.engine_element.startBinding),
+                    (item.target_node_id, item.engine_element.endBinding),
+                ):
+                    if target_id is None:
+                        if binding is not None:
+                            raise ValueError("Free endpoints cannot have engine bindings.")
+                        continue
+                    target = by_id.get(target_id)
+                    if not isinstance(target, (CanvasTextNode, CanvasShapeNode, CanvasImageNode)):
+                        raise ValueError("Arrow endpoints must reference bindable nodes.")
+                    if binding is None or binding.elementId != target_id:
+                        raise ValueError("Canonical and engine endpoint references must match.")
+                    if not any(
+                        ref.id == item.id and ref.type == "arrow"
+                        for ref in target.engine_element.boundElements or []
+                    ):
+                        raise ValueError("Arrow endpoints must list their bound arrow.")
+
+        try:
+            byte_size = len(self.model_dump_json().encode("utf-8"))
+        except (PydanticSerializationError, UnicodeError) as exc:
+            raise ValueError("Canvas document must contain valid UTF-8 JSON.") from exc
+        if byte_size > MAX_CANVAS_DOCUMENT_BYTES:
+            raise ValueError("Canvas document exceeds the UTF-8 JSON byte limit.")
+        return self
 
 
 class CanvasCreateForm(BaseModel):

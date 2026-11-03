@@ -3230,19 +3230,23 @@
                 "type": "object"
             },
             "CanvasContent": {
+                "additionalProperties": false,
                 "properties": {
                     "edges": {
                         "items": {
-                            "additionalProperties": true,
-                            "type": "object"
+                            "$ref": "#/components/schemas/CanvasEdge"
                         },
+                        "maxItems": 2000,
                         "title": "Edges",
                         "type": "array"
                     },
                     "element_order": {
                         "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
                             "type": "string"
                         },
+                        "maxItems": 2000,
                         "title": "Element Order",
                         "type": "array"
                     },
@@ -3251,9 +3255,31 @@
                     },
                     "nodes": {
                         "items": {
-                            "additionalProperties": true,
-                            "type": "object"
+                            "discriminator": {
+                                "mapping": {
+                                    "drawing": "#/components/schemas/CanvasDrawingNode",
+                                    "image": "#/components/schemas/CanvasImageNode",
+                                    "shape": "#/components/schemas/CanvasShapeNode",
+                                    "text": "#/components/schemas/CanvasTextNode"
+                                },
+                                "propertyName": "type"
+                            },
+                            "oneOf": [
+                                {
+                                    "$ref": "#/components/schemas/CanvasTextNode"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/CanvasShapeNode"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/CanvasImageNode"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/CanvasDrawingNode"
+                                }
+                            ]
                         },
+                        "maxItems": 2000,
                         "title": "Nodes",
                         "type": "array"
                     },
@@ -3321,7 +3347,113 @@
                 "title": "CanvasDocumentResponse",
                 "type": "object"
             },
+            "CanvasDrawingNode": {
+                "additionalProperties": false,
+                "properties": {
+                    "engine_element": {
+                        "$ref": "#/components/schemas/CanvasEngineDrawing"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/CanvasPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/CanvasSize"
+                    },
+                    "type": {
+                        "const": "drawing",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "engine_element", "type"],
+                "title": "CanvasDrawingNode",
+                "type": "object"
+            },
+            "CanvasEdge": {
+                "additionalProperties": false,
+                "properties": {
+                    "engine_element": {
+                        "discriminator": {
+                            "mapping": {
+                                "arrow": "#/components/schemas/CanvasEngineArrow",
+                                "line": "#/components/schemas/CanvasEngineLine"
+                            },
+                            "propertyName": "type"
+                        },
+                        "oneOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineLine"
+                            },
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineArrow"
+                            }
+                        ],
+                        "title": "Engine Element"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/CanvasPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/CanvasSize"
+                    },
+                    "source_node_id": {
+                        "anyOf": [
+                            {
+                                "maxLength": 80,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Source Node Id"
+                    },
+                    "target_node_id": {
+                        "anyOf": [
+                            {
+                                "maxLength": 80,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Target Node Id"
+                    },
+                    "type": {
+                        "const": "edge",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "position",
+                    "size",
+                    "engine_element",
+                    "type",
+                    "source_node_id",
+                    "target_node_id"
+                ],
+                "title": "CanvasEdge",
+                "type": "object"
+            },
             "CanvasEngine": {
+                "additionalProperties": false,
                 "properties": {
                     "adapter_version": {
                         "const": 1,
@@ -3343,6 +3475,1593 @@
                     }
                 },
                 "title": "CanvasEngine",
+                "type": "object"
+            },
+            "CanvasEngineArrow": {
+                "additionalProperties": false,
+                "properties": {
+                    "angle": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Angle",
+                        "type": "number"
+                    },
+                    "backgroundColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Backgroundcolor",
+                        "type": "string"
+                    },
+                    "boundElements": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/CanvasEngineBoundElement"
+                                },
+                                "maxItems": 2000,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Boundelements"
+                    },
+                    "elbowed": {
+                        "const": false,
+                        "title": "Elbowed",
+                        "type": "boolean"
+                    },
+                    "endArrowhead": {
+                        "anyOf": [
+                            {
+                                "enum": [
+                                    "arrow",
+                                    "bar",
+                                    "dot",
+                                    "circle",
+                                    "circle_outline",
+                                    "triangle",
+                                    "triangle_outline",
+                                    "diamond",
+                                    "diamond_outline",
+                                    "crowfoot_one",
+                                    "crowfoot_many",
+                                    "crowfoot_one_or_many"
+                                ],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Endarrowhead"
+                    },
+                    "endBinding": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEnginePointBinding"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "fillStyle": {
+                        "enum": ["hachure", "cross-hatch", "solid", "zigzag"],
+                        "title": "Fillstyle",
+                        "type": "string"
+                    },
+                    "frameId": {
+                        "title": "Frameid",
+                        "type": "null"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        "maxItems": 0,
+                        "title": "Groupids",
+                        "type": "array"
+                    },
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "index": {
+                        "anyOf": [
+                            {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Index"
+                    },
+                    "isDeleted": {
+                        "const": false,
+                        "title": "Isdeleted",
+                        "type": "boolean"
+                    },
+                    "lastCommittedPoint": {
+                        "title": "Lastcommittedpoint",
+                        "type": "null"
+                    },
+                    "locked": {
+                        "title": "Locked",
+                        "type": "boolean"
+                    },
+                    "opacity": {
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Opacity",
+                        "type": "number"
+                    },
+                    "points": {
+                        "items": {
+                            "items": {
+                                "maximum": 100000.0,
+                                "minimum": -100000.0,
+                                "type": "number"
+                            },
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "type": "array"
+                        },
+                        "maxItems": 20000,
+                        "minItems": 2,
+                        "title": "Points",
+                        "type": "array"
+                    },
+                    "roughness": {
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "title": "Roughness",
+                        "type": "number"
+                    },
+                    "roundness": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineRoundness"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "seed": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Seed",
+                        "type": "integer"
+                    },
+                    "startArrowhead": {
+                        "anyOf": [
+                            {
+                                "enum": [
+                                    "arrow",
+                                    "bar",
+                                    "dot",
+                                    "circle",
+                                    "circle_outline",
+                                    "triangle",
+                                    "triangle_outline",
+                                    "diamond",
+                                    "diamond_outline",
+                                    "crowfoot_one",
+                                    "crowfoot_many",
+                                    "crowfoot_one_or_many"
+                                ],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Startarrowhead"
+                    },
+                    "startBinding": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEnginePointBinding"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "strokeColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Strokecolor",
+                        "type": "string"
+                    },
+                    "strokeStyle": {
+                        "enum": ["solid", "dashed", "dotted"],
+                        "title": "Strokestyle",
+                        "type": "string"
+                    },
+                    "strokeWidth": {
+                        "maximum": 1000.0,
+                        "minimum": 0.0,
+                        "title": "Strokewidth",
+                        "type": "number"
+                    },
+                    "type": {
+                        "const": "arrow",
+                        "title": "Type",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 0.0,
+                        "title": "Updated",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 1.0,
+                        "title": "Version",
+                        "type": "integer"
+                    },
+                    "versionNonce": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Versionnonce",
+                        "type": "integer"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "angle",
+                    "strokeColor",
+                    "backgroundColor",
+                    "fillStyle",
+                    "strokeWidth",
+                    "strokeStyle",
+                    "roundness",
+                    "roughness",
+                    "opacity",
+                    "seed",
+                    "version",
+                    "versionNonce",
+                    "index",
+                    "isDeleted",
+                    "groupIds",
+                    "frameId",
+                    "boundElements",
+                    "updated",
+                    "locked",
+                    "points",
+                    "lastCommittedPoint",
+                    "startBinding",
+                    "endBinding",
+                    "startArrowhead",
+                    "endArrowhead",
+                    "elbowed"
+                ],
+                "title": "CanvasEngineArrow",
+                "type": "object"
+            },
+            "CanvasEngineBoundElement": {
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "type": {
+                        "enum": ["arrow", "text"],
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "type"],
+                "title": "CanvasEngineBoundElement",
+                "type": "object"
+            },
+            "CanvasEngineDrawing": {
+                "additionalProperties": false,
+                "properties": {
+                    "angle": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Angle",
+                        "type": "number"
+                    },
+                    "backgroundColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Backgroundcolor",
+                        "type": "string"
+                    },
+                    "boundElements": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/CanvasEngineBoundElement"
+                                },
+                                "maxItems": 2000,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Boundelements"
+                    },
+                    "fillStyle": {
+                        "enum": ["hachure", "cross-hatch", "solid", "zigzag"],
+                        "title": "Fillstyle",
+                        "type": "string"
+                    },
+                    "frameId": {
+                        "title": "Frameid",
+                        "type": "null"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        "maxItems": 0,
+                        "title": "Groupids",
+                        "type": "array"
+                    },
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "index": {
+                        "anyOf": [
+                            {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Index"
+                    },
+                    "isDeleted": {
+                        "const": false,
+                        "title": "Isdeleted",
+                        "type": "boolean"
+                    },
+                    "lastCommittedPoint": {
+                        "title": "Lastcommittedpoint",
+                        "type": "null"
+                    },
+                    "locked": {
+                        "title": "Locked",
+                        "type": "boolean"
+                    },
+                    "opacity": {
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Opacity",
+                        "type": "number"
+                    },
+                    "points": {
+                        "items": {
+                            "items": {
+                                "maximum": 100000.0,
+                                "minimum": -100000.0,
+                                "type": "number"
+                            },
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "type": "array"
+                        },
+                        "maxItems": 20000,
+                        "minItems": 1,
+                        "title": "Points",
+                        "type": "array"
+                    },
+                    "pressures": {
+                        "items": {
+                            "maximum": 1.0,
+                            "minimum": 0.0,
+                            "type": "number"
+                        },
+                        "maxItems": 20000,
+                        "title": "Pressures",
+                        "type": "array"
+                    },
+                    "roughness": {
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "title": "Roughness",
+                        "type": "number"
+                    },
+                    "roundness": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineRoundness"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "seed": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Seed",
+                        "type": "integer"
+                    },
+                    "simulatePressure": {
+                        "title": "Simulatepressure",
+                        "type": "boolean"
+                    },
+                    "strokeColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Strokecolor",
+                        "type": "string"
+                    },
+                    "strokeStyle": {
+                        "enum": ["solid", "dashed", "dotted"],
+                        "title": "Strokestyle",
+                        "type": "string"
+                    },
+                    "strokeWidth": {
+                        "maximum": 1000.0,
+                        "minimum": 0.0,
+                        "title": "Strokewidth",
+                        "type": "number"
+                    },
+                    "type": {
+                        "const": "freedraw",
+                        "title": "Type",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 0.0,
+                        "title": "Updated",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 1.0,
+                        "title": "Version",
+                        "type": "integer"
+                    },
+                    "versionNonce": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Versionnonce",
+                        "type": "integer"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "angle",
+                    "strokeColor",
+                    "backgroundColor",
+                    "fillStyle",
+                    "strokeWidth",
+                    "strokeStyle",
+                    "roundness",
+                    "roughness",
+                    "opacity",
+                    "seed",
+                    "version",
+                    "versionNonce",
+                    "index",
+                    "isDeleted",
+                    "groupIds",
+                    "frameId",
+                    "boundElements",
+                    "updated",
+                    "locked",
+                    "points",
+                    "pressures",
+                    "simulatePressure",
+                    "lastCommittedPoint"
+                ],
+                "title": "CanvasEngineDrawing",
+                "type": "object"
+            },
+            "CanvasEngineImage": {
+                "additionalProperties": false,
+                "properties": {
+                    "angle": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Angle",
+                        "type": "number"
+                    },
+                    "backgroundColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Backgroundcolor",
+                        "type": "string"
+                    },
+                    "boundElements": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/CanvasEngineBoundElement"
+                                },
+                                "maxItems": 2000,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Boundelements"
+                    },
+                    "crop": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasImageCrop"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "fillStyle": {
+                        "enum": ["hachure", "cross-hatch", "solid", "zigzag"],
+                        "title": "Fillstyle",
+                        "type": "string"
+                    },
+                    "frameId": {
+                        "title": "Frameid",
+                        "type": "null"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        "maxItems": 0,
+                        "title": "Groupids",
+                        "type": "array"
+                    },
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "index": {
+                        "anyOf": [
+                            {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Index"
+                    },
+                    "isDeleted": {
+                        "const": false,
+                        "title": "Isdeleted",
+                        "type": "boolean"
+                    },
+                    "locked": {
+                        "title": "Locked",
+                        "type": "boolean"
+                    },
+                    "opacity": {
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Opacity",
+                        "type": "number"
+                    },
+                    "roughness": {
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "title": "Roughness",
+                        "type": "number"
+                    },
+                    "roundness": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineRoundness"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "scale": {
+                        "items": {
+                            "enum": [-1, 1],
+                            "type": "integer"
+                        },
+                        "maxItems": 2,
+                        "minItems": 2,
+                        "title": "Scale",
+                        "type": "array"
+                    },
+                    "seed": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Seed",
+                        "type": "integer"
+                    },
+                    "status": {
+                        "const": "saved",
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "strokeColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Strokecolor",
+                        "type": "string"
+                    },
+                    "strokeStyle": {
+                        "enum": ["solid", "dashed", "dotted"],
+                        "title": "Strokestyle",
+                        "type": "string"
+                    },
+                    "strokeWidth": {
+                        "maximum": 1000.0,
+                        "minimum": 0.0,
+                        "title": "Strokewidth",
+                        "type": "number"
+                    },
+                    "type": {
+                        "const": "image",
+                        "title": "Type",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 0.0,
+                        "title": "Updated",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 1.0,
+                        "title": "Version",
+                        "type": "integer"
+                    },
+                    "versionNonce": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Versionnonce",
+                        "type": "integer"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "angle",
+                    "strokeColor",
+                    "backgroundColor",
+                    "fillStyle",
+                    "strokeWidth",
+                    "strokeStyle",
+                    "roundness",
+                    "roughness",
+                    "opacity",
+                    "seed",
+                    "version",
+                    "versionNonce",
+                    "index",
+                    "isDeleted",
+                    "groupIds",
+                    "frameId",
+                    "boundElements",
+                    "updated",
+                    "locked",
+                    "status",
+                    "scale",
+                    "crop"
+                ],
+                "title": "CanvasEngineImage",
+                "type": "object"
+            },
+            "CanvasEngineLine": {
+                "additionalProperties": false,
+                "properties": {
+                    "angle": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Angle",
+                        "type": "number"
+                    },
+                    "backgroundColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Backgroundcolor",
+                        "type": "string"
+                    },
+                    "boundElements": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/CanvasEngineBoundElement"
+                                },
+                                "maxItems": 2000,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Boundelements"
+                    },
+                    "endArrowhead": {
+                        "anyOf": [
+                            {
+                                "enum": [
+                                    "arrow",
+                                    "bar",
+                                    "dot",
+                                    "circle",
+                                    "circle_outline",
+                                    "triangle",
+                                    "triangle_outline",
+                                    "diamond",
+                                    "diamond_outline",
+                                    "crowfoot_one",
+                                    "crowfoot_many",
+                                    "crowfoot_one_or_many"
+                                ],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Endarrowhead"
+                    },
+                    "endBinding": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEnginePointBinding"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "fillStyle": {
+                        "enum": ["hachure", "cross-hatch", "solid", "zigzag"],
+                        "title": "Fillstyle",
+                        "type": "string"
+                    },
+                    "frameId": {
+                        "title": "Frameid",
+                        "type": "null"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        "maxItems": 0,
+                        "title": "Groupids",
+                        "type": "array"
+                    },
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "index": {
+                        "anyOf": [
+                            {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Index"
+                    },
+                    "isDeleted": {
+                        "const": false,
+                        "title": "Isdeleted",
+                        "type": "boolean"
+                    },
+                    "lastCommittedPoint": {
+                        "title": "Lastcommittedpoint",
+                        "type": "null"
+                    },
+                    "locked": {
+                        "title": "Locked",
+                        "type": "boolean"
+                    },
+                    "opacity": {
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Opacity",
+                        "type": "number"
+                    },
+                    "points": {
+                        "items": {
+                            "items": {
+                                "maximum": 100000.0,
+                                "minimum": -100000.0,
+                                "type": "number"
+                            },
+                            "maxItems": 2,
+                            "minItems": 2,
+                            "type": "array"
+                        },
+                        "maxItems": 20000,
+                        "minItems": 2,
+                        "title": "Points",
+                        "type": "array"
+                    },
+                    "roughness": {
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "title": "Roughness",
+                        "type": "number"
+                    },
+                    "roundness": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineRoundness"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "seed": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Seed",
+                        "type": "integer"
+                    },
+                    "startArrowhead": {
+                        "anyOf": [
+                            {
+                                "enum": [
+                                    "arrow",
+                                    "bar",
+                                    "dot",
+                                    "circle",
+                                    "circle_outline",
+                                    "triangle",
+                                    "triangle_outline",
+                                    "diamond",
+                                    "diamond_outline",
+                                    "crowfoot_one",
+                                    "crowfoot_many",
+                                    "crowfoot_one_or_many"
+                                ],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Startarrowhead"
+                    },
+                    "startBinding": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEnginePointBinding"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "strokeColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Strokecolor",
+                        "type": "string"
+                    },
+                    "strokeStyle": {
+                        "enum": ["solid", "dashed", "dotted"],
+                        "title": "Strokestyle",
+                        "type": "string"
+                    },
+                    "strokeWidth": {
+                        "maximum": 1000.0,
+                        "minimum": 0.0,
+                        "title": "Strokewidth",
+                        "type": "number"
+                    },
+                    "type": {
+                        "const": "line",
+                        "title": "Type",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 0.0,
+                        "title": "Updated",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 1.0,
+                        "title": "Version",
+                        "type": "integer"
+                    },
+                    "versionNonce": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Versionnonce",
+                        "type": "integer"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "angle",
+                    "strokeColor",
+                    "backgroundColor",
+                    "fillStyle",
+                    "strokeWidth",
+                    "strokeStyle",
+                    "roundness",
+                    "roughness",
+                    "opacity",
+                    "seed",
+                    "version",
+                    "versionNonce",
+                    "index",
+                    "isDeleted",
+                    "groupIds",
+                    "frameId",
+                    "boundElements",
+                    "updated",
+                    "locked",
+                    "points",
+                    "lastCommittedPoint",
+                    "startBinding",
+                    "endBinding",
+                    "startArrowhead",
+                    "endArrowhead"
+                ],
+                "title": "CanvasEngineLine",
+                "type": "object"
+            },
+            "CanvasEnginePointBinding": {
+                "additionalProperties": false,
+                "properties": {
+                    "elementId": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Elementid",
+                        "type": "string"
+                    },
+                    "focus": {
+                        "maximum": 1.0,
+                        "minimum": -1.0,
+                        "title": "Focus",
+                        "type": "number"
+                    },
+                    "gap": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Gap",
+                        "type": "number"
+                    }
+                },
+                "required": ["elementId", "focus", "gap"],
+                "title": "CanvasEnginePointBinding",
+                "type": "object"
+            },
+            "CanvasEngineRoundness": {
+                "additionalProperties": false,
+                "properties": {
+                    "type": {
+                        "maximum": 3.0,
+                        "minimum": 1.0,
+                        "title": "Type",
+                        "type": "integer"
+                    },
+                    "value": {
+                        "anyOf": [
+                            {
+                                "maximum": 100000.0,
+                                "minimum": 0.0,
+                                "type": "number"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Value"
+                    }
+                },
+                "required": ["type"],
+                "title": "CanvasEngineRoundness",
+                "type": "object"
+            },
+            "CanvasEngineShape": {
+                "additionalProperties": false,
+                "properties": {
+                    "angle": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Angle",
+                        "type": "number"
+                    },
+                    "backgroundColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Backgroundcolor",
+                        "type": "string"
+                    },
+                    "boundElements": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/CanvasEngineBoundElement"
+                                },
+                                "maxItems": 2000,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Boundelements"
+                    },
+                    "fillStyle": {
+                        "enum": ["hachure", "cross-hatch", "solid", "zigzag"],
+                        "title": "Fillstyle",
+                        "type": "string"
+                    },
+                    "frameId": {
+                        "title": "Frameid",
+                        "type": "null"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        "maxItems": 0,
+                        "title": "Groupids",
+                        "type": "array"
+                    },
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "index": {
+                        "anyOf": [
+                            {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Index"
+                    },
+                    "isDeleted": {
+                        "const": false,
+                        "title": "Isdeleted",
+                        "type": "boolean"
+                    },
+                    "locked": {
+                        "title": "Locked",
+                        "type": "boolean"
+                    },
+                    "opacity": {
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Opacity",
+                        "type": "number"
+                    },
+                    "roughness": {
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "title": "Roughness",
+                        "type": "number"
+                    },
+                    "roundness": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineRoundness"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "seed": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Seed",
+                        "type": "integer"
+                    },
+                    "strokeColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Strokecolor",
+                        "type": "string"
+                    },
+                    "strokeStyle": {
+                        "enum": ["solid", "dashed", "dotted"],
+                        "title": "Strokestyle",
+                        "type": "string"
+                    },
+                    "strokeWidth": {
+                        "maximum": 1000.0,
+                        "minimum": 0.0,
+                        "title": "Strokewidth",
+                        "type": "number"
+                    },
+                    "type": {
+                        "enum": ["rectangle", "ellipse", "diamond"],
+                        "title": "Type",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 0.0,
+                        "title": "Updated",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 1.0,
+                        "title": "Version",
+                        "type": "integer"
+                    },
+                    "versionNonce": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Versionnonce",
+                        "type": "integer"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "angle",
+                    "strokeColor",
+                    "backgroundColor",
+                    "fillStyle",
+                    "strokeWidth",
+                    "strokeStyle",
+                    "roundness",
+                    "roughness",
+                    "opacity",
+                    "seed",
+                    "version",
+                    "versionNonce",
+                    "index",
+                    "isDeleted",
+                    "groupIds",
+                    "frameId",
+                    "boundElements",
+                    "updated",
+                    "locked"
+                ],
+                "title": "CanvasEngineShape",
+                "type": "object"
+            },
+            "CanvasEngineText": {
+                "additionalProperties": false,
+                "properties": {
+                    "angle": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Angle",
+                        "type": "number"
+                    },
+                    "autoResize": {
+                        "title": "Autoresize",
+                        "type": "boolean"
+                    },
+                    "backgroundColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Backgroundcolor",
+                        "type": "string"
+                    },
+                    "boundElements": {
+                        "anyOf": [
+                            {
+                                "items": {
+                                    "$ref": "#/components/schemas/CanvasEngineBoundElement"
+                                },
+                                "maxItems": 2000,
+                                "type": "array"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Boundelements"
+                    },
+                    "containerId": {
+                        "anyOf": [
+                            {
+                                "maxLength": 80,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Containerid"
+                    },
+                    "fillStyle": {
+                        "enum": ["hachure", "cross-hatch", "solid", "zigzag"],
+                        "title": "Fillstyle",
+                        "type": "string"
+                    },
+                    "fontFamily": {
+                        "enum": [1, 2, 3, 5, 6, 7, 8, 9],
+                        "title": "Fontfamily",
+                        "type": "integer"
+                    },
+                    "fontSize": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 10000.0,
+                        "title": "Fontsize",
+                        "type": "number"
+                    },
+                    "frameId": {
+                        "title": "Frameid",
+                        "type": "null"
+                    },
+                    "groupIds": {
+                        "items": {
+                            "maxLength": 80,
+                            "minLength": 1,
+                            "type": "string"
+                        },
+                        "maxItems": 0,
+                        "title": "Groupids",
+                        "type": "array"
+                    },
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "index": {
+                        "anyOf": [
+                            {
+                                "maxLength": 128,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Index"
+                    },
+                    "isDeleted": {
+                        "const": false,
+                        "title": "Isdeleted",
+                        "type": "boolean"
+                    },
+                    "lineHeight": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 10.0,
+                        "title": "Lineheight",
+                        "type": "number"
+                    },
+                    "locked": {
+                        "title": "Locked",
+                        "type": "boolean"
+                    },
+                    "opacity": {
+                        "maximum": 100.0,
+                        "minimum": 0.0,
+                        "title": "Opacity",
+                        "type": "number"
+                    },
+                    "originalText": {
+                        "maxLength": 20000,
+                        "title": "Originaltext",
+                        "type": "string"
+                    },
+                    "roughness": {
+                        "maximum": 10.0,
+                        "minimum": 0.0,
+                        "title": "Roughness",
+                        "type": "number"
+                    },
+                    "roundness": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/CanvasEngineRoundness"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "seed": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Seed",
+                        "type": "integer"
+                    },
+                    "strokeColor": {
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
+                        "title": "Strokecolor",
+                        "type": "string"
+                    },
+                    "strokeStyle": {
+                        "enum": ["solid", "dashed", "dotted"],
+                        "title": "Strokestyle",
+                        "type": "string"
+                    },
+                    "strokeWidth": {
+                        "maximum": 1000.0,
+                        "minimum": 0.0,
+                        "title": "Strokewidth",
+                        "type": "number"
+                    },
+                    "text": {
+                        "maxLength": 20000,
+                        "title": "Text",
+                        "type": "string"
+                    },
+                    "textAlign": {
+                        "enum": ["left", "center", "right"],
+                        "title": "Textalign",
+                        "type": "string"
+                    },
+                    "type": {
+                        "const": "text",
+                        "title": "Type",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 0.0,
+                        "title": "Updated",
+                        "type": "integer"
+                    },
+                    "version": {
+                        "maximum": 9007199254740991.0,
+                        "minimum": 1.0,
+                        "title": "Version",
+                        "type": "integer"
+                    },
+                    "versionNonce": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Versionnonce",
+                        "type": "integer"
+                    },
+                    "verticalAlign": {
+                        "enum": ["top", "middle", "bottom"],
+                        "title": "Verticalalign",
+                        "type": "string"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "id",
+                    "type",
+                    "x",
+                    "y",
+                    "width",
+                    "height",
+                    "angle",
+                    "strokeColor",
+                    "backgroundColor",
+                    "fillStyle",
+                    "strokeWidth",
+                    "strokeStyle",
+                    "roundness",
+                    "roughness",
+                    "opacity",
+                    "seed",
+                    "version",
+                    "versionNonce",
+                    "index",
+                    "isDeleted",
+                    "groupIds",
+                    "frameId",
+                    "boundElements",
+                    "updated",
+                    "locked",
+                    "text",
+                    "originalText",
+                    "fontSize",
+                    "fontFamily",
+                    "textAlign",
+                    "verticalAlign",
+                    "containerId",
+                    "autoResize",
+                    "lineHeight"
+                ],
+                "title": "CanvasEngineText",
                 "type": "object"
             },
             "CanvasErrorDetail": {
@@ -3390,6 +5109,94 @@
                 },
                 "required": ["detail"],
                 "title": "CanvasErrorResponse",
+                "type": "object"
+            },
+            "CanvasImageContent": {
+                "additionalProperties": false,
+                "properties": {
+                    "asset_id": {
+                        "format": "uuid",
+                        "title": "Asset Id",
+                        "type": "string"
+                    }
+                },
+                "required": ["asset_id"],
+                "title": "CanvasImageContent",
+                "type": "object"
+            },
+            "CanvasImageCrop": {
+                "additionalProperties": false,
+                "properties": {
+                    "height": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "naturalHeight": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
+                        "title": "Naturalheight",
+                        "type": "number"
+                    },
+                    "naturalWidth": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
+                        "title": "Naturalwidth",
+                        "type": "number"
+                    },
+                    "width": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
+                        "title": "Width",
+                        "type": "number"
+                    },
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": ["x", "y", "width", "height", "naturalWidth", "naturalHeight"],
+                "title": "CanvasImageCrop",
+                "type": "object"
+            },
+            "CanvasImageNode": {
+                "additionalProperties": false,
+                "properties": {
+                    "content": {
+                        "$ref": "#/components/schemas/CanvasImageContent"
+                    },
+                    "engine_element": {
+                        "$ref": "#/components/schemas/CanvasEngineImage"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/CanvasPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/CanvasSize"
+                    },
+                    "type": {
+                        "const": "image",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "engine_element", "type", "content"],
+                "title": "CanvasImageNode",
                 "type": "object"
             },
             "CanvasMetadata": {
@@ -3535,6 +5342,26 @@
                 "title": "CanvasPatchForm",
                 "type": "object"
             },
+            "CanvasPosition": {
+                "additionalProperties": false,
+                "properties": {
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": ["x", "y"],
+                "title": "CanvasPosition",
+                "type": "object"
+            },
             "CanvasResponse": {
                 "properties": {
                     "canvas": {
@@ -3573,9 +5400,11 @@
                 "type": "object"
             },
             "CanvasSettings": {
+                "additionalProperties": false,
                 "properties": {
                     "background": {
                         "default": "#F8F7F4",
+                        "pattern": "^(#[0-9A-Fa-f]{3}|#[0-9A-Fa-f]{6}|#[0-9A-Fa-f]{8}|transparent)$",
                         "title": "Background",
                         "type": "string"
                     },
@@ -3587,16 +5416,96 @@
                     },
                     "height": {
                         "default": 2100,
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
                         "title": "Height",
                         "type": "integer"
                     },
                     "width": {
                         "default": 3200,
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
                         "title": "Width",
                         "type": "integer"
                     }
                 },
                 "title": "CanvasSettings",
+                "type": "object"
+            },
+            "CanvasShapeNode": {
+                "additionalProperties": false,
+                "properties": {
+                    "engine_element": {
+                        "$ref": "#/components/schemas/CanvasEngineShape"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/CanvasPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/CanvasSize"
+                    },
+                    "type": {
+                        "const": "shape",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "engine_element", "type"],
+                "title": "CanvasShapeNode",
+                "type": "object"
+            },
+            "CanvasSize": {
+                "additionalProperties": false,
+                "properties": {
+                    "height": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "width": {
+                        "maximum": 100000.0,
+                        "minimum": 0.0,
+                        "title": "Width",
+                        "type": "number"
+                    }
+                },
+                "required": ["width", "height"],
+                "title": "CanvasSize",
+                "type": "object"
+            },
+            "CanvasTextNode": {
+                "additionalProperties": false,
+                "properties": {
+                    "engine_element": {
+                        "$ref": "#/components/schemas/CanvasEngineText"
+                    },
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/CanvasPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/CanvasSize"
+                    },
+                    "type": {
+                        "const": "text",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "engine_element", "type"],
+                "title": "CanvasTextNode",
                 "type": "object"
             },
             "ChangePasswordForm": {

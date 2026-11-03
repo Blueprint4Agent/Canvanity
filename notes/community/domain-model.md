@@ -6,7 +6,7 @@
 
 FastAPI 모듈러 모놀리스를 유지한다. `routers/v1/<domain>.py → services/<domain>.py → models/<domain>.py`와 도메인 에러 모듈의 기존 경계를 사용한다. BoardService는 생성 트랜잭션을 조정하고 MembershipService는 역할/등급/상태 및 BoardPermissionService를 소유한다. ShelfService는 분류/정책, CanvasService는 게시 수명주기/메타데이터/문서, MediaService는 에셋, DiscoveryService는 권한이 적용된 목록을 소유한다.
 
-현재 `get_db()`는 세션 수명만 관리하며 자동 commit하지 않는다. 복합 생성 작업의 하위 repository가 각각 commit하는 기존 단일 작업 패턴을 복제하지 않는다. 서비스가 `async with session.begin()`을 열고 하위 저장소에 같은 세션을 전달한다. 객체 저장소 호출은 DB 트랜잭션과 원자적이지 않으므로 파일 실패 보상을 별도로 처리한다.
+현재 `get_db()`는 세션 수명만 관리하며 자동 commit하지 않는다. 세션·SQL·트랜잭션·ORM 쓰기와 드라이버 오류 변환은 각 모델/저장소가 소유하고 복합 작업도 하나의 저장소 트랜잭션으로 조합한다. 서비스는 DI로 받은 저장소 결과/도메인 실패를 사용하고 관계형 세션을 열거나 전달하지 않는다. 객체 저장소 호출은 DB 트랜잭션과 원자적이지 않으므로 파일 실패 보상을 별도로 처리한다.
 
 ```mermaid
 erDiagram
@@ -101,7 +101,7 @@ Board archived는 읽기와 Owner의 명시적 복원·소유권 이전만 허�
 
 ## JSON 문서와 버전
 
-Content v1은 `schema_version`, `engine`(name/version/adapter_version), `settings`, `nodes`, `edges`를 갖는다. [편집기 어댑터](editor-decision.md)처럼 엔진 필드의 손실 없는 보존과 서버 허용 타입 검증을 병행한다. text/image/drawing/shape만 nodes, 연결선은 edges. 전체 z 순서는 element_order로 보존하며 engine_element의 고정 버전 필드를 검증한다. node/edge ID는 문서 내 유일한 길이 1~80 문자열이며 동일 문서 안 참조만 허용한다. 자유 화살표의 source/target은 null을 허용한다.
+Content v1은 `schema_version`, `engine`(name/version/adapter_version), `settings`, `nodes`, `edges`를 갖는다. [객체 스키마](canvas-content-schema.md)가 현재 모델의 허용 타입/필드·엔진 스냅샷·참조/크기 검증 기준이다. [편집기 어댑터](editor-decision.md)처럼 고정 버전 필드를 보존하며 임의 JSON을 통과시키지 않는다. text/image/drawing/shape만 nodes, 연결선은 edges. 전체 z 순서는 element_order로 보존한다. node/edge ID는 문서 내 유일한 길이 1~80 문자열이며 동일 문서 안 참조만 허용한다. 자유 화살표의 source/target은 null을 허용한다. 객체 validator는 구현되어 있지만 문서 PUT/CAS와 실제 에셋 참조 갱신은 #7 후속이다.
 
 기본 세계 크기 3200×2100, 좌표는 유한값·절댓값 최대 100,000, size는 일반 shape/image는 양수 최대 100,000, edge/drawing은 각 축 0 이상이며 둘 다 0은 거부한다. 줌은 임시 상태다. 본문 최대 UTF-8 JSON 2 MiB, 노드+연결선 합계 2,000, text 노드당 20,000자, drawing당 point 20,000. 수치는 MVP 거부 상한이며 성능 보장은 아니다. 이미지 바이너리는 JSON에서 제외하고 asset_id로만 참조한다.
 

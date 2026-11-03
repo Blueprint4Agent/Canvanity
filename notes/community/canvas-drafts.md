@@ -31,7 +31,7 @@ Board archived는 작성자 조회만 허용하고 변경/휴지통/복구/새 �
 
 0026_canvas_drafts는 canvases와 canvas_documents를 추가한다. 소속 (board_id, shelf_id)는 shelves의 복합 유니크를 참조하고 삭제는 RESTRICT다. 작성자 FK는 기존 설계의 SET NULL을 사용한다. 계정 삭제 시 메타데이터/문서는 남고 다른 사용자에게 읽기 권한을 주지 않는다.
 
-본문은 schema_version=1, engine(excalidraw 0.18.1/adapter 1), settings(배경 #F8F7F4·dots·3200×2100), 빈 nodes/edges/element_order로 초기화한다. 이는 기존 검증 어댑터의 포맷을 따른 초기값이며 제품 편집기의 채택·설치를 의미하지 않는다. 입력 문서를 받는 API는 아직 없고 요소/에셋 검증·편집 저장은 #7/#6에서 연결한다. 이 단계의 배열 출력 타입은 후속 요소 스키마를 담을 수 있지만 생성 데이터는 항상 비어 있다.
+본문은 schema_version=1, engine(excalidraw 0.18.1/adapter 1), settings(배경 #F8F7F4·dots·3200×2100), 빈 nodes/edges/element_order로 초기화한다. 이는 기존 검증 어댑터의 포맷을 따른 초기값이며 제품 편집기의 채택·설치를 의미하지 않는다. [객체 스키마](canvas-content-schema.md)는 Text/Image/Drawing/Shape/Edge의 실제 출력 타입과 문서 내부 검증을 정의한다. 생성 데이터는 계속 비어 있고, 입력 문서를 받는 PUT API·실제 에셋 소속/참조 검사·편집 저장은 후속 #7에서 연결한다.
 
 세션·SQL·ORM 쓰기·트랜잭션·드라이버 오류 변환은 기존 패턴대로 models/canvas.py 안의 CanvasRepository/CanvasTransaction이 소유한다. 같은 세션에 BoardTransaction을 조합해 Board 권한 데이터를 읽고, CanvasService는 저장소와 공유 CanvasAccessService를 생성자 DI로 사용한다. 공유 가드는 BoardPermissionService로 정책을 평가하며 이미지 서비스도 같은 작성자 경계를 사용한다. 별도 Repository 파일이나 다른 서비스 private 호출은 없다.
 
@@ -43,4 +43,4 @@ Board archived는 작성자 조회만 허용하고 변경/휴지통/복구/새 �
 
 Shelf 삭제는 초안·휴지통·작성자가 삭제된 문서를 모두 비어 있지 않음으로 계산해 SHELF_NOT_EMPTY 409다. 같은 Board의 다른 Shelf로 문서를 옮기면 비기본 빈 Shelf를 삭제할 수 있다. active 빈 Board 되돌리기도 Canvas가 하나라도 있으면 409다. 보관된 Board의 Owner 확인 삭제는 현재 모든 CanvasDocument/Canvas를 Shelf보다 먼저 같은 트랜잭션에서 정리하고 다른 Board/계정/프로필 파일을 보존한다.
 
-[이미지 에셋](canvas-assets.md)이 업로드/조회/미참조 삭제·참조 FK·Board 삭제 outbox/worker를 연결한다. #7 문서 저장/CAS·요소 validator·본문과 에셋 참조의 원자 동기화, #24 Tag, #8 publish/publication/공개 목록·cursor·Plaza·UI는 후속이다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.
+[이미지 에셋](canvas-assets.md)이 업로드/조회/미참조 삭제·참조 FK·Board 삭제 outbox/worker를 연결한다. 객체 타입·문서 내부 validator는 [객체 스키마](canvas-content-schema.md)를 따르고, #7 문서 PUT/CAS·본문과 에셋 참조의 원자 동기화, #24 Tag, #8 publish/publication/공개 목록·cursor·Plaza·UI는 후속이다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.
