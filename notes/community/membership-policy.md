@@ -59,13 +59,13 @@ public 읽기 정책은 min_grade_id=null, staff_only=false다. `inherit`는 She
 1. 인증된 계정이 비활성이면 거부한다. 비회원 public 읽기 여부는 별도 판단한다.
 2. Board suspended는 운영 역할에도 거부한다. archived는 열람만 가능하다.
 3. 해당 Board 멤버 suspended/banned는 public Board 열람도 거부한다. pending은 멤버 전용 기능을 사용할 수 없고 public 읽기만 가능하다.
-4. Canvas trashed/archived/draft는 작성자의 전용 조회 경로만 허용한다. 운영자도 타인의 비공개 초안 원문을 읽지 못한다. 게시글 visibility와 Board private 경계는 등급보다 우선한다.
+4. 편집 draft/trashed는 작성자 전용이며 공개 snapshot은 별도 축이다. DB status=draft에도 게시본이 있을 수 있으므로 publication 존재/view로 구분한다. 운영자도 타인의 초안 원문을 읽지 못한다. 공개본은 현재 Canvas visibility와 snapshot.visibility의 교집합·현재 Shelf/Board 경계로 검사한다. Canvas archive는 후속이다.
 5. Shelf 정책을 조회하고 해당 액션 행이 없으면 Board 기본 정책을 쓴다. 인증/활성 멤버 조건을 먼저 만족해야 한다.
 6. staff_only는 owner/admin/moderator만 허용한다. staff_bypass=true면 그 운영 역할은 최소 등급만 우회한다. 일반 회원은 현재 rank가 기준 rank 이상인지 판단한다.
-7. 작성·수정·게시 액션은 작성자 여부와 현재 create_canvas 정책을 모두 검사한다. 강등/차단 후 열린 편집기의 저장도 거부한다. 자기 초안의 읽기·휴지통 이동은 낮은 등급에도 허용하되 banned/suspended·Board 정지이면 금지한다.
-8. metadata 수정 필드는 별도로 allowlist를 적용한다. 운영자에게 허용된 moderation은 타인 공개 게시물 숨김/휴지통이며 본문 편집이 아니다.
+7. 작성·수정·게시 액션은 작성자 여부와 현재 create_canvas 정책을 모두 검사한다. 강등/차단 후 열린 편집기의 저장도 거부한다. 자기 초안의 읽기·휴지통 이동과 공개본 게시 취소는 낮은 등급에도 허용하되 banned/suspended·Board 정지이면 금지한다. 보관 Board에서는 읽기만 허용한다.
+8. metadata 수정 필드는 별도로 allowlist를 적용한다. 운영자 moderation은 후속이며 현재 게시/취소/휴지통은 작성자만 가능하다. 향후 타인 공개 게시물 숨김/휴지통도 본문 편집 권한을 부여하지 않는다.
 
-권한 검사는 모든 요청에서 현재 DB 멤버·등급·정책을 읽는다. JWT에 grade/rank/capabilities를 권한 원본으로 넣지 않는다. 변경 API는 Board 행을 FOR UPDATE로 잠그고 권한을 재검사한다. 권한 변경도 같은 잠금을 사용하여 변경 commit 이후 시작한 쓰기가 이전 권한으로 commit하지 않게 한다. 잠금 전에 시작된 public 읽기는 기존 요청을 완료할 수 있으며 응답으로 이미 전달된 정보의 회수는 보장하지 않는다.
+권한 검사는 모든 요청에서 현재 DB 멤버·등급·정책을 읽는다. JWT에 grade/rank/capabilities를 권한 원본으로 넣지 않는다. 변경 API는 Board 행을 FOR UPDATE로 잠그고 권한을 재검사한다. 권한 변경도 같은 잠금을 사용하여 변경 commit 이후 시작한 쓰기가 이전 권한으로 commit하지 않게 한다. [공개 단건 읽기](canvas-publication.md)는 Board→인증된 active User→Canvas 공유 잠금 아래 현재 정책/snapshot/참조를 읽는다. SQLite는 명시적 읽기 transaction을 사용한다. 먼저 읽기 잠금을 확보한 요청은 기존 snapshot을 완료할 수 있으며 응답으로 전달된 정보의 회수는 보장하지 않는다.
 
 규모가 커지면 Board 잠금은 병목이 될 수 있다. 초기에는 짧은 DB 트랜잭션으로 제한하고 파일 I/O를 밖에서 수행한다. 정책 버전 기반 세분화는 측정 후 변경한다. 권한 응답은 `Cache-Control: private, no-store`, 위젯/검색/에셋도 동일하다. 후속 캐시를 추가하면 정책 버전/멤버 버전·사용자·Board를 키에 포함하고 commit 후 무효화한다.
 

@@ -17,7 +17,9 @@ PostgreSQL/SQLite. 스택 이름 자체는 연결 성공을 뜻하지 않습니�
   점검을 껐다면 `Connection check skipped`를 함께 표시합니다.
 - `No / Not checked`: 비활성화되어 점검하지 않았습니다.
 - `Failed`: 점검 실패로 시작을 중단합니다. 뒤의 활성 서비스는 `Not run`입니다.
-- Database는 `Migrating… → Initializing… → Ready`로 진행합니다.
+- Database는 `Migrating… → Ready`로 진행합니다. Alembic 성공 후 요청을 받으며,
+  startup에서 ORM `create_all`을 실행하지 않습니다. 새 모델이 migration보다 먼저
+  저장돼 reload되더라도 이전 revision에 테이블을 몰래 만들지 않습니다.
 
 정상 종료 시 같은 스타일의 표에서 Database, Cache, Storage가
 `Closing… → Closed`로 바뀝니다. Cache는 Redis 또는 Redis · In-memory이며,

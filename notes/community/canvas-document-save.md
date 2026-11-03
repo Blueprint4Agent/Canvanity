@@ -1,6 +1,6 @@
 # Canvas 초안 본문 저장 — #47 / #7
 
-작성자 전용 `PUT /api/v1/canvases/{canvas_id}/document`를 제공한다. [객체 스키마](canvas-content-schema.md)와 [초안 메타데이터](canvas-drafts.md), [이미지 에셋](canvas-assets.md)을 같은 저장 트랜잭션에 연결한다. 구현·검증·PR 게시·main 병합은 [#47](https://github.com/Blueprint4Agent/Canvanity/issues/47)에서 구분한다. 자동 저장·충돌 복구 UI·제품 편집기는 #7, 공개 snapshot과 게시는 #8의 후속이다.
+작성자 전용 `PUT /api/v1/canvases/{canvas_id}/document`를 제공한다. [객체 스키마](canvas-content-schema.md)와 [초안 메타데이터](canvas-drafts.md), [이미지 에셋](canvas-assets.md)을 같은 저장 트랜잭션에 연결한다. 구현·검증·PR 게시·main 병합은 [#47](https://github.com/Blueprint4Agent/Canvanity/issues/47)에서 구분한다. 자동 저장·충돌 복구 UI·제품 편집기는 #7의 후속이고, [#51 게시/공개본 단건](canvas-publication.md)은 현재 초안의 source revision을 고정한다. 공개 목록/Plaza는 #8의 후속이다.
 
 ## 요청·응답
 
@@ -62,4 +62,4 @@ API 검사는 세션·엄격한 입력·크기 경계·작은 응답·오류 대
 
 `tests/integration/api/v1/canvas/test_canvas_document_postgres.py`는 `CANVANITY_TEST_POSTGRES=1`로 명시 실행한다. 로컬 PostgreSQL에 매번 고유 schema를 생성하고 실제 migration·JSONB·두 연결 CAS·FK/flush/commit 롤백·Board 잠금 대기 중 등급 회수·저장/cleanup 양방향 경쟁을 확인한다. 임시 파일만 쓰고 schema 삭제를 재확인하며 기존 DB/Board/프로필 파일을 보존한다. 기본 전체 테스트에서는 이 opt-in 검사가 skip되므로 실제 실행 결과는 [작업 기록](../../worklog/0292-canvas-document-save.md)에 별도로 남긴다.
 
-기존 0026/0027 테이블과 제약을 사용하여 새 migration은 없다. 자동 저장 큐/오프라인 복구·실시간 편집·Tag·공개 게시/목록·UI·운영 배포는 포함하지 않는다.
+기존 0026/0027 테이블과 제약을 사용하여 새 migration은 없다. [자유 Tag](canvas-tags.md)와 [게시/공개본 단건 열람](canvas-publication.md)은 별도 계약으로 연결한다. 게시 뒤 PUT도 draft만 바꾸고 source document revision과 공개 내용은 재게시까지 유지한다. 자동 저장 큐/오프라인 복구·실시간 편집·공개 목록·UI·운영 배포는 포함하지 않는다.

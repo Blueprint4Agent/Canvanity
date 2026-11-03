@@ -6,7 +6,15 @@ from datetime import UTC, datetime
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    ValidationError,
+    field_validator,
+    model_validator,
+)
 from pydantic_core import PydanticSerializationError
 from sqlalchemy import (
     JSON,
@@ -16,8 +24,11 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     String,
+    UniqueConstraint,
     Uuid,
+    delete,
     select,
     text,
     update,
@@ -94,6 +105,58 @@ class CanvasDocument(Base):
     document: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"))
     revision: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class CanvasPublicationCounter(Base):
+    """Persistent state CAS token, including transitions to an unpublished state."""
+
+    __tablename__ = "canvas_publication_counters"
+    __table_args__ = (CheckConstraint("revision >= 0", name="ck_publication_counter_revision"),)
+    canvas_id: Mapped[UUID] = mapped_column(
+        ForeignKey("canvases.id", ondelete="CASCADE"), primary_key=True
+    )
+    revision: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
+
+
+class CanvasPublication(Base):
+    __tablename__ = "canvas_publications"
+    __table_args__ = (
+        CheckConstraint("publication_revision > 0", name="ck_publication_revision"),
+        CheckConstraint(
+            "source_metadata_revision >= 0 AND source_document_revision >= 0",
+            name="ck_publication_source_revisions",
+        ),
+        CheckConstraint("visibility IN ('public','members')", name="ck_publication_visibility"),
+        Index("ix_canvas_publications_published", "published_at", "canvas_id"),
+    )
+    canvas_id: Mapped[UUID] = mapped_column(
+        ForeignKey("canvases.id", ondelete="CASCADE"), primary_key=True
+    )
+    publication_revision: Mapped[int] = mapped_column(BigInteger)
+    source_metadata_revision: Mapped[int] = mapped_column(BigInteger)
+    source_document_revision: Mapped[int] = mapped_column(BigInteger)
+    title: Mapped[str] = mapped_column(String(200))
+    summary: Mapped[str] = mapped_column(String(500))
+    visibility: Mapped[str] = mapped_column(String(10))
+    document: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"))
+    published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class CanvasPublicationTag(Base):
+    __tablename__ = "canvas_publication_tags"
+    __table_args__ = (
+        CheckConstraint("position >= 0 AND position < 10", name="ck_publication_tag_position"),
+        UniqueConstraint("canvas_id", "position", name="uq_publication_tag_position"),
+        Index("ix_publication_tags_tag", "tag_id", "canvas_id"),
+    )
+    canvas_id: Mapped[UUID] = mapped_column(
+        ForeignKey("canvas_publications.canvas_id", ondelete="CASCADE"), primary_key=True
+    )
+    tag_id: Mapped[UUID] = mapped_column(
+        ForeignKey("tags.id", ondelete="RESTRICT"), primary_key=True
+    )
+    name: Mapped[str] = mapped_column(String(40))
+    position: Mapped[int] = mapped_column(Integer)
 
 
 MAX_CANVAS_ELEMENTS = 2_000
@@ -498,6 +561,16 @@ class CanvasDocumentSaveForm(CanvasRevisionForm):
     document: CanvasContent
 
 
+class CanvasUnpublishForm(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    expected_publication_revision: int = Field(ge=0, le=MAX_CANVAS_REVISION, strict=True)
+
+
+class CanvasPublishForm(CanvasUnpublishForm):
+    expected_metadata_revision: int = Field(ge=0, le=MAX_CANVAS_REVISION, strict=True)
+    expected_document_revision: int = Field(ge=0, le=MAX_CANVAS_REVISION, strict=True)
+
+
 def _patch_schema(schema: dict) -> None:
     for field in CANVAS_PATCH_FIELDS:
         schema["properties"][field].pop("default", None)
@@ -548,6 +621,21 @@ class CanvasCapabilities(BaseModel):
     edit_document: bool
     trash: bool
     restore: bool
+    publish: bool = False
+    unpublish: bool = False
+
+
+class CanvasPublicationInfo(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    publication_revision: int
+    source_metadata_revision: int
+    source_document_revision: int
+    published_at: datetime
+
+    @field_validator("published_at")
+    @classmethod
+    def utc_published_at(cls, value: datetime) -> datetime:
+        return as_utc(value)
 
 
 class CanvasResponse(BaseModel):
@@ -555,6 +643,39 @@ class CanvasResponse(BaseModel):
     document_revision: int
     view: Literal["draft"] = "draft"
     capabilities: CanvasCapabilities
+    publication_revision: int = 0
+    publication: CanvasPublicationInfo | None = None
+
+
+class CanvasPublicationMetadata(BaseModel):
+    id: UUID
+    board_id: UUID
+    shelf_id: UUID
+    author_id: int | None
+    title: str
+    summary: str
+    visibility: CanvasVisibility
+    status: Literal["published"] = "published"
+    tags: list[TagResponse]
+
+
+class CanvasPublicationResponse(CanvasPublicationInfo):
+    canvas: CanvasPublicationMetadata
+    view: Literal["publication"] = "publication"
+    capabilities: CanvasCapabilities
+
+
+class CanvasPublicationDocumentResponse(CanvasPublicationInfo):
+    document: CanvasContent
+    revision: int
+    view: Literal["publication"] = "publication"
+
+
+class CanvasPublicationMutationResponse(BaseModel):
+    metadata_revision: int
+    document_revision: int
+    publication_revision: int
+    publication: CanvasPublicationInfo | None
 
 
 class CanvasDocumentResponse(BaseModel):
@@ -591,15 +712,134 @@ class CanvasTransaction:
     async def board_id(self, canvas_id: UUID) -> UUID | None:
         return await self._db.scalar(select(Canvas.board_id).where(Canvas.id == canvas_id))
 
-    async def canvas(self, canvas_id: UUID, *, locked: bool = False) -> Canvas | None:
+    async def canvas(
+        self, canvas_id: UUID, *, locked: bool = False, shared: bool = False
+    ) -> Canvas | None:
         statement = select(Canvas).where(Canvas.id == canvas_id)
-        return await self._db.scalar(statement.with_for_update() if locked else statement)
+        return await self._db.scalar(
+            statement.with_for_update(read=shared) if locked or shared else statement
+        )
 
     async def document(self, canvas_id: UUID) -> CanvasDocument | None:
         return await self._db.get(CanvasDocument, canvas_id)
 
     async def tags(self, canvas_id: UUID) -> list[TagResponse]:
         return await TagTransaction(self._db).canvas_tags(canvas_id)
+
+    async def publication(self, canvas_id: UUID) -> CanvasPublication | None:
+        return await self._db.get(CanvasPublication, canvas_id)
+
+    async def publication_revision(self, canvas_id: UUID) -> int:
+        counter = await self._db.get(CanvasPublicationCounter, canvas_id)
+        return counter.revision if counter is not None else 0
+
+    async def publication_tags(self, canvas_id: UUID) -> list[TagResponse]:
+        rows = (
+            await self._db.scalars(
+                select(CanvasPublicationTag)
+                .where(CanvasPublicationTag.canvas_id == canvas_id)
+                .order_by(CanvasPublicationTag.position)
+            )
+        ).all()
+        return [TagResponse(id=row.tag_id, name=row.name) for row in rows]
+
+    async def _advance_publication(self, canvas_id: UUID) -> int:
+        counter = await self._db.get(CanvasPublicationCounter, canvas_id)
+        if counter is None:
+            counter = CanvasPublicationCounter(canvas_id=canvas_id, revision=0)
+            self._db.add(counter)
+        if counter.revision >= MAX_CANVAS_REVISION:
+            raise CanvasException(
+                CanvasErrorCode.PUBLICATION_CONFLICT, {"current_revision": counter.revision}
+            )
+        counter.revision += 1
+        await self._db.flush()
+        return counter.revision
+
+    async def check_publication_revision(self, canvas_id: UUID, expected: int) -> int:
+        current = await self.publication_revision(canvas_id)
+        if current != expected:
+            raise CanvasException(
+                CanvasErrorCode.PUBLICATION_CONFLICT, {"current_revision": current}
+            )
+        return current
+
+    async def publish(self, canvas: Canvas, form: CanvasPublishForm) -> CanvasPublication:
+        from app.models.asset import AssetTransaction
+
+        document = await self._db.scalar(
+            select(CanvasDocument).where(CanvasDocument.canvas_id == canvas.id).with_for_update()
+        )
+        if document is None:
+            raise CanvasException(CanvasErrorCode.UNAVAILABLE)
+        if canvas.revision != form.expected_metadata_revision:
+            raise CanvasException(CanvasErrorCode.CONFLICT, {"current_revision": canvas.revision})
+        if document.revision != form.expected_document_revision:
+            raise CanvasException(
+                CanvasErrorCode.DOCUMENT_CONFLICT, {"current_revision": document.revision}
+            )
+        await self.check_publication_revision(canvas.id, form.expected_publication_revision)
+        try:
+            content = CanvasContent.model_validate(document.document)
+        except ValidationError as error:
+            raise CanvasException(CanvasErrorCode.DOCUMENT_INVALID) from error
+        publication = await self.publication(canvas.id)
+        if publication is not None and (
+            publication.source_metadata_revision == canvas.revision
+            and publication.source_document_revision == document.revision
+        ):
+            return publication
+        revision = await self._advance_publication(canvas.id)
+        values = {
+            "publication_revision": revision,
+            "source_metadata_revision": canvas.revision,
+            "source_document_revision": document.revision,
+            "title": canvas.title,
+            "summary": canvas.summary,
+            "visibility": canvas.visibility,
+            "document": content.model_dump(mode="json"),
+            "published_at": utc_now(),
+        }
+        if publication is None:
+            publication = CanvasPublication(canvas_id=canvas.id, **values)
+            self._db.add(publication)
+        else:
+            for key, value in values.items():
+                setattr(publication, key, value)
+        await self._db.flush()
+        await self._db.execute(
+            delete(CanvasPublicationTag).where(CanvasPublicationTag.canvas_id == canvas.id)
+        )
+        self._db.add_all(
+            [
+                CanvasPublicationTag(
+                    canvas_id=canvas.id, tag_id=tag.id, name=tag.name, position=index
+                )
+                for index, tag in enumerate(await self.tags(canvas.id))
+            ]
+        )
+        await AssetTransaction(self._db).replace_refs(
+            canvas,
+            {node.content.asset_id for node in content.nodes if isinstance(node, CanvasImageNode)},
+            scope="publication",
+        )
+        await self._db.flush()
+        return publication
+
+    async def unpublish(self, canvas: Canvas) -> None:
+        from app.models.asset import AssetTransaction
+
+        publication = await self.publication(canvas.id)
+        if publication is None:
+            return
+        # Keep the common Document -> sorted Asset -> outbox order for both transitions.
+        await self._db.scalar(
+            select(CanvasDocument).where(CanvasDocument.canvas_id == canvas.id).with_for_update()
+        )
+        await self._advance_publication(canvas.id)
+        await AssetTransaction(self._db).replace_refs(canvas, set(), scope="publication")
+        await self._db.delete(publication)
+        await self._db.flush()
 
     async def save_document(self, canvas: Canvas, form: CanvasDocumentSaveForm) -> int:
         # Same-session composition avoids a second transaction and circular initialization.
@@ -687,6 +927,7 @@ class CanvasTransaction:
     async def trash(self, canvas: Canvas) -> None:
         if canvas.status == "trashed":
             return
+        await self.unpublish(canvas)
         canvas.status = "trashed"
         canvas.trashed_at = utc_now()
         self._touch(canvas)
@@ -705,8 +946,8 @@ class CanvasRepository:
     async def transaction(self, *, write: bool = True) -> AsyncIterator[CanvasTransaction]:
         try:
             async with get_db() as db:
-                if write and db.bind.dialect.name == "sqlite":
-                    await db.execute(text("BEGIN IMMEDIATE"))
+                if db.bind.dialect.name == "sqlite":
+                    await db.execute(text("BEGIN IMMEDIATE" if write else "BEGIN"))
                 yield CanvasTransaction(db)
                 if write:
                     await db.commit()

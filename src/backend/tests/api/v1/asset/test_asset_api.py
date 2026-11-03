@@ -5,7 +5,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.deps import get_current_session_user
+from app.deps import get_current_session_user, get_current_token_user
 from app.main import register_exception_handlers
 from app.models.asset import AssetResponse
 from app.routers.v1.asset import router
@@ -37,6 +37,7 @@ def asset_api(sample_user):
     register_exception_handlers(app)
     app.include_router(router, prefix="/api/v1")
     app.dependency_overrides[get_current_session_user] = lambda: sample_user
+    app.dependency_overrides[get_current_token_user] = lambda: sample_user
     service = AsyncMock(spec=AssetService)
     app.dependency_overrides[AssetService] = lambda: service
     return TestClient(app), service
@@ -69,10 +70,11 @@ def test_upload_binary_read_and_deferred_delete_contract(asset_api):
     assert content == {"image/webp": {"schema": {"type": "string", "format": "binary"}}}
 
 
-@pytest.mark.parametrize("method,path", [("POST", PATH), ("GET", URL), ("DELETE", URL)])
+@pytest.mark.parametrize("method,path", [("POST", PATH), ("DELETE", URL)])
 def test_images_require_session_bearer(asset_api, method, path):
     client, service = asset_api
     client.app.dependency_overrides.pop(get_current_session_user)
+    client.app.dependency_overrides.pop(get_current_token_user)
     response = client.request(method, path, files={"file": ("a.png", b"x")})
     assert response.status_code == 401
     assert not service.mock_calls

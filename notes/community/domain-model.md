@@ -54,9 +54,11 @@ erDiagram
 | board_member_audit    | id UUID, board_id FK, actor_user_id/target_user_id nullable FK SET NULL, before/after JSONB(역할·등급·상태·정책 식별자만), reason VARCHAR(500), created_at. 조회는 Owner/Admin, 보존 180일 후 삭제 작업                                                                                                                              |
 | board_layouts         | board_id PK/FK, document JSONB, revision BIGINT >=0, updated_at                                                                                                                                                                                                                                                                      |
 | shelves               | id PK, board_id FK, slug VARCHAR(64), name VARCHAR(80), description VARCHAR(2,000), icon 허용 아이콘 키(최대 40), sort_order INTEGER >=0, purpose general/notice, classification manual, is_visible BOOL, is_default BOOL, created_at/updated_at. UNIQUE(board_id,slug), UNIQUE(board_id,id), Board별 기본 부분 유니크               |
-| canvases              | id PK, board_id/shelf_id NOT NULL 복합 FK, author_id nullable FK SET NULL, title VARCHAR(200), summary VARCHAR(500), thumbnail_asset_id nullable, status draft/published/archived/trashed, visibility public/members, revision BIGINT 기본 0, published_at nullable, trashed_at nullable, created_at/updated_at                      |
+| canvases | id PK, board_id/shelf_id NOT NULL 복합 FK, author_id nullable FK SET NULL, title VARCHAR(200), summary VARCHAR(500), status draft/trashed(편집/휴지통), visibility public/members, metadata revision BIGINT, trashed_at, created_at/updated_at. 게시 여부는 별도 publication 존재로 판정 |
 | canvas_documents      | canvas_id PK/FK, document JSONB, revision BIGINT >=0, updated_at. 편집 중인 현재 초안 한 개                                                                                                                                                                                                                                          |
-| canvas_publications   | canvas_id PK/FK, publication_revision BIGINT, source_document_revision, source_metadata_revision, document JSONB, metadata JSONB(공개 제목/요약/태그 ID·표시명/썸네일), published_at. 현재 공개 snapshot 한 개만 보관                                                                                                                |
+| canvas_publications | canvas_id PK/FK CASCADE, publication_revision BIGINT, source_document_revision/source_metadata_revision, title/summary/visibility, document JSONB, published_at. 현재 공개 snapshot 한 개 |
+| canvas_publication_counters | canvas_id PK/FK CASCADE, 지속 BIGINT revision. 실제 게시/취소/휴지통 공개제거마다 증가, 취소 후에도 보존 |
+| canvas_publication_tags | (canvas_id,tag_id) PK, publication CASCADE/Tag RESTRICT, name VARCHAR(40), position0~9와 (canvas_id,position) UNIQUE, tag_id/canvas_id 조회 인덱스 |
 | tags / canvas_tags    | tags(id,name VARCHAR(40),normalized_name VARCHAR(80) UNIQUE), canvas_tags(canvas_id,tag_id) PK. NFC+trim+casefold 정규화, 표시명은 최초 생성값. Canvas당 10개. 기존 공식 Interest와 별도                                                                                                                                             |
 | assets                | id, owner_id nullable, board_id nullable, canvas_id nullable, object_key UNIQUE, storage_fingerprint, mime_type/bytes/width/height/state pending/ready, created_at. Board 브랜드와 게시글 소유 범위를 구분                                                                                                                           |
 | asset_deletion_outbox | id, object_key/storage_fingerprint, available_at/attempts/status. Board 삭제와 같은 트랜잭션에 기록하고 FK 없이 참조 재검사 후 파일을 삭제. worker 실패 시 지수 backoff·최대 횟수/운영 재처리                                                                                                                                        |
@@ -79,21 +81,24 @@ erDiagram
 
 ## Canvas 수명주기와 공개본
 
-| 액션            | 출발 → 도착                        | 저장·노출                                                                                               |
-| --------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| create          | 없음 → draft                       | 제목+빈 문서 revision 0 생성, 공개 snapshot 없음                                                        |
-| save            | draft/published → 동일             | 초안 문서만 revision 증가. 게시중인 경우도 공개본 불변                                                  |
-| publish         | draft/published → published        | 기대 문서/메타 revision 비교, 제목·문서·에셋 검증 후 현재 공개 snapshot 교체. publication_revision 증가 |
-| unpublish       | published → draft                  | snapshot 삭제 및 publication 에셋 참조 해제. 초안 유지                                                  |
-| archive         | draft/published → archived         | 메타데이터 PATCH 전용 액션으로 보관. 공개 snapshot 제거, 작성자는 조회만 가능                           |
-| restore archive | archived → draft                   | 명시 PATCH 후 초안 편집 재개. 자동 재게시하지 않음                                                      |
-| delete          | draft/published/archived → trashed | snapshot 제거, trashed_at 기록. 기본 30일 보관                                                          |
-| restore trash   | trashed → draft                    | 30일 이내 작성자 복구. 자동 재게시하지 않음                                                             |
-| purge           | trashed → 제거                     | 30일 후 DB 참조 제거, 미참조 파일 비동기 정리. 물리 파일 삭제 성공을 DB 트랜잭션으로 보장하지 않음      |
+편집 상태는 DB draft/trashed, 공개 상태는 snapshot 유무와 지속 publication_revision으로 구분한다. 아래 표의 게시 상태는 Canvas.status 열이 아니다. 실제 계약은 [#51 게시](canvas-publication.md)를 따른다.
 
-후속 POST publish는 expected_document_revision, expected_metadata_revision을 받고 현재 권한·Board/Shelf 상태와 revision을 검사한 뒤 snapshot/메타/참조를 함께 commit한다. 저장·이동·게시 취소의 공통 잠금 순서는 Board → 활성 User 공유 잠금 → Canvas → Document → 정렬한 해당 Canvas Asset → outbox다. User 잠금은 계정 삭제의 User→Canvas SET NULL과 순서를 맞춘다. 현재 [본문 PUT](canvas-document-save.md)은 조건부 UPDATE와 RETURNING으로 최종 CAS를 수행하고 같은 트랜잭션에서 draft 참조를 교체한다. 이동처럼 문서/에셋을 바꾸지 않는 작업은 해당 행을 추가로 잠그지 않는다.
+| 액션 | 편집 상태 | 공개본과 clock |
+| --- | --- | --- |
+| create | 없음 → draft | metadata/document0, publication0·공개본 없음 |
+| save / metadata PATCH | draft 유지 | 해당 초안 clock만 증가, 현재 공개본 불변 |
+| publish | draft 유지 | metadata/document/publication 기대값 검사, 검증된 현재 snapshot 교체·상태 token +1 |
+| 동일 source publish | draft 유지 | 모든 기대 clock이 맞으면 snapshot/시각/token 불변 |
+| unpublish | draft 유지 | snapshot/publication 참조 제거·상태 token +1, 초안 유지 |
+| delete | draft → trashed | metadata +1, 공개본이 있으면 제거·publication token +1 |
+| restore trash | trashed → draft | 30일 미만 작성자 복구·metadata +1, 자동 재게시 없음 |
+| archive / purge | 후속 | 현재 API/DB 상태에 추가하지 않음 |
 
-게시글 이동은 동일 Board 내 Manual Shelf만 허용한다. 이동 즉시 새 Shelf 권한이 적용되며 공개 snapshot 제목/본문은 유지한다. 새 Shelf에서 공개 visibility가 허용되는지 검사한다. 공개 제목/태그/미리보기 수정은 재게시 때 반영한다. 읽기 응답은 현재 Board/Shelf/멤버 권한을 재검사한 뒤 공개 snapshot에서 가져온다.
+POST publish는 expected_document_revision/expected_metadata_revision/expected_publication_revision을 받고 현재 작성자·Board/Shelf 작성 권한과 source를 검사한 뒤 snapshot/태그/publication 참조를 함께 commit한다. unpublish는 expected_publication_revision만 받고 작성 등급이 낮아진 active 작성자도 자기 공개본을 철회할 수 있다. 실제 공개 상태 전이마다 지속 token을 증가시켜 취소 전 stale 요청의 재실행과 번호 재사용을 막는다. meta/doc clock은 게시/취소로 변하지 않는다.
+
+저장·이동·게시 취소의 공통 잠금 순서는 Board → 활성 User 공유 잠금 → Canvas → Document → 정렬한 해당 Canvas Asset → outbox다. User 잠금은 계정 삭제의 User→Canvas SET NULL과 순서를 맞춘다. 공개 읽기는 Board/User/Canvas 공유 잠금 아래 현재 정책과 snapshot/참조를 읽고, SQLite는 명시적 읽기 transaction을 사용한다. [본문 PUT](canvas-document-save.md)은 최종 CAS와 같은 트랜잭션에서 draft 참조를 교체한다. 이동처럼 문서/에셋을 바꾸지 않는 작업은 해당 행을 추가로 잠그지 않는다.
+
+게시글 이동은 동일 Board 내 Manual Shelf만 허용한다. 이동 즉시 새 Shelf 권한이 적용되며 공개 snapshot 제목/본문은 유지한다. 현재 Canvas visibility와 snapshot.visibility의 교집합을 적용해 축소는 즉시, 확대는 재게시 후 적용한다. 공개 제목/태그 수정도 재게시 때 반영하며 썸네일 생성은 후속이다. 읽기 응답은 현재 Board/Shelf/멤버 권한을 재검사한 뒤 공개 snapshot에서 가져온다.
 
 Board archived는 읽기와 Owner의 명시적 복원·소유권 이전만 허용, suspended는 일반 사용자에게 404를 반환하고 작성/운영 변경도 차단한다. 서비스 운영자의 정지/해제는 기존 앱 관리자 기능과 분리한 후속 관리 경로다. Board 영구 삭제는 archived 상태의 Owner가 confirm_slug와 expected_revision을 지정한 전용 DELETE에서만 허용한다. Board·멤버·정책·Shelf·Canvas·공개본·댓글/좋아요/구독(구현 후)을 같은 트랜잭션에서 삭제하고, 파일 키/저장 위치를 삭제 outbox에 남겨 commit 후 재시도 가능한 정리를 수행한다. 삭제 outbox는 Board FK를 두지 않아 부모 삭제 뒤에도 남으며 다른 Board/프로필의 공유 참조가 있는 파일은 제거하지 않는다. API는 DB 삭제 완료를 반환하며 파일 물리 삭제 완료를 보장하지 않는다. UI에서 다른 작성자의 게시글도 사라짐을 명시적으로 확인한다. 비어 있지 않은 Shelf와 기본 Shelf 삭제는 409. 빈 비기본 Shelf만 운영자가 삭제할 수 있다.
 
@@ -111,7 +116,7 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 
 ## 단계별 마이그레이션
 
-현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes, 에셋은0027, 자유 Tag는0028로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약을 제공하며 위 표의 공개본·전체 수명주기는 단계별 목표다. 에셋/태그의 실제 구현 경계는 아래 별도 계약을 따른다.
+현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes, 에셋은0027, 자유 Tag는0028, 독립 publication/counter/태그는0029로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약을 제공하며 공개본 단건은 [게시 계약](canvas-publication.md)을 따르고 archive/자동 purge·공개 목록은 단계별 목표다. 에셋/태그의 실제 구현 경계는 아래 별도 계약을 따른다.
 
 1. #22/#23: Board/등급/멤버/정책/감사/Shelf/홈/Interest. 신규 테이블만 생성하고 기존 users/Interest 데이터는 보존한다. 계정 삭제 소유 검사는 Board 종료/에셋 정리 기반까지 연결한 뒤 활성화한다.
 2. #8 기반/#24: Canvas/Document/Publication/Tag, 복합 FK·조회 인덱스. 초기 빈 문서 생성은 API에 연결할 때 함께 구현한다.
@@ -128,8 +133,8 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 
 ## Canvas 이미지 구현 경계 — #6
 
-0027_canvas_assets는 [이미지 에셋 계약](canvas-assets.md)의 assets/canvas_asset_refs/asset_deletion_outbox와 Canvas 복합 유니크 인덱스를 추가한다. 현재 에셋은 Board/Canvas 소속이 필수이고 프로필/Board avatar·cover와 통합하지 않는다. storage_fingerprint/object_key 조합이 고유하며 content_type/byte_size/frame_count, pending/ready/deleting, upload_deadline/expires_at을 사용한다. 참조 FK는 같은 Board/Canvas의 ready 상태만 허용한다. outbox는 부모 FK 없이 원래 위치와 키를 보존한다. [본문 저장 #47](canvas-document-save.md)은 기존 테이블로 실제 JSON Image 참조를 추출해 같은 트랜잭션에 동기화하며 새 migration은 없다. publication 참조를 만드는 게시 경로는 #8 후속이다. 위 전체 목표 스키마와 현재 구현의 경계를 구분한다.
+0027_canvas_assets는 [이미지 에셋 계약](canvas-assets.md)의 assets/canvas_asset_refs/asset_deletion_outbox와 Canvas 복합 유니크 인덱스를 추가한다. 현재 에셋은 Board/Canvas 소속이 필수이고 프로필/Board avatar·cover와 통합하지 않는다. storage_fingerprint/object_key 조합이 고유하며 content_type/byte_size/frame_count, pending/ready/deleting, upload_deadline/expires_at을 사용한다. 참조 FK는 같은 Board/Canvas의 ready 상태만 허용한다. outbox는 부모 FK 없이 원래 위치와 키를 보존한다. [본문 저장 #47](canvas-document-save.md)은 기존 테이블로 실제 JSON Image 참조를 추출해 같은 트랜잭션에 동기화하며 새 migration은 없다. [#51 게시](canvas-publication.md)가 publication 참조를 같은 트랜잭션에 연결하고 현재 공개본의 참조만 타인에게 읽게 한다. 위 전체 목표 스키마와 현재 구현의 경계를 구분한다.
 
 ## 자유 Tag 구현 경계 — #49 / #24
 
-0028_canvas_tags는 [자유 태그 계약](canvas-tags.md)의 tags/canvas_tags와 정규화 고유/역방향 조회 인덱스만 추가한다. 표시명은 valid UTF-8·제어/포맷 문자 거부·NFC/trim 1~40자, 고유 키는 casefold 뒤 다시 NFC 1~80자다. 최초 표시명/ID를 전역 재사용하고 공개 검색은 ID/이름만 반환한다. Canvas 생성/metadata PATCH는 최대10개 고유 tag_ids를 같은 트랜잭션에 연결하며 응답 tags는 정렬한 요약이다. 동일 태그 집합은 no-op이고 실제 변경은 metadata revision을 1회 증가시킨다. Canvas FK는 CASCADE, Tag FK는 RESTRICT이며 계정 삭제 뒤 사전/연결은 보존한다. 공식 Interest와 Board 자유 Tag·UI·공개 snapshot은 별도 범위다.
+0028_canvas_tags는 [자유 태그 계약](canvas-tags.md)의 tags/canvas_tags와 정규화 고유/역방향 조회 인덱스만 추가한다. 표시명은 valid UTF-8·제어/포맷 문자 거부·NFC/trim 1~40자, 고유 키는 casefold 뒤 다시 NFC 1~80자다. 최초 표시명/ID를 전역 재사용하고 공개 검색은 ID/이름만 반환한다. Canvas 생성/metadata PATCH는 최대10개 고유 tag_ids를 같은 트랜잭션에 연결하며 응답 tags는 정렬한 요약이다. 동일 태그 집합은 no-op이고 실제 변경은 metadata revision을 1회 증가시킨다. Canvas FK는 CASCADE, Tag FK는 RESTRICT이며 계정 삭제 뒤 사전/연결은 보존한다. 공식 Interest와 Board 자유 Tag·UI는 별도 범위다. 공개 snapshot 태그는0029의 canvas_publication_tags로 고정하며 draft 연결 변경을 재게시 전 공개 응답에 섞지 않는다.

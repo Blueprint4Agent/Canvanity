@@ -55,8 +55,8 @@ def get_session_factory():
 
 
 async def init_db() -> None:
-    # Agent note: this template uses create_all for quick bootstrap.
-    # Replace with Alembic migration workflow when schema history is needed.
+    # Explicit isolated-schema helper only. Runtime startup must use Alembic alone:
+    # create_all can introduce pending models without advancing the migration revision.
     async with get_engine().begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 

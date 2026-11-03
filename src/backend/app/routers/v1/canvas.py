@@ -9,7 +9,7 @@ from starlette.types import Message
 from app.core.error.asset_exception import AssetErrorCode, asset_error_responses
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException, canvas_error_responses
 from app.core.error.response_contracts import current_user_error_responses
-from app.deps import get_current_session_user
+from app.deps import get_current_session_user, get_current_token_user
 from app.models.canvas import (
     CanvasCreateForm,
     CanvasDocumentResponse,
@@ -18,8 +18,13 @@ from app.models.canvas import (
     CanvasDocumentValidationErrorResponse,
     CanvasMetadataValidationErrorResponse,
     CanvasPatchForm,
+    CanvasPublicationDocumentResponse,
+    CanvasPublicationMutationResponse,
+    CanvasPublicationResponse,
+    CanvasPublishForm,
     CanvasResponse,
     CanvasRevisionForm,
+    CanvasUnpublishForm,
 )
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
@@ -86,30 +91,87 @@ async def create_canvas(
     return result
 
 
-@router.get("/canvases/{canvas_id}", response_model=CanvasResponse, responses=READ_ERRORS)
+@router.get(
+    "/canvases/{canvas_id}",
+    response_model=CanvasResponse | CanvasPublicationResponse,
+    responses=READ_ERRORS,
+    openapi_extra={"security": [{}]},
+)
 async def get_canvas(
     canvas_id: UUID,
     response: Response,
-    view: Literal["draft"] = "draft",
-    user: UserResponse = Depends(get_current_session_user),
+    view: Literal["draft", "publication"] | None = None,
+    user: UserResponse | None = Depends(get_current_token_user),
     service: CanvasService = Depends(),
-) -> CanvasResponse:
+) -> CanvasResponse | CanvasPublicationResponse:
     response.headers["Cache-Control"] = "private, no-store"
-    return await service.get(user.id, canvas_id)
+    return await service.get(user.id if user else None, canvas_id, view=view)
 
 
 @router.get(
-    "/canvases/{canvas_id}/document", response_model=CanvasDocumentResponse, responses=READ_ERRORS
+    "/canvases/{canvas_id}/document",
+    response_model=CanvasDocumentResponse | CanvasPublicationDocumentResponse,
+    responses=READ_ERRORS,
+    openapi_extra={"security": [{}]},
 )
 async def get_canvas_document(
     canvas_id: UUID,
     response: Response,
-    view: Literal["draft"] = "draft",
+    view: Literal["draft", "publication"] | None = None,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasService = Depends(),
+) -> CanvasDocumentResponse | CanvasPublicationDocumentResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.document(user.id if user else None, canvas_id, view=view)
+
+
+@router.post(
+    "/canvases/{canvas_id}/publish",
+    response_model=CanvasPublicationMutationResponse,
+    responses=current_user_error_responses(
+        canvas_error_responses(
+            *WRITE_CODES,
+            CanvasErrorCode.DOCUMENT_CONFLICT,
+            CanvasErrorCode.PUBLICATION_CONFLICT,
+            CanvasErrorCode.DOCUMENT_INVALID,
+            CanvasErrorCode.INVALID_STATE,
+        ),
+        asset_error_responses(AssetErrorCode.INVALID_REFERENCE),
+        {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasDocumentValidationErrorResponse}},
+    ),
+)
+async def publish_canvas(
+    canvas_id: UUID,
+    form: CanvasPublishForm,
+    response: Response,
     user: UserResponse = Depends(get_current_session_user),
     service: CanvasService = Depends(),
-) -> CanvasDocumentResponse:
+) -> CanvasPublicationMutationResponse:
     response.headers["Cache-Control"] = "private, no-store"
-    return await service.document(user.id, canvas_id)
+    return await service.publish(user.id, canvas_id, form)
+
+
+@router.post(
+    "/canvases/{canvas_id}/unpublish",
+    response_model=CanvasPublicationMutationResponse,
+    responses=current_user_error_responses(
+        canvas_error_responses(
+            *READ_CODES,
+            CanvasErrorCode.FORBIDDEN,
+            CanvasErrorCode.PUBLICATION_CONFLICT,
+            CanvasErrorCode.INVALID_STATE,
+        )
+    ),
+)
+async def unpublish_canvas(
+    canvas_id: UUID,
+    form: CanvasUnpublishForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasService = Depends(),
+) -> CanvasPublicationMutationResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.unpublish(user.id, canvas_id, form)
 
 
 @document_router.put(
@@ -170,7 +232,9 @@ async def change_canvas(
 @router.delete(
     "/canvases/{canvas_id}",
     status_code=status.HTTP_204_NO_CONTENT,
-    responses=current_user_error_responses(canvas_error_responses(*WRITE_CODES)),
+    responses=current_user_error_responses(
+        canvas_error_responses(*WRITE_CODES, CanvasErrorCode.PUBLICATION_CONFLICT)
+    ),
 )
 async def trash_canvas(
     canvas_id: UUID,

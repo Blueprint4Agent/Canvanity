@@ -177,6 +177,18 @@ class AssetTransaction:
             is not None
         )
 
+    async def publication_ref(self, canvas_id: UUID, asset_id: UUID) -> bool:
+        return (
+            await self._db.scalar(
+                select(CanvasAssetRef.asset_id).where(
+                    CanvasAssetRef.canvas_id == canvas_id,
+                    CanvasAssetRef.asset_id == asset_id,
+                    CanvasAssetRef.scope == "publication",
+                )
+            )
+            is not None
+        )
+
     async def _job(self, asset: Asset) -> AssetDeletionOutbox | None:
         return await self._db.scalar(
             select(AssetDeletionOutbox)
@@ -397,8 +409,8 @@ class AssetRepository:
     async def transaction(self, *, write: bool = True) -> AsyncIterator[AssetTransaction]:
         try:
             async with get_db() as db:
-                if write and db.bind.dialect.name == "sqlite":
-                    await db.execute(text("BEGIN IMMEDIATE"))
+                if db.bind.dialect.name == "sqlite":
+                    await db.execute(text("BEGIN IMMEDIATE" if write else "BEGIN"))
                 yield AssetTransaction(db)
                 if write:
                     await db.commit()

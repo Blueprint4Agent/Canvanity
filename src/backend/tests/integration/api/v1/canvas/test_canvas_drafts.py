@@ -178,6 +178,8 @@ def test_current_grade_demotion_allows_own_read_and_trash_but_blocks_edit_and_re
         "edit_document": False,
         "trash": True,
         "restore": False,
+        "publish": False,
+        "unpublish": False,
     }
     assert r.client.get(r.canvas_path + "/document", headers=r.headers["member"]).status_code == 200
     assert create(r).status_code == 403
@@ -263,6 +265,8 @@ def test_archived_board_allows_author_read_and_hides_others_before_write_status(
         "edit_document": False,
         "trash": False,
         "restore": False,
+        "publish": False,
+        "unpublish": False,
     }
     assert r.client.get(r.canvas_path + "/document", headers=r.headers["member"]).status_code == 200
     assert mutate(r, title="보관 변경").status_code == 403

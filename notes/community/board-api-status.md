@@ -14,8 +14,8 @@
 | Shelf·액션 정책 | CRUD/전체 순서·숨김·직접 조회·Board 기본/Shelf 재정의 정책 구현. |
 | 기본 홈 조회 | GET home 구현. 공식 자유 배치 편집/동적 공개 게시글 위젯 완료를 뜻하지 않는다. |
 
-따라서 기본 커뮤니티 운영 API는 마련됐지만 Board 관련 전체 계획의 완료 상태는 아니다. 대표 이미지/커버의 실제 미디어 연결(#22), 공식 홈 레이아웃 PUT과 위젯 데이터(#25), Shelf/Board의 공개 Canvas 목록과 게시/Plaza(#8)는 남아 있다. 가입 승인·이메일/토큰 초대 고도화·활동량 자동 승급도 후속이다. 제품 UI는 보류한다.
+따라서 기본 커뮤니티 운영 API는 마련됐지만 Board 관련 전체 계획의 완료 상태는 아니다. 대표 이미지/커버의 실제 미디어 연결(#22), 공식 홈 레이아웃 PUT과 위젯 데이터(#25), Shelf/Board의 공개 Canvas 목록과 Plaza(#8)는 남아 있다. [#51 게시·공개본 단건 열람](canvas-publication.md)은 별도 백엔드 단위이며 실제 게시/병합 상태는 worklog0294와 이슈/PR을 따른다. 가입 승인·이메일/토큰 초대 고도화·활동량 자동 승급도 후속이다. 제품 UI는 보류한다.
 
 기존 설계의 `GET /boards/{id}/membership` 전용 경로는 현재 라우터/OpenAPI에 없다. 본인 membership/capabilities는 현재 Board 상세/홈 응답에 포함된다. 별도 조회 경로의 필요성·최종 계약은 #22에서 추적하며 모든 목표 endpoint가 구현됐다고 표시하지 않는다.
 
-이번 객체 스키마 작업은 Board 라우터·서비스·DB 저장 동작을 변경하지 않는다. 최신 게시/병합 상태와 개별 수용 기준은 [#22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [#23](https://github.com/Blueprint4Agent/Canvanity/issues/23), [#25](https://github.com/Blueprint4Agent/Canvanity/issues/25)를 따른다.
+Canvas 공개본 단건 조회는 현재 Board/Shelf/회원 정책을 재사용하며 공개 목록/위젯은 후속이다. 최신 게시/병합 상태와 개별 수용 기준은 [#22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [#23](https://github.com/Blueprint4Agent/Canvanity/issues/23), [#25](https://github.com/Blueprint4Agent/Canvanity/issues/25)를 따른다.

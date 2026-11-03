@@ -303,7 +303,6 @@ def test_shutdown_closes_resources_before_farewell(
     monkeypatch.setattr(main.MAIL_SERVICE, "initialize", AsyncMock())
     monkeypatch.setattr(main.BillingService, "initialize", AsyncMock())
     monkeypatch.setattr(main, "run_startup_schema_migrations", AsyncMock())
-    monkeypatch.setattr(main, "init_db", AsyncMock())
     monkeypatch.setattr(main, "dispose_db", close_database)
     monkeypatch.setattr(main.RedisManager, "close", close_redis)
     monkeypatch.setattr(main.RedisManager, "_client", None)

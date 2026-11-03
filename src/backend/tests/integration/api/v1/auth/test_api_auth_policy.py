@@ -154,14 +154,13 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("GET", "/api/v1/shelves/{shelf_id}/policies"),
         ("PUT", "/api/v1/shelves/{shelf_id}/policies"),
         ("POST", "/api/v1/boards/{board_id}/canvases"),
-        ("GET", "/api/v1/canvases/{canvas_id}"),
         ("PATCH", "/api/v1/canvases/{canvas_id}"),
         ("DELETE", "/api/v1/canvases/{canvas_id}"),
-        ("GET", "/api/v1/canvases/{canvas_id}/document"),
         ("PUT", "/api/v1/canvases/{canvas_id}/document"),
         ("POST", "/api/v1/canvases/{canvas_id}/restore"),
+        ("POST", "/api/v1/canvases/{canvas_id}/publish"),
+        ("POST", "/api/v1/canvases/{canvas_id}/unpublish"),
         ("POST", "/api/v1/canvases/{canvas_id}/assets"),
-        ("GET", "/api/v1/canvases/{canvas_id}/assets/{asset_id}"),
         ("DELETE", "/api/v1/canvases/{canvas_id}/assets/{asset_id}"),
     }
     assert actual == expected
@@ -384,13 +383,36 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
     canvas_path = created_canvas.headers["location"]
     for method, target, body in [
         ("POST", path + "/canvases", {"shelf_id": shelves[0]["id"], "title": "키 거부"}),
-        ("GET", canvas_path, None),
-        ("GET", canvas_path + "/document", None),
         ("PUT", canvas_path + "/document", {"expected_revision": 0, "document": {}}),
         ("PATCH", canvas_path, {"expected_revision": 0, "title": "키 거부"}),
         ("DELETE", canvas_path, {"expected_revision": 0}),
         ("POST", canvas_path + "/restore", {"expected_revision": 0}),
+        (
+            "POST",
+            canvas_path + "/publish",
+            {
+                "expected_metadata_revision": 0,
+                "expected_document_revision": 0,
+                "expected_publication_revision": 0,
+            },
+        ),
+        ("POST", canvas_path + "/unpublish", {"expected_publication_revision": 0}),
     ]:
         assert client.request(method, target, headers=key, json=body).status_code == 401
+    for suffix in ("", "/document"):
+        assert client.get(canvas_path + suffix, headers=key).status_code == 404
+        assert client.get(canvas_path + suffix, headers=bearer).status_code == 200
+        assert (
+            client.get(canvas_path + suffix, headers={**key, "Authorization": "Bearer invalid"})
+        ).status_code == 401
     schema = client.app.openapi()
     assert {} in schema["paths"]["/api/v1/boards"]["get"]["security"]
+    for template in (
+        "/api/v1/canvases/{canvas_id}",
+        "/api/v1/canvases/{canvas_id}/document",
+        "/api/v1/canvases/{canvas_id}/assets/{asset_id}",
+    ):
+        assert schema["paths"][template]["get"]["security"] == [
+            {"OAuth2PasswordBearer": []},
+            {},
+        ]

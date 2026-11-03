@@ -1,3 +1,4 @@
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Response, UploadFile, status
@@ -5,7 +6,7 @@ from fastapi import APIRouter, Depends, File, Response, UploadFile, status
 from app.core.error.asset_exception import AssetErrorCode, asset_error_responses
 from app.core.error.canvas_exception import CanvasErrorCode, canvas_error_responses
 from app.core.error.response_contracts import current_user_error_responses
-from app.deps import get_current_session_user
+from app.deps import get_current_session_user, get_current_token_user
 from app.models.asset import AssetResponse
 from app.models.user import UserResponse
 from app.services.asset import AssetService
@@ -56,6 +57,7 @@ async def upload_asset(
 
 @router.get(
     "/canvases/{canvas_id}/assets/{asset_id}",
+    openapi_extra={"security": [{}]},
     responses={
         status.HTTP_200_OK: {
             "description": "Private normalized image.",
@@ -71,10 +73,11 @@ async def upload_asset(
 async def read_asset(
     canvas_id: UUID,
     asset_id: UUID,
-    user: UserResponse = Depends(get_current_session_user),
+    view: Literal["draft", "publication"] | None = None,
+    user: UserResponse | None = Depends(get_current_token_user),
     service: AssetService = Depends(),
 ) -> Response:
-    data = await service.read(user.id, canvas_id, asset_id)
+    data = await service.read(user.id if user else None, canvas_id, asset_id, view=view)
     return Response(
         data,
         media_type="image/webp",

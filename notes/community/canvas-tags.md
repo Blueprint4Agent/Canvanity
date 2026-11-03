@@ -1,6 +1,6 @@
 # 자유 Tag 사전과 Canvas 연결 — #49 / #24
 
-공식 Interest와 별도로 전역 자유 Tag를 검색·생성하고 Canvas 초안 메타데이터에 연결한다. [#49](https://github.com/Blueprint4Agent/Canvanity/issues/49)는 백엔드 완료 단위다. 구현·검증·PR 게시·main 병합은 이슈/PR에서 구분한다. 태그 입력 UI·추천·Board 자유 Tag·공개 게시/목록은 #24/#8의 후속이다.
+공식 Interest와 별도로 전역 자유 Tag를 검색·생성하고 Canvas 초안 메타데이터에 연결한다. [#49](https://github.com/Blueprint4Agent/Canvanity/issues/49)는 백엔드 완료 단위다. 구현·검증·PR 게시·main 병합은 이슈/PR에서 구분한다. 태그 입력 UI·추천·Board 자유 Tag·공개 목록은 #24/#8의 후속이다. [게시 단건 계약](canvas-publication.md)은 게시 당시 태그 ID/최초 표시명/순서를 별도 snapshot 관계에 고정한다.
 
 ## 이름과 재사용
 
@@ -64,4 +64,4 @@ Tag는 UUID v4, 최초 표시명 `name`, 고유 비교 키 `normalized_name`을 
 
 정규화/HTTP 계약·실제 API Key 거부와 SQLite 통합으로 공개 검색 최소 응답, 두 Board 재사용, 생성/PATCH 검증, 단일 revision/no-op·stale, 권한·rollback, 본문/Asset refs 보존과 FK/삭제 동작을 검사한다. 실제 로컬 PostgreSQL 고유 schema에서 이전0027의 데이터를 만든 뒤0028로 올려 보존을 확인하고 중복 생성·metadata CAS 경쟁, 권한 회수의 실제 lock wait, 실패 rollback·FK를 검증한다. 임시 schema를 제거하며 기존 DB 데이터·파일에는 접근하지 않는다. 실행 결과와 루트 전체 검증은 [worklog0293](../../worklog/0293-canvas-tags.md)에 기록한다.
 
-UI/추천·사용 건수·전체 발견·Board 자유 Tag·Tag 수정/삭제·분산 rate limit·공개 게시 snapshot은 후속이다. 공개 snapshot을 추가할 때 공개 제목과 태그 ID/표시명을 해당 게시 revision에 함께 고정한다.
+UI/추천·사용 건수·전체 발견·Board 자유 Tag·Tag 수정/삭제·분산 rate limit은 후속이다. [#51 게시 snapshot](canvas-publication.md)은 제목과 태그 ID/표시명/순서를 publication revision에 고정한다. 공개 단건 응답과 후속 공개 태그 필터는 mutable canvas_tags가 아닌 canvas_publication_tags를 사용한다. 초안 태그 변경은 재게시 전 공개본에 반영하지 않는다.

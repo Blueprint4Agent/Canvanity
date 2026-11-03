@@ -1,6 +1,6 @@
 # MVP API 명세
 
-현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md), 본문 PUT/CAS·draft 참조 동기화는 [Canvas 본문 저장](canvas-document-save.md), 전역 자유 사전과 metadata 연결은 [Canvas 태그](canvas-tags.md)를 따른다. 게시 시 publication 참조 동기화는 후속이며 아래 전체 목표 API와 구분한다.
+현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md), 본문 PUT/CAS·draft 참조 동기화는 [Canvas 본문 저장](canvas-document-save.md), 전역 자유 사전과 metadata 연결은 [Canvas 태그](canvas-tags.md)를 따른다. [게시·공개본 단건 계약](canvas-publication.md)이 publication 참조와 현재 권한의 단건 읽기를 연결하며 목록/Plaza 등 아래 전체 목표 API와 구분한다.
 
 [도메인](domain-model.md) · [권한](membership-policy.md)
 
@@ -103,20 +103,20 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 | ------ | ------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
 | POST   | /boards/{board_id}/canvases     | shelf_id/title/tag_ids, create_canvas capability. 초안 메타와 빈 본문 생성                                       |
 | GET    | /canvases/{canvas_id}           | 작성자는 초안 메타/문서 revision, 다른 사용자는 공개 snapshot 메타만. capabilities와 view=draft/publication 명시 |
-| PATCH  | /canvases/{canvas_id}           | 작성자, expected_revision + title/summary/shelf_id/tag_ids/thumbnail_asset_id/visibility/status. 허용 전이만     |
-| DELETE | /canvases/{canvas_id}           | expected_revision, 작성자 휴지통 또는 운영자 공개글 moderation. 204                                              |
+| PATCH  | /canvases/{canvas_id}           | 작성자, expected_revision + title/summary/shelf_id/tag_ids/visibility. status/thumbnail 입력은 후속     |
+| DELETE | /canvases/{canvas_id}           | expected_revision, 작성자 휴지통/공개본 철회. 204, moderation은 후속                                              |
 | POST   | /canvases/{canvas_id}/restore   | 작성자, expected_revision. 휴지통 30일 내 draft 복구                                                             |
 | GET    | /canvases/{canvas_id}/document  | 작성자는 기본 draft, 타인은 publication. view=draft를 명시해도 권한 우회 불가. revision/document 반환            |
 | PUT    | /canvases/{canvas_id}/document  | 작성자+현재 작성 등급, expected_revision/document. 원자 CAS, 성공 revision 반환                                  |
-| POST   | /canvases/{canvas_id}/publish   | 작성자+작성 권한, expected_document_revision/expected_metadata_revision                                          |
-| POST   | /canvases/{canvas_id}/unpublish | 작성자 또는 공개글 moderation 운영자, expected_revision. 이미 draft면 상태 확인 후 200                           |
-| GET    | /canvases                       | Plaza용 공개 snapshot 조회. interest_id/tag_id/board_id/cursor/limit, 현재 권한 필터                             |
-| GET    | /boards/{board_id}/canvases     | 동일 공개 목록 + Board 범위                                                                                      |
-| GET    | /boards/{board_id}/my-canvases  | 로그인 본인 초안/공개/보관/휴지통, status 필터. 프로필 My Canvas와 별도 데이터                                   |
+| POST   | /canvases/{canvas_id}/publish   | 작성자+작성 권한, expected_document_revision/expected_metadata_revision/expected_publication_revision |
+| POST   | /canvases/{canvas_id}/unpublish | 현재 active 작성자, expected_publication_revision. 최신 token의 미게시 상태는200 no-op                           |
+| GET    | /canvases                       | 후속: Plaza용 공개 snapshot 조회. interest_id/tag_id/board_id/cursor/limit, 현재 권한 필터                             |
+| GET    | /boards/{board_id}/canvases     | 후속: 동일 공개 목록 + Board 범위                                                                                      |
+| GET    | /boards/{board_id}/my-canvases  | 후속: 로그인 본인 초안/공개/보관/휴지통, status 필터. 프로필 My Canvas와 별도 데이터                                   |
 
 author_id/board_id/published_at/publication_revision은 서버 전용 필드다. DTO extra='forbid'로 과다 필드를 422로 거부한다. metadata revision과 document revision을 혼용하지 않는다.
 
-현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/본문 조회·title/summary/shelf_id/visibility/tag_ids PATCH·휴지통/복구를 제공하고 [본문 저장 #47](canvas-document-save.md)이 PUT/CAS를 연결한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. canvas.tags는 정렬한 Tag ID/표시명 요약이다. PUT은 document revision을 받아 200 revision/view만 반환하고 metadata revision/태그 연결은 보존한다. 문서 전용 충돌은 CANVAS_DOCUMENT_REVISION_CONFLICT 409/current_revision이다. PUT 입력·GET 객체 응답과 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서다. DELETE는 204와 X-Canvas-Revision이다. 썸네일·태그 UI·자동 저장/복구 UI·게시/공개 snapshot·목록/Plaza는 후속이다.
+현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/본문 조회·title/summary/shelf_id/visibility/tag_ids PATCH·휴지통/복구를 제공하고 [본문 저장 #47](canvas-document-save.md)이 PUT/CAS를 연결한다. 편집 status는 draft/trashed이며 [#51 게시](canvas-publication.md)의 별도 publication 존재/상태 token으로 게시 여부를 구분한다. GET은 기본 현재 작성자 draft/타인 publication과 명시 view=draft/publication을 허용하고 optional Bearer/API Key-only 익명·invalid token 거부를 적용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. canvas.tags는 정렬한 Tag ID/표시명 요약이다. PUT은 document revision을 받아 200 revision/view만 반환하고 metadata revision/태그 연결은 보존한다. 문서 전용 충돌은 CANVAS_DOCUMENT_REVISION_CONFLICT 409/current_revision이다. PUT 입력·GET 객체 응답과 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서다. DELETE는 204와 X-Canvas-Revision이다. draft 응답에는 현재 publication_revision/요약과 publish/unpublish capabilities를 더한다. 공개 metadata는 별도 whitelist DTO의 snapshot 제목/태그와 source clocks만 제공하고 현재 소속/author SET NULL·현재 Board/Shelf/멤버·current/snapshot visibility 교집합을 적용한다. 썸네일·태그 UI·자동 저장/복구 UI·목록/Plaza는 후속이다.
 
 ```json
 {
@@ -132,7 +132,7 @@ author_id/board_id/published_at/publication_revision은 서버 전용 필드다.
 }
 ```
 
-publish 응답은 metadata_revision/document_revision/publication_revision/published_at을 반환한다. 파일 변환/미리보기 작업을 큐에 넣었다면 성공한 미리보기처럼 표시하지 않고 preview_status=pending/ready/failed로 구분한다. 공개 이미지 썸네일은 해당 publication_revision에 귀속시키고 미생성 시 기본 미리보기를 사용한다.
+publish/unpublish 응답은 현재 metadata_revision/document_revision/publication_revision과 publication 요약 또는 null을 반환한다. publication은 source_metadata_revision/source_document_revision/publication_revision/published_at을 고정한다. 실제 공개 상태 전이마다 token을 증가시키며 게시 취소 후에도 counter를 보존한다. 같은 source/state no-op도 세 기대 clock을 먼저 검사한다. 세부 충돌/상한/휴지통/이미지 참조 정책은 [게시 계약](canvas-publication.md)을 따른다. 미리보기·썸네일 생성/preview_status는 아직 없으며 기본 미리보기를 사용한다.
 
 ## Tag·에셋·공식 레이아웃
 

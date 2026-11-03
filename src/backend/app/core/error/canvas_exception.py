@@ -35,6 +35,16 @@ class CanvasErrorCode(Enum):
         "Canvas document revision conflict. Reload the latest document.",
         status.HTTP_409_CONFLICT,
     )
+    PUBLICATION_CONFLICT = ServiceErrorCode(
+        "CANVAS_PUBLICATION_REVISION_CONFLICT",
+        "Canvas publication state revision conflict. Reload the latest canvas.",
+        status.HTTP_409_CONFLICT,
+    )
+    DOCUMENT_INVALID = ServiceErrorCode(
+        "CANVAS_DOCUMENT_INVALID",
+        "The stored canvas document cannot be published. Save a valid document first.",
+        status.HTTP_409_CONFLICT,
+    )
     DOCUMENT_TOO_LARGE = ServiceErrorCode(
         "CANVAS_DOCUMENT_TOO_LARGE",
         "Canvas document request exceeds the byte limit.",

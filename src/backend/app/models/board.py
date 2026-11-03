@@ -1501,7 +1501,11 @@ class BoardTransaction:
             await self._db.execute(delete(model).where(model.board_id == board.id))
         await self._db.delete(board)
 
-    async def read_board(self, board_id: UUID) -> Board | None:
+    async def read_board(self, board_id: UUID, *, locked: bool = False) -> Board | None:
+        if locked:
+            return await self._db.scalar(
+                select(Board).where(Board.id == board_id).with_for_update(read=True)
+            )
         return await self._db.get(Board, board_id)
 
     @staticmethod
