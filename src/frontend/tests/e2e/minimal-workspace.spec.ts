@@ -125,7 +125,8 @@ test("capsule variants keep their shape and shortcut hover paints one surface", 
     await shortcut.hover();
     await expect(shortcut.locator("kbd")).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
     await expect(shortcut).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
-    expect((await shortcut.boundingBox())!.height).toBe(before.height);
+    // Translated DOMRects can differ below 0.001px while the rendered height is unchanged.
+    expect((await shortcut.boundingBox())!.height).toBeCloseTo(before.height, 3);
 });
 
 test("guest login and Showcase links reuse the button variants and keep navigation semantics", async ({

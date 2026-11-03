@@ -3006,16 +3006,17 @@ export interface components {
         /** CanvasContent */
         CanvasContent: {
             /** Edges */
-            edges?: {
-                [key: string]: unknown;
-            }[];
+            edges?: components["schemas"]["CanvasEdge"][];
             /** Element Order */
             element_order?: string[];
             engine?: components["schemas"]["CanvasEngine"];
             /** Nodes */
-            nodes?: {
-                [key: string]: unknown;
-            }[];
+            nodes?: (
+                | components["schemas"]["CanvasTextNode"]
+                | components["schemas"]["CanvasShapeNode"]
+                | components["schemas"]["CanvasImageNode"]
+                | components["schemas"]["CanvasDrawingNode"]
+            )[];
             /**
              * Schema Version
              * @default 1
@@ -3057,6 +3058,39 @@ export interface components {
              */
             view: "draft";
         };
+        /** CanvasDrawingNode */
+        CanvasDrawingNode: {
+            engine_element: components["schemas"]["CanvasEngineDrawing"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "drawing";
+        };
+        /** CanvasEdge */
+        CanvasEdge: {
+            /** Engine Element */
+            engine_element:
+                | components["schemas"]["CanvasEngineLine"]
+                | components["schemas"]["CanvasEngineArrow"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /** Source Node Id */
+            source_node_id: string | null;
+            /** Target Node Id */
+            target_node_id: string | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "edge";
+        };
         /** CanvasEngine */
         CanvasEngine: {
             /**
@@ -3077,6 +3111,544 @@ export interface components {
              * @constant
              */
             version: "0.18.1";
+        };
+        /** CanvasEngineArrow */
+        CanvasEngineArrow: {
+            /** Angle */
+            angle: number;
+            /** Backgroundcolor */
+            backgroundColor: string;
+            /** Boundelements */
+            boundElements: components["schemas"]["CanvasEngineBoundElement"][] | null;
+            /**
+             * Elbowed
+             * @constant
+             */
+            elbowed: false;
+            /** Endarrowhead */
+            endArrowhead:
+                | (
+                      | "arrow"
+                      | "bar"
+                      | "dot"
+                      | "circle"
+                      | "circle_outline"
+                      | "triangle"
+                      | "triangle_outline"
+                      | "diamond"
+                      | "diamond_outline"
+                      | "crowfoot_one"
+                      | "crowfoot_many"
+                      | "crowfoot_one_or_many"
+                  )
+                | null;
+            endBinding: components["schemas"]["CanvasEnginePointBinding"] | null;
+            /**
+             * Fillstyle
+             * @enum {string}
+             */
+            fillStyle: "hachure" | "cross-hatch" | "solid" | "zigzag";
+            /** Frameid */
+            frameId: null;
+            /** Groupids */
+            groupIds: string[];
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Index */
+            index: string | null;
+            /**
+             * Isdeleted
+             * @constant
+             */
+            isDeleted: false;
+            /** Lastcommittedpoint */
+            lastCommittedPoint: null;
+            /** Locked */
+            locked: boolean;
+            /** Opacity */
+            opacity: number;
+            /** Points */
+            points: number[][];
+            /** Roughness */
+            roughness: number;
+            roundness: components["schemas"]["CanvasEngineRoundness"] | null;
+            /** Seed */
+            seed: number;
+            /** Startarrowhead */
+            startArrowhead:
+                | (
+                      | "arrow"
+                      | "bar"
+                      | "dot"
+                      | "circle"
+                      | "circle_outline"
+                      | "triangle"
+                      | "triangle_outline"
+                      | "diamond"
+                      | "diamond_outline"
+                      | "crowfoot_one"
+                      | "crowfoot_many"
+                      | "crowfoot_one_or_many"
+                  )
+                | null;
+            startBinding: components["schemas"]["CanvasEnginePointBinding"] | null;
+            /** Strokecolor */
+            strokeColor: string;
+            /**
+             * Strokestyle
+             * @enum {string}
+             */
+            strokeStyle: "solid" | "dashed" | "dotted";
+            /** Strokewidth */
+            strokeWidth: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "arrow";
+            /** Updated */
+            updated: number;
+            /** Version */
+            version: number;
+            /** Versionnonce */
+            versionNonce: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CanvasEngineBoundElement */
+        CanvasEngineBoundElement: {
+            /** Id */
+            id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "arrow" | "text";
+        };
+        /** CanvasEngineDrawing */
+        CanvasEngineDrawing: {
+            /** Angle */
+            angle: number;
+            /** Backgroundcolor */
+            backgroundColor: string;
+            /** Boundelements */
+            boundElements: components["schemas"]["CanvasEngineBoundElement"][] | null;
+            /**
+             * Fillstyle
+             * @enum {string}
+             */
+            fillStyle: "hachure" | "cross-hatch" | "solid" | "zigzag";
+            /** Frameid */
+            frameId: null;
+            /** Groupids */
+            groupIds: string[];
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Index */
+            index: string | null;
+            /**
+             * Isdeleted
+             * @constant
+             */
+            isDeleted: false;
+            /** Lastcommittedpoint */
+            lastCommittedPoint: null;
+            /** Locked */
+            locked: boolean;
+            /** Opacity */
+            opacity: number;
+            /** Points */
+            points: number[][];
+            /** Pressures */
+            pressures: number[];
+            /** Roughness */
+            roughness: number;
+            roundness: components["schemas"]["CanvasEngineRoundness"] | null;
+            /** Seed */
+            seed: number;
+            /** Simulatepressure */
+            simulatePressure: boolean;
+            /** Strokecolor */
+            strokeColor: string;
+            /**
+             * Strokestyle
+             * @enum {string}
+             */
+            strokeStyle: "solid" | "dashed" | "dotted";
+            /** Strokewidth */
+            strokeWidth: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "freedraw";
+            /** Updated */
+            updated: number;
+            /** Version */
+            version: number;
+            /** Versionnonce */
+            versionNonce: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CanvasEngineImage */
+        CanvasEngineImage: {
+            /** Angle */
+            angle: number;
+            /** Backgroundcolor */
+            backgroundColor: string;
+            /** Boundelements */
+            boundElements: components["schemas"]["CanvasEngineBoundElement"][] | null;
+            crop: components["schemas"]["CanvasImageCrop"] | null;
+            /**
+             * Fillstyle
+             * @enum {string}
+             */
+            fillStyle: "hachure" | "cross-hatch" | "solid" | "zigzag";
+            /** Frameid */
+            frameId: null;
+            /** Groupids */
+            groupIds: string[];
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Index */
+            index: string | null;
+            /**
+             * Isdeleted
+             * @constant
+             */
+            isDeleted: false;
+            /** Locked */
+            locked: boolean;
+            /** Opacity */
+            opacity: number;
+            /** Roughness */
+            roughness: number;
+            roundness: components["schemas"]["CanvasEngineRoundness"] | null;
+            /** Scale */
+            scale: (-1 | 1)[];
+            /** Seed */
+            seed: number;
+            /**
+             * Status
+             * @constant
+             */
+            status: "saved";
+            /** Strokecolor */
+            strokeColor: string;
+            /**
+             * Strokestyle
+             * @enum {string}
+             */
+            strokeStyle: "solid" | "dashed" | "dotted";
+            /** Strokewidth */
+            strokeWidth: number;
+            /**
+             * Type
+             * @constant
+             */
+            type: "image";
+            /** Updated */
+            updated: number;
+            /** Version */
+            version: number;
+            /** Versionnonce */
+            versionNonce: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CanvasEngineLine */
+        CanvasEngineLine: {
+            /** Angle */
+            angle: number;
+            /** Backgroundcolor */
+            backgroundColor: string;
+            /** Boundelements */
+            boundElements: components["schemas"]["CanvasEngineBoundElement"][] | null;
+            /** Endarrowhead */
+            endArrowhead:
+                | (
+                      | "arrow"
+                      | "bar"
+                      | "dot"
+                      | "circle"
+                      | "circle_outline"
+                      | "triangle"
+                      | "triangle_outline"
+                      | "diamond"
+                      | "diamond_outline"
+                      | "crowfoot_one"
+                      | "crowfoot_many"
+                      | "crowfoot_one_or_many"
+                  )
+                | null;
+            endBinding: components["schemas"]["CanvasEnginePointBinding"] | null;
+            /**
+             * Fillstyle
+             * @enum {string}
+             */
+            fillStyle: "hachure" | "cross-hatch" | "solid" | "zigzag";
+            /** Frameid */
+            frameId: null;
+            /** Groupids */
+            groupIds: string[];
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Index */
+            index: string | null;
+            /**
+             * Isdeleted
+             * @constant
+             */
+            isDeleted: false;
+            /** Lastcommittedpoint */
+            lastCommittedPoint: null;
+            /** Locked */
+            locked: boolean;
+            /** Opacity */
+            opacity: number;
+            /** Points */
+            points: number[][];
+            /** Roughness */
+            roughness: number;
+            roundness: components["schemas"]["CanvasEngineRoundness"] | null;
+            /** Seed */
+            seed: number;
+            /** Startarrowhead */
+            startArrowhead:
+                | (
+                      | "arrow"
+                      | "bar"
+                      | "dot"
+                      | "circle"
+                      | "circle_outline"
+                      | "triangle"
+                      | "triangle_outline"
+                      | "diamond"
+                      | "diamond_outline"
+                      | "crowfoot_one"
+                      | "crowfoot_many"
+                      | "crowfoot_one_or_many"
+                  )
+                | null;
+            startBinding: components["schemas"]["CanvasEnginePointBinding"] | null;
+            /** Strokecolor */
+            strokeColor: string;
+            /**
+             * Strokestyle
+             * @enum {string}
+             */
+            strokeStyle: "solid" | "dashed" | "dotted";
+            /** Strokewidth */
+            strokeWidth: number;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "line";
+            /** Updated */
+            updated: number;
+            /** Version */
+            version: number;
+            /** Versionnonce */
+            versionNonce: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CanvasEnginePointBinding */
+        CanvasEnginePointBinding: {
+            /** Elementid */
+            elementId: string;
+            /** Focus */
+            focus: number;
+            /** Gap */
+            gap: number;
+        };
+        /** CanvasEngineRoundness */
+        CanvasEngineRoundness: {
+            /** Type */
+            type: number;
+            /** Value */
+            value?: number | null;
+        };
+        /** CanvasEngineShape */
+        CanvasEngineShape: {
+            /** Angle */
+            angle: number;
+            /** Backgroundcolor */
+            backgroundColor: string;
+            /** Boundelements */
+            boundElements: components["schemas"]["CanvasEngineBoundElement"][] | null;
+            /**
+             * Fillstyle
+             * @enum {string}
+             */
+            fillStyle: "hachure" | "cross-hatch" | "solid" | "zigzag";
+            /** Frameid */
+            frameId: null;
+            /** Groupids */
+            groupIds: string[];
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Index */
+            index: string | null;
+            /**
+             * Isdeleted
+             * @constant
+             */
+            isDeleted: false;
+            /** Locked */
+            locked: boolean;
+            /** Opacity */
+            opacity: number;
+            /** Roughness */
+            roughness: number;
+            roundness: components["schemas"]["CanvasEngineRoundness"] | null;
+            /** Seed */
+            seed: number;
+            /** Strokecolor */
+            strokeColor: string;
+            /**
+             * Strokestyle
+             * @enum {string}
+             */
+            strokeStyle: "solid" | "dashed" | "dotted";
+            /** Strokewidth */
+            strokeWidth: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "rectangle" | "ellipse" | "diamond";
+            /** Updated */
+            updated: number;
+            /** Version */
+            version: number;
+            /** Versionnonce */
+            versionNonce: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CanvasEngineText */
+        CanvasEngineText: {
+            /** Angle */
+            angle: number;
+            /** Autoresize */
+            autoResize: boolean;
+            /** Backgroundcolor */
+            backgroundColor: string;
+            /** Boundelements */
+            boundElements: components["schemas"]["CanvasEngineBoundElement"][] | null;
+            /** Containerid */
+            containerId: string | null;
+            /**
+             * Fillstyle
+             * @enum {string}
+             */
+            fillStyle: "hachure" | "cross-hatch" | "solid" | "zigzag";
+            /**
+             * Fontfamily
+             * @enum {integer}
+             */
+            fontFamily: 1 | 2 | 3 | 5 | 6 | 7 | 8 | 9;
+            /** Fontsize */
+            fontSize: number;
+            /** Frameid */
+            frameId: null;
+            /** Groupids */
+            groupIds: string[];
+            /** Height */
+            height: number;
+            /** Id */
+            id: string;
+            /** Index */
+            index: string | null;
+            /**
+             * Isdeleted
+             * @constant
+             */
+            isDeleted: false;
+            /** Lineheight */
+            lineHeight: number;
+            /** Locked */
+            locked: boolean;
+            /** Opacity */
+            opacity: number;
+            /** Originaltext */
+            originalText: string;
+            /** Roughness */
+            roughness: number;
+            roundness: components["schemas"]["CanvasEngineRoundness"] | null;
+            /** Seed */
+            seed: number;
+            /** Strokecolor */
+            strokeColor: string;
+            /**
+             * Strokestyle
+             * @enum {string}
+             */
+            strokeStyle: "solid" | "dashed" | "dotted";
+            /** Strokewidth */
+            strokeWidth: number;
+            /** Text */
+            text: string;
+            /**
+             * Textalign
+             * @enum {string}
+             */
+            textAlign: "left" | "center" | "right";
+            /**
+             * Type
+             * @constant
+             */
+            type: "text";
+            /** Updated */
+            updated: number;
+            /** Version */
+            version: number;
+            /** Versionnonce */
+            versionNonce: number;
+            /**
+             * Verticalalign
+             * @enum {string}
+             */
+            verticalAlign: "top" | "middle" | "bottom";
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
         };
         /** CanvasErrorDetail */
         CanvasErrorDetail: {
@@ -3103,6 +3675,43 @@ export interface components {
         /** CanvasErrorResponse */
         CanvasErrorResponse: {
             detail: components["schemas"]["CanvasErrorDetail"];
+        };
+        /** CanvasImageContent */
+        CanvasImageContent: {
+            /**
+             * Asset Id
+             * Format: uuid
+             */
+            asset_id: string;
+        };
+        /** CanvasImageCrop */
+        CanvasImageCrop: {
+            /** Height */
+            height: number;
+            /** Naturalheight */
+            naturalHeight: number;
+            /** Naturalwidth */
+            naturalWidth: number;
+            /** Width */
+            width: number;
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** CanvasImageNode */
+        CanvasImageNode: {
+            content: components["schemas"]["CanvasImageContent"];
+            engine_element: components["schemas"]["CanvasEngineImage"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "image";
         };
         /** CanvasMetadata */
         CanvasMetadata: {
@@ -3171,6 +3780,13 @@ export interface components {
              */
             visibility?: "public" | "members";
         } & (unknown | unknown | unknown | unknown);
+        /** CanvasPosition */
+        CanvasPosition: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
         /** CanvasResponse */
         CanvasResponse: {
             canvas: components["schemas"]["CanvasMetadata"];
@@ -3212,6 +3828,39 @@ export interface components {
              * @default 3200
              */
             width: number;
+        };
+        /** CanvasShapeNode */
+        CanvasShapeNode: {
+            engine_element: components["schemas"]["CanvasEngineShape"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "shape";
+        };
+        /** CanvasSize */
+        CanvasSize: {
+            /** Height */
+            height: number;
+            /** Width */
+            width: number;
+        };
+        /** CanvasTextNode */
+        CanvasTextNode: {
+            engine_element: components["schemas"]["CanvasEngineText"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "text";
         };
         /** ChangePasswordForm */
         ChangePasswordForm: {

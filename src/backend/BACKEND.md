@@ -792,3 +792,5 @@ Board 기본 정보·공개/가입 정책·보관/복원은 [Board 기본 설정
 
 
 쿠키 기반 refresh는 세션에 연결된 CSRF proof를 요구한다. bootstrap 헤더·자격 분기·TTL·프런트 연동은 [CSRF 가이드](../../notes/csrf.md)를 따른다. 관계형 세션/SQL을 서비스로 옮기지 않는다.
+
+CanvasContent의 Text/Image/Drawing/Shape/Edge 모델과 고정 엔진 필드·좌표/참조/순서·크기 검증은 [객체 스키마](../../notes/community/canvas-content-schema.md)를 따른다. 문서 내부 구조 검증은 모델이 소유한다. 현재 GET의 빈 문서 계약을 유지하며 PUT/CAS·실제 Asset 소속/ready·현재 권한과 참조 갱신은 후속 저장 트랜잭션에서 연결한다.

@@ -59,7 +59,7 @@ edges(edge, source_node_id?, target_node_id?)
 element_order(전체 node/edge id를 한 번씩 포함)
 ```
 
-각 요소는 id/position/size와 고정 엔진 버전의 `engine_element`를 가진다. 굽은 선·텍스트 baseline·선 스타일·pressure·바인딩·seed 등은 typed engine_element로 손실 없이 보존한다. z순서는 nodes/edges를 분리해도 element_order로 유지한다. engine_element는 임의 JSON 통과 경로가 아니며 **제품 서버에서 허용 타입/필드/배열/유한수·좌표 일치·참조를 별도로 검증해야 한다.** frame/embed/iframe/custom 실행 필드와 알 수 없는 속성은 거부한다.
+각 요소는 id/position/size와 고정 엔진 버전의 `engine_element`를 가진다. 굽은 선·텍스트·선 스타일·pressure·바인딩·seed 등은 typed engine_element로 보존한다. z순서는 nodes/edges를 분리해도 element_order로 유지한다. 현재 제품 모델의 허용 필드/배열/유한수·좌표 일치·참조 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. engine_element는 임의 JSON 통과 경로가 아니며 frame/embed/iframe/custom 실행 필드와 알 수 없는 속성은 거부한다. 검증 전용 adapter는 실제 Asset UUID/제한·바인딩 계약을 대신하지 않고 제품 입력 어댑터는 후속에서 이 계약에 맞춰 연결한다.
 
 image는 `content.asset_id`만 영속화하고 엔진 fileId와 바이너리 매핑은 로드 시 생성한다. probe의 `probe-asset-*`는 메모리 파일 연결을 확인하기 위한 논리 키이며 제품 UUID/Asset API 계약이 아니다. text는 초기에는 plain text, Markdown/리치 텍스트는 후속 확장이다.
 

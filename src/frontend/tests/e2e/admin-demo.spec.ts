@@ -175,7 +175,8 @@ for (const width of [390, 1440])
             state.role = "admin";
             await page.goto("/admin");
             await expect(page.getByText(row.email, { exact: true })).toBeVisible();
-            expect(await geometry()).toEqual(directoryGeometry);
+            // A full navigation can render rows before the shared grid finishes layout.
+            await expect.poll(geometry).toEqual(directoryGeometry);
             await page.locator(".profile-menu__trigger").click();
             await expect(
                 page.getByRole("link", { name: "Admin panel", exact: true }),
@@ -186,7 +187,7 @@ for (const width of [390, 1440])
             await page.keyboard.press("Escape");
             await page.goto("/admin/server");
             await expect(page.getByText("SQLite", { exact: true })).toBeVisible();
-            expect(await geometry()).toEqual(statusGeometry);
+            await expect.poll(geometry).toEqual(statusGeometry);
         });
     }
 test("disabled public demo hides navigation and refuses both direct routes", async ({ page }) => {

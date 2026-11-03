@@ -1,0 +1,282 @@
+{
+  "schema_version": 1,
+  "engine": {
+    "name": "excalidraw",
+    "version": "0.18.1",
+    "adapter_version": 1
+  },
+  "settings": {
+    "background": "#F8F7F4",
+    "grid": "dots",
+    "width": 3200,
+    "height": 2100
+  },
+  "nodes": [
+    {
+      "id": "text-one",
+      "position": {
+        "x": 100,
+        "y": 100
+      },
+      "size": {
+        "width": 137.76983642578125,
+        "height": 46
+      },
+      "engine_element": {
+        "id": "text-one",
+        "type": "text",
+        "x": 100,
+        "y": 100,
+        "width": 137.76983642578125,
+        "height": 46,
+        "angle": 0,
+        "strokeColor": "#1e1e1e",
+        "backgroundColor": "transparent",
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "groupIds": [],
+        "frameId": null,
+        "index": "a0",
+        "roundness": null,
+        "seed": 1,
+        "version": 1,
+        "versionNonce": 1,
+        "isDeleted": false,
+        "boundElements": [],
+        "updated": 0,
+        "locked": false,
+        "text": "한글 캔버스\n저장 후 다시 편집",
+        "fontSize": 20,
+        "fontFamily": 2,
+        "textAlign": "left",
+        "verticalAlign": "top",
+        "containerId": null,
+        "originalText": "한글 캔버스\n저장 후 다시 편집",
+        "autoResize": true,
+        "lineHeight": 1.15
+      },
+      "type": "text"
+    },
+    {
+      "id": "shape-one",
+      "position": {
+        "x": 100,
+        "y": 230
+      },
+      "size": {
+        "width": 200,
+        "height": 100
+      },
+      "engine_element": {
+        "id": "shape-one",
+        "type": "rectangle",
+        "x": 100,
+        "y": 230,
+        "width": 200,
+        "height": 100,
+        "angle": 0,
+        "strokeColor": "#1e1e1e",
+        "backgroundColor": "transparent",
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "groupIds": [],
+        "frameId": null,
+        "index": "a1",
+        "roundness": null,
+        "seed": 1,
+        "version": 1,
+        "versionNonce": 1,
+        "isDeleted": false,
+        "boundElements": [],
+        "updated": 0,
+        "locked": false
+      },
+      "type": "shape"
+    },
+    {
+      "id": "image-one",
+      "position": {
+        "x": 420,
+        "y": 100
+      },
+      "size": {
+        "width": 160,
+        "height": 120
+      },
+      "engine_element": {
+        "id": "image-one",
+        "type": "image",
+        "x": 420,
+        "y": 100,
+        "width": 160,
+        "height": 120,
+        "angle": 0,
+        "strokeColor": "transparent",
+        "backgroundColor": "transparent",
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "groupIds": [],
+        "frameId": null,
+        "index": "a2",
+        "roundness": null,
+        "seed": 1,
+        "version": 1,
+        "versionNonce": 1,
+        "isDeleted": false,
+        "boundElements": [],
+        "updated": 0,
+        "locked": false,
+        "status": "saved",
+        "scale": [
+          1,
+          1
+        ],
+        "crop": null
+      },
+      "type": "image",
+      "content": {
+        "asset_id": "00000000-0000-4000-8000-000000000010"
+      }
+    },
+    {
+      "id": "draw-one",
+      "position": {
+        "x": 420,
+        "y": 250
+      },
+      "size": {
+        "width": 120,
+        "height": 60
+      },
+      "engine_element": {
+        "id": "draw-one",
+        "type": "freedraw",
+        "x": 420,
+        "y": 250,
+        "width": 120,
+        "height": 60,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            30,
+            40
+          ],
+          [
+            60,
+            10
+          ],
+          [
+            120,
+            60
+          ]
+        ],
+        "pressures": [
+          0.2,
+          0.8,
+          0.5,
+          0.3
+        ],
+        "simulatePressure": false,
+        "index": "a3",
+        "version": 1,
+        "versionNonce": 1,
+        "updated": 0,
+        "isDeleted": false,
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "angle": 0,
+        "strokeColor": "#1e1e1e",
+        "backgroundColor": "transparent",
+        "seed": 1,
+        "groupIds": [],
+        "frameId": null,
+        "roundness": null,
+        "boundElements": [],
+        "locked": false,
+        "lastCommittedPoint": null
+      },
+      "type": "drawing"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-one",
+      "position": {
+        "x": 320.5,
+        "y": 260.5
+      },
+      "size": {
+        "width": 79,
+        "height": 9
+      },
+      "engine_element": {
+        "id": "edge-one",
+        "type": "arrow",
+        "x": 320.5,
+        "y": 260.5,
+        "width": 79,
+        "height": 9,
+        "angle": 0,
+        "strokeColor": "#1e1e1e",
+        "backgroundColor": "transparent",
+        "fillStyle": "solid",
+        "strokeWidth": 2,
+        "strokeStyle": "solid",
+        "roughness": 1,
+        "opacity": 100,
+        "groupIds": [],
+        "frameId": null,
+        "index": "a4",
+        "roundness": null,
+        "seed": 1,
+        "version": 1,
+        "versionNonce": 1,
+        "isDeleted": false,
+        "boundElements": [],
+        "updated": 0,
+        "locked": false,
+        "points": [
+          [
+            0,
+            0
+          ],
+          [
+            79,
+            9
+          ]
+        ],
+        "lastCommittedPoint": null,
+        "startBinding": null,
+        "endBinding": null,
+        "startArrowhead": null,
+        "endArrowhead": "arrow",
+        "elbowed": false
+      },
+      "type": "edge",
+      "source_node_id": null,
+      "target_node_id": null
+    }
+  ],
+  "element_order": [
+    "text-one",
+    "shape-one",
+    "image-one",
+    "draw-one",
+    "edge-one"
+  ]
+}

@@ -62,7 +62,7 @@
 
 MVP public→private 전환은 기존 open 멤버가 유지되며 join_policy=invite를 같은 요청에 요구한다. private→public은 공개 snapshot·파일 노출 범위가 넓어짐을 UI에서 명시하고 Owner만 허용한다. Admin은 visibility 변경 불가다. Board archived→active는 Owner가 명시적으로 복원한다. suspended 설정/해제는 이 일반 API에서 거부한다.
 
-현재 PATCH의 길이·권한·보관/복원·관심사·감사는 [Board 기본 설정](board-settings.md)을 따른다. public 정책도 private Board에서는 active 멤버만 허용하며 members 정책은 공개 전환으로 자동 개방하지 않는다. UI의 전환 안내·소유권 위임·영구 삭제/파일 정리는 후속이다.
+현재 PATCH의 길이·권한·보관/복원·관심사·감사는 [Board 기본 설정](board-settings.md)을 따른다. public 정책도 private Board에서는 active 멤버만 허용하며 members 정책은 공개 전환으로 자동 개방하지 않는다. 소유권 위임·영구 삭제와 에셋 outbox는 각 구현 계약에 연결됐고 UI의 전환 안내는 후속이다. 전체 목표와 실제 endpoint의 차이는 [Board API 구현 범위](board-api-status.md)를 따른다. 위 GET membership 전용 경로는 아직 없으며 현재 본인 membership은 Board 상세/홈 응답에서 조회한다.
 
 ```json
 {
@@ -79,7 +79,7 @@ interest_ids 값은 설명용이며 실제 GET /interests의 활성 id만 수락
 
 Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/target_user_id/reason을 받는다. 기존 Owner→Admin, 대상 active 멤버→Owner, owner_id 변경과 감사를 원자적으로 처리한다. generic member PATCH의 role=owner는 422다. `DELETE /boards/{board_id}`는 Owner만 archived 상태에서 `{expected_revision,confirm_slug}`로 요청한다. 게시글 등 하위 DB 데이터 삭제와 파일 정리 outbox를 원자적으로 기록하고 204를 반환한다. sole Owner도 보관→명시적 영구 삭제로 계정 삭제 전제조건을 해소할 수 있다. 계정 삭제 소유 검사는 이 종료 경로와 함께 출시한다.
 
-현재 구현은 [소유권·종료 계약](board-lifecycle.md)을 따른다. 위임은 같은 Board의 다른 active 회원/활성 계정을 대상으로 하고 응답은 board_id/previous_owner_id/owner_id/board_revision이다. 삭제는 archived 전체 현재 데이터 정리와 기존 active 빈 Board 되돌리기를 지원하며 현재 Canvas/문서를 함께 정리한다. 에셋 파일 참조가 없어 파일 I/O/outbox는 없으며 User 프로필 파일을 보존한다. 에셋/outbox는 #6 연결 전 구현할 후속 범위다.
+현재 구현은 [소유권·종료 계약](board-lifecycle.md)을 따른다. 위임은 같은 Board의 다른 active 회원/활성 계정을 대상으로 하고 응답은 board_id/previous_owner_id/owner_id/board_revision이다. 삭제는 archived 전체 현재 데이터 정리와 기존 active 빈 Board 되돌리기를 지원하며 현재 Canvas/문서를 함께 정리한다. [이미지 에셋](canvas-assets.md)의 삭제 outbox를 같은 DB 트랜잭션에서 기록하고 파일 물리 정리는 commit 후 worker가 처리하며 User 프로필 파일을 보존한다.
 
 ## Shelf — #23
 
@@ -116,7 +116,7 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 
 author_id/board_id/published_at/publication_revision은 서버 전용 필드다. DTO extra='forbid'로 과다 필드를 422로 거부한다. metadata revision과 document revision을 혼용하지 않는다.
 
-현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/빈 본문 조회·title/summary/shelf_id/visibility PATCH·휴지통/복구만 제공한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. DELETE는 204와 X-Canvas-Revision이다. Tag/썸네일·본문 PUT·게시/공개 snapshot·목록/Plaza는 해당 후속 작업에서 계약을 확장한다.
+현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/빈 본문 조회·title/summary/shelf_id/visibility PATCH·휴지통/복구만 제공한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. GET의 객체 응답 타입과 문서 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서이며 구조 모델 구현을 본문 저장 완료로 해석하지 않는다. DELETE는 204와 X-Canvas-Revision이다. Tag/썸네일·본문 PUT·게시/공개 snapshot·목록/Plaza는 해당 후속 작업에서 계약을 확장한다.
 
 ```json
 {
