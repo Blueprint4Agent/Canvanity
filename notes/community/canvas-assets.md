@@ -1,6 +1,6 @@
 # Canvas 이미지 에셋 — #6
 
-작성자 전용 Canvas 초안의 이미지 업로드·조회·삭제 기반이다. 선행 초안 PR #42의 7631143을 기준으로 한다. 실제 편집기 붙여넣기/드롭·본문 저장·공개 게시 연결은 #7/#8의 후속이며 구현·검증·원격 게시·main 병합은 이슈/PR에서 구분한다.
+작성자 전용 Canvas 초안의 이미지 업로드·조회·삭제 기반이다. 선행 초안 PR #42의 7631143을 기준으로 한다. [본문 저장](canvas-document-save.md)이 실제 이미지 참조를 연결한다. 제품 편집기의 붙여넣기/드롭·자동 저장 UI·공개 게시 연결은 #7/#8의 후속이며 구현·검증·원격 게시·main 병합은 이슈/PR에서 구분한다.
 
 ## API와 접근
 
@@ -31,7 +31,9 @@ CanvasAccessService가 CanvasService와 AssetService의 현재 작성자·멤버
 
 put 실패/취소·권한 회수·후속 DB 실패에도 원래 예약이 남는다. 확인된 ready는 커밋 결과가 불확실해도 보상 삭제하지 않는다. pending 업로드 기한은 1시간이며 실패 보상도 그 기한과 최소 60초 유예를 지킨다. 정리된 뒤 늦게 put이 끝난 경우에는 남겨 둔 완료 기록을 다시 예약할 수 있다. 파일 I/O는 SQL 잠금 밖에서 실행한다.
 
-`assets(board_id,canvas_id)`는 Canvas 복합 키를 참조한다. `canvas_asset_refs`는 draft/publication을 독립적으로 기록하며 같은 Board/Canvas의 **ready 상태**만 복합 FK로 참조한다. 참조가 있으면 expires_at을 비우고 마지막 참조가 사라지면 24시간 유예를 다시 부여한다. deleting/pending·다른 Canvas의 연결은 거부한다. 문서 저장 서비스는 실제 문서를 검증하고 Board/Canvas 잠금 안에서 `replace_refs`를 본문 변경과 함께 호출해야 한다. 현재는 저장소 기반만 구현하며 문서 저장/게시 API를 제공하지 않는다.
+`assets(board_id,canvas_id)`는 Canvas 복합 키를 참조한다. `canvas_asset_refs`는 draft/publication을 독립적으로 기록하며 같은 Board/Canvas의 **ready 상태**만 복합 FK로 참조한다. 참조가 있으면 expires_at을 비우고 마지막 참조가 사라지면 24시간 유예를 다시 부여한다. deleting/pending·다른 Canvas의 연결은 거부한다. [본문 PUT](canvas-document-save.md)의 CanvasTransaction은 실제 Image node의 UUID 집합을 추출하고 같은 세션의 `replace_refs(scope="draft")`를 CAS와 함께 호출한다. 조회/잠금은 같은 Board/Canvas로 한정하고 publication 참조는 보존한다. 게시 API는 후속이다.
+
+ready의 expires_at이 지나도 cleanup이 deleting으로 claim하기 전에는 참조할 수 있다. 저장과 cleanup은 Board/Asset 잠금으로 직렬화한다. 저장이 먼저 참조하면 protected outbox와 null expires_at을 유지하고, claim이 먼저면 PUT은 ASSET_INVALID_REFERENCE 422로 문서/참조를 함께 롤백한다. 별도 파일 I/O나 정리 유예 정책을 추가하지 않는다.
 
 ## 삭제 outbox와 운영
 

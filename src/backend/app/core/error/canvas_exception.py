@@ -27,6 +27,16 @@ class CanvasErrorCode(Enum):
         "Canvas metadata revision conflict. Reload the latest canvas.",
         status.HTTP_409_CONFLICT,
     )
+    DOCUMENT_CONFLICT = ServiceErrorCode(
+        "CANVAS_DOCUMENT_REVISION_CONFLICT",
+        "Canvas document revision conflict. Reload the latest document.",
+        status.HTTP_409_CONFLICT,
+    )
+    DOCUMENT_TOO_LARGE = ServiceErrorCode(
+        "CANVAS_DOCUMENT_TOO_LARGE",
+        "Canvas document request exceeds the byte limit.",
+        status.HTTP_413_CONTENT_TOO_LARGE,
+    )
     INVALID_STATE = ServiceErrorCode(
         "CANVAS_INVALID_STATE", "Restore the canvas before editing it.", status.HTTP_409_CONFLICT
     )

@@ -1,6 +1,6 @@
 # MVP API 명세
 
-현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md)을 따른다. 본문 저장/게시 시 참조 동기화는 후속이며 아래 전체 목표 API와 구분한다.
+현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md), 본문 PUT/CAS·draft 참조 동기화는 [Canvas 본문 저장](canvas-document-save.md)을 따른다. 게시 시 publication 참조 동기화는 후속이며 아래 전체 목표 API와 구분한다.
 
 [도메인](domain-model.md) · [권한](membership-policy.md)
 
@@ -116,7 +116,7 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 
 author_id/board_id/published_at/publication_revision은 서버 전용 필드다. DTO extra='forbid'로 과다 필드를 422로 거부한다. metadata revision과 document revision을 혼용하지 않는다.
 
-현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/빈 본문 조회·title/summary/shelf_id/visibility PATCH·휴지통/복구만 제공한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. GET의 객체 응답 타입과 문서 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서이며 구조 모델 구현을 본문 저장 완료로 해석하지 않는다. DELETE는 204와 X-Canvas-Revision이다. Tag/썸네일·본문 PUT·게시/공개 snapshot·목록/Plaza는 해당 후속 작업에서 계약을 확장한다.
+현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/본문 조회·title/summary/shelf_id/visibility PATCH·휴지통/복구를 제공하고 [본문 저장 #47](canvas-document-save.md)이 PUT/CAS를 연결한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. PUT은 document revision을 받아 200 revision/view만 반환하고 metadata revision은 보존한다. 문서 전용 충돌은 CANVAS_DOCUMENT_REVISION_CONFLICT 409/current_revision이다. PUT 입력·GET 객체 응답과 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서다. DELETE는 204와 X-Canvas-Revision이다. Tag/썸네일·자동 저장/복구 UI·게시/공개 snapshot·목록/Plaza는 후속이다.
 
 ```json
 {
@@ -126,7 +126,8 @@ author_id/board_id/published_at/publication_revision은 서버 전용 필드다.
         "engine": { "name": "excalidraw", "version": "0.18.1", "adapter_version": 1 },
         "settings": { "background": "#F8F7F4", "grid": "dots", "width": 3200, "height": 2100 },
         "nodes": [],
-        "edges": []
+        "edges": [],
+        "element_order": []
     }
 }
 ```
