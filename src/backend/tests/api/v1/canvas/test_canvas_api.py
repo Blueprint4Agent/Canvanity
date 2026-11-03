@@ -145,7 +145,11 @@ def test_all_draft_routes_require_session(canvas_api, method, path, body, operat
         {"board_id": BOARD},
         {"status": "published"},
         {"status": "trashed"},
-        {"tag_ids": []},
+        {"tag_ids": None},
+        {"tag_ids": [None]},
+        {"tag_ids": ["invalid"]},
+        {"tag_ids": [CANVAS] * 2},
+        {"tag_ids": [f"00000000-0000-0000-0000-{i:012d}" for i in range(11)]},
         {"thumbnail_asset_id": SHELF},
         {"published_at": "2026-10-29T00:00:00Z"},
         {"document": {}},
@@ -184,6 +188,45 @@ def test_canvas_creation_rejects_invalid_and_server_owned_fields(canvas_api, fie
     response = client.post(CREATE_PATH, json={"shelf_id": SHELF, "title": "초안", **fields})
     assert response.status_code == 422
     service.create.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "tags",
+    [
+        None,
+        [None],
+        ["invalid"],
+        [CANVAS, CANVAS],
+        [f"00000000-0000-0000-0000-{i:012d}" for i in range(11)],
+    ],
+)
+def test_creation_rejects_invalid_tag_selection(canvas_api, tags):
+    client, service = canvas_api
+    result = client.post(CREATE_PATH, json={"shelf_id": SHELF, "title": "초안", "tag_ids": tags})
+    assert result.status_code == 422
+    service.create.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    "method,path,operation,body",
+    [
+        ("POST", CREATE_PATH, "create", {"shelf_id": SHELF, "title": "초안"}),
+        ("PATCH", PATH, "change", {"expected_revision": 0}),
+    ],
+)
+def test_creation_and_metadata_patch_accept_tag_ids_and_return_tag_summaries(
+    canvas_api, method, path, operation, body
+):
+    client, service = canvas_api
+    data = deepcopy(DATA)
+    data["canvas"]["tags"] = [{"id": CANVAS, "name": "한글"}]
+    getattr(service, operation).return_value = CanvasResponse(**data)
+    response = client.request(method, path, json={**body, "tag_ids": [CANVAS]})
+    assert response.status_code in {200, 201}, response.text
+    assert response.json()["canvas"]["tags"] == data["canvas"]["tags"]
+    assert [str(tag_id) for tag_id in getattr(service, operation).call_args.args[-1].tag_ids] == [
+        CANVAS
+    ]
 
 
 @pytest.mark.parametrize("suffix,operation", [("", "get"), ("/document", "document")])

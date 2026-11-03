@@ -1,6 +1,6 @@
 # MVP API 명세
 
-현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md), 본문 PUT/CAS·draft 참조 동기화는 [Canvas 본문 저장](canvas-document-save.md)을 따른다. 게시 시 publication 참조 동기화는 후속이며 아래 전체 목표 API와 구분한다.
+현재 이미지 업로드/작성자 전용 바이너리 조회/미참조 삭제의 실제 계약은 [Canvas 이미지 에셋](canvas-assets.md), 본문 PUT/CAS·draft 참조 동기화는 [Canvas 본문 저장](canvas-document-save.md), 전역 자유 사전과 metadata 연결은 [Canvas 태그](canvas-tags.md)를 따른다. 게시 시 publication 참조 동기화는 후속이며 아래 전체 목표 API와 구분한다.
 
 [도메인](domain-model.md) · [권한](membership-policy.md)
 
@@ -11,7 +11,7 @@
 | 응답 | 기준                                                                       |
 | ---- | -------------------------------------------------------------------------- |
 | 200  | 조회/수정/가입/게시 성공. 바뀐 revision/capabilities 반환                  |
-| 201  | Board/Shelf/Grade/Canvas/Tag 생성. Location 헤더에 리소스 경로             |
+| 201  | Board/Shelf/Grade/Canvas 생성은 Location에 리소스 경로. Tag 신규 생성은 단건 GET이 없어 Location 생략 |
 | 204  | 멤버 탈퇴·빈 Shelf 삭제·게시글 휴지통 이동 (Grade 대체 삭제는 200 목록 반환) |
 | 401  | 인증이 필요한 액션의 토큰 없음/만료                                        |
 | 403  | 볼 수 있는 객체에서 역할·등급·액션 부족                                    |
@@ -116,7 +116,7 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 
 author_id/board_id/published_at/publication_revision은 서버 전용 필드다. DTO extra='forbid'로 과다 필드를 422로 거부한다. metadata revision과 document revision을 혼용하지 않는다.
 
-현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/본문 조회·title/summary/shelf_id/visibility PATCH·휴지통/복구를 제공하고 [본문 저장 #47](canvas-document-save.md)이 PUT/CAS를 연결한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. PUT은 document revision을 받아 200 revision/view만 반환하고 metadata revision은 보존한다. 문서 전용 충돌은 CANVAS_DOCUMENT_REVISION_CONFLICT 409/current_revision이다. PUT 입력·GET 객체 응답과 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서다. DELETE는 204와 X-Canvas-Revision이다. Tag/썸네일·자동 저장/복구 UI·게시/공개 snapshot·목록/Plaza는 후속이다.
+현재 [Canvas 초안 기반](canvas-drafts.md)은 생성·작성자 메타데이터/본문 조회·title/summary/shelf_id/visibility/tag_ids PATCH·휴지통/복구를 제공하고 [본문 저장 #47](canvas-document-save.md)이 PUT/CAS를 연결한다. 모든 현재 상태는 draft/trashed이며 GET view는 draft만 허용한다. visibility=members가 기본이고 public을 설정해도 초안을 공개하지 않는다. POST/GET/PATCH/restore는 canvas/document_revision/view/capabilities를, 본문 GET은 document/revision/view를 반환한다. canvas.tags는 정렬한 Tag ID/표시명 요약이다. PUT은 document revision을 받아 200 revision/view만 반환하고 metadata revision/태그 연결은 보존한다. 문서 전용 충돌은 CANVAS_DOCUMENT_REVISION_CONFLICT 409/current_revision이다. PUT 입력·GET 객체 응답과 내부 검증은 [객체 스키마](canvas-content-schema.md)를 따른다. 기본 초안 생성은 계속 빈 문서다. DELETE는 204와 X-Canvas-Revision이다. 썸네일·태그 UI·자동 저장/복구 UI·게시/공개 snapshot·목록/Plaza는 후속이다.
 
 ```json
 {
@@ -136,7 +136,7 @@ publish 응답은 metadata_revision/document_revision/publication_revision/publi
 
 ## Tag·에셋·공식 레이아웃
 
-- #24 GET /tags?q=…&limit=20, POST /tags `{name}`. 정규화 중복 생성은 기존 Tag를 200, 신규는 201. 생성/검색 요청은 기존 rate-limit 패턴으로 사용자별 분당 30회를 적용한다. Canvas 연결은 metadata PATCH로만 한다.
+- #49/#24 [자유 Tag 계약](canvas-tags.md): 공개 GET /tags?q=…&limit=20(최대50), 현재 active 계정의 세션 전용 POST /tags `{name}`. NFC/trim 표시명40자·NFC(casefold) 키80자를 사용하고 최초 ID/표시명을 재사용한다. 기존 키는200/신규201이며 단건 GET과 Location은 없다. 검색은 키의 literal 부분일치·binary 키/UUID 순서로 ID/표시명만 반환한다. Canvas 생성/metadata PATCH의 tag_ids는 최대10개 고유 UUID이며 동일 집합은 no-op, 태그/일반 metadata는 현재 권한/revision 아래 원자 변경한다. 이전 사용자별 분당30회 제안은 현재 구현하지 않으며 익명 공개 검색을 포함한 분산 rate limit은 후속이다.
 - #6 POST /canvases/{id}/assets (multipart 이미지 한 개), GET /canvases/{id}/assets/{asset_id}, DELETE 동일 경로(미참조 업로드만). 실제 형식 PNG/JPEG/WebP/GIF·8 MiB·16MP, 본문/공개본에 연결된 asset 삭제 409. 기존 object storage 사용·서명 URL 영속 금지. 세부 이미지 변환/애니메이션 정책은 #6에서 실제 구현과 확정한다.
 - #25 PUT /boards/{id}/layout `{expected_revision,document:{schema_version,widgets}}`, Owner/Admin. GET home에 layout_revision 포함. 엔진 nodes/edges 문서는 422.
 - 댓글·좋아요·구독·통계 API는 #26에서 추가하며 Shelf create_comment/react 정책을 재사용한다. 자동 승급 API와 Smart Shelf endpoint는 아직 노출하지 않는다.

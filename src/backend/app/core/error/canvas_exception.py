@@ -22,6 +22,9 @@ class CanvasErrorCode(Enum):
         "Select a manual shelf in the same board.",
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
+    INVALID_TAGS = ServiceErrorCode(
+        "CANVAS_INVALID_TAGS", "Select existing tags.", status.HTTP_422_UNPROCESSABLE_CONTENT
+    )
     CONFLICT = ServiceErrorCode(
         "CANVAS_REVISION_CONFLICT",
         "Canvas metadata revision conflict. Reload the latest canvas.",

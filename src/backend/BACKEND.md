@@ -785,7 +785,7 @@ Board 기본 정보·공개/가입 정책·보관/복원은 [Board 기본 설정
 
 [Shelf 관리/정책](../../notes/community/shelf-management.md)은 ShelfService·BoardPermissionService·기존 models/board.py의 Repository를 DI로 사용한다. 현재 Owner/Admin의 CRUD/전체 순서·Board 기본/Shelf별 4액션 정책을 Board 잠금/revision·허용 DTO 감사와 원자적으로 저장한다. 홈/일반 목록/직접 조회는 같은 현재 등급 정책을 사용하고 관리 조회는 별도다. Canvas 초안 기반과 함께 소속 FK/RESTRICT·초안/휴지통의 비어 있지 않음 검사를 연결한다. 공개 Canvas 목록·제품 UI는 후속이고 별도 Repository 파일은 추가하지 않는다.
 
-[Canvas 초안 기반](../../notes/community/canvas-drafts.md)은 0026 migration과 models/canvas.py의 CanvasRepository/CanvasTransaction을 사용한다. 세션·SQL·트랜잭션·ORM 쓰기·드라이버 오류 변환은 모델에 두고 같은 세션의 공개 BoardTransaction 연산을 조합한다. CanvasService는 현재 작성자/활성 멤버와 공통 Shelf 정책을 검사하며 Board→User 공유 잠금→Canvas 순서를 유지한다. author SET NULL, 같은 Board 복합 FK/RESTRICT와 metadata/document revision을 분리하고 초안/휴지통을 Shelf/Board 삭제 경계에 포함한다. 제품 UI·게시 snapshot·목록·Tag는 후속이다. 이미지와 본문 저장은 아래 별도 계약을 따른다.
+[Canvas 초안 기반](../../notes/community/canvas-drafts.md)은 0026 migration과 models/canvas.py의 CanvasRepository/CanvasTransaction을 사용한다. 세션·SQL·트랜잭션·ORM 쓰기·드라이버 오류 변환은 모델에 두고 같은 세션의 공개 BoardTransaction 연산을 조합한다. CanvasService는 현재 작성자/활성 멤버와 공통 Shelf 정책을 검사하며 Board→User 공유 잠금→Canvas 순서를 유지한다. author SET NULL, 같은 Board 복합 FK/RESTRICT와 metadata/document revision을 분리하고 초안/휴지통을 Shelf/Board 삭제 경계에 포함한다. 제품 UI·게시 snapshot·목록은 후속이다. 이미지·본문 저장·태그는 아래 별도 계약을 따른다.
 
 
 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md)은 AssetService·CanvasAccessService·models/asset.py의 AssetRepository를 생성자 DI로 사용한다. 실제 이미지 검증/정규화·현재 작성자 권한은 서비스가, SQL·잠금·트랜잭션·ORM 쓰기·오류 변환은 모델이 소유한다. put 전 pending/outbox 예약과 성공 시 ready를 분리하고 파일 I/O는 SQL 잠금 밖에서 실행한다. 같은 Board/Canvas/ready 복합 FK가 draft/publication 참조를 보호한다. 0027 migration과 Board 삭제 연계, 주기적 AssetCleanupService·fenced lease/재시도/위치 검사·운영 CLI를 함께 제공한다. 원래 ObjectStorage 구현을 재사용하며 게시/편집기 UI는 후속이다.
@@ -794,3 +794,5 @@ Board 기본 정보·공개/가입 정책·보관/복원은 [Board 기본 설정
 쿠키 기반 refresh는 세션에 연결된 CSRF proof를 요구한다. bootstrap 헤더·자격 분기·TTL·프런트 연동은 [CSRF 가이드](../../notes/csrf.md)를 따른다. 관계형 세션/SQL을 서비스로 옮기지 않는다.
 
 CanvasContent의 Text/Image/Drawing/Shape/Edge 모델과 고정 엔진 필드·좌표/참조/순서·크기 검증은 [객체 스키마](../../notes/community/canvas-content-schema.md)를 따른다. [본문 저장 #47](../../notes/community/canvas-document-save.md)은 기존 빈 문서 생성을 유지하며 PUT 입력으로 같은 모델을 재사용한다. 전용 APIRoute는 JSON 디코딩 전 실제 바이트 상한만 처리하고, CanvasService/CanvasAccessService는 현재 권한과 draft를 검사한다. Board→활성 User 공유 잠금→Canvas→Document→해당 Canvas Asset→outbox 아래 모델의 조건부 UPDATE/RETURNING CAS와 같은 세션의 draft 참조를 원자 갱신한다. metadata revision과 publication 참조를 보존하고 새 migration·별도 Repository 파일·파일 I/O는 추가하지 않는다.
+
+[자유 Tag #49](../../notes/community/canvas-tags.md)는 TagService와 models/tag.py의 TagRepository/TagTransaction을 DI/같은 세션으로 조합한다. 0028은 기존 콘텐츠 테이블을 바꾸지 않고 전역 사전/Canvas 연결만 추가한다. NFC/trim·NFC(casefold) 키 고유성, 최초 표시명 재사용, active 계정 공유 잠금과 경쟁 INSERT를 모델이 소유한다. Canvas tag_ids는 ORM 열과 분리하며 metadata PATCH의 현재 권한/revision 아래 태그·일반 필드를 원자 갱신한다. 본문/Asset refs와 공식 Interest는 보존하고 공개 응답에는 사전의 ID/표시명만 노출한다.

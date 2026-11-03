@@ -21,6 +21,7 @@ from app.models import (
     inquiry,  # noqa: F401
     interest,  # noqa: F401
     notification,  # noqa: F401
+    tag,  # noqa: F401
     user,  # noqa: F401
 )
 

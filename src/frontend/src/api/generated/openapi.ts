@@ -1462,6 +1462,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Tags */
+        get: operations["search_tags_api_v1_tags_get"];
+        put?: never;
+        /** Create Tag */
+        post: operations["create_tag_api_v1_tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/config": {
         parameters: {
             query?: never;
@@ -3062,6 +3080,8 @@ export interface components {
              * @default
              */
             summary: string;
+            /** Tag Ids */
+            tag_ids?: string[];
             /** Title */
             title: string;
             /**
@@ -3757,6 +3777,7 @@ export interface components {
                 | "CANVAS_NOT_FOUND"
                 | "CANVAS_FORBIDDEN"
                 | "CANVAS_INVALID_SHELF"
+                | "CANVAS_INVALID_TAGS"
                 | "CANVAS_REVISION_CONFLICT"
                 | "CANVAS_DOCUMENT_REVISION_CONFLICT"
                 | "CANVAS_DOCUMENT_TOO_LARGE"
@@ -3854,6 +3875,8 @@ export interface components {
             status: "draft" | "trashed";
             /** Summary */
             summary: string;
+            /** Tags */
+            tags?: components["schemas"]["TagResponse"][];
             /** Title */
             title: string;
             /** Trashed At */
@@ -3869,6 +3892,11 @@ export interface components {
              */
             visibility: "public" | "members";
         };
+        /** CanvasMetadataValidationErrorResponse */
+        CanvasMetadataValidationErrorResponse: {
+            /** Detail */
+            detail: components["schemas"]["CanvasDocumentValidationErrorDetail"][];
+        };
         /** CanvasPatchForm */
         CanvasPatchForm: {
             /** Expected Revision */
@@ -3880,6 +3908,8 @@ export interface components {
             shelf_id?: string;
             /** Summary */
             summary?: string;
+            /** Tag Ids */
+            tag_ids?: string[];
             /** Title */
             title?: string;
             /**
@@ -3887,7 +3917,7 @@ export interface components {
              * @enum {string}
              */
             visibility?: "public" | "members";
-        } & (unknown | unknown | unknown | unknown);
+        } & (unknown | unknown | unknown | unknown | unknown);
         /** CanvasPosition */
         CanvasPosition: {
             /** X */
@@ -4886,6 +4916,45 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "configured" | "disabled" | "unverified";
+        };
+        /** TagCatalogResponse */
+        TagCatalogResponse: {
+            /** Items */
+            items: components["schemas"]["TagResponse"][];
+        };
+        /** TagCreateForm */
+        TagCreateForm: {
+            /** Name */
+            name: string;
+        };
+        /** TagErrorDetail */
+        TagErrorDetail: {
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Error
+             * @example TAG_UNAVAILABLE
+             * @enum {string}
+             */
+            error: "TAG_UNAVAILABLE";
+            /** Message */
+            message: string;
+        };
+        /** TagErrorResponse */
+        TagErrorResponse: {
+            detail: components["schemas"]["TagErrorDetail"];
+        };
+        /** TagResponse */
+        TagResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Name */
+            name: string;
         };
         /** UpdateProfileForm */
         UpdateProfileForm: {
@@ -11289,15 +11358,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    /**
-                     * @example {
-                     *       "detail": {
-                     *         "error": "CANVAS_INVALID_SHELF",
-                     *         "message": "Select a manual shelf in the same board."
-                     *       }
-                     *     }
-                     */
-                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
                 };
             };
             /** @description Unexpected server error */
@@ -13554,15 +13617,9 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    /**
-                     * @example {
-                     *       "detail": {
-                     *         "error": "CANVAS_INVALID_SHELF",
-                     *         "message": "Select a manual shelf in the same board."
-                     *       }
-                     *     }
-                     */
-                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
                 };
             };
             /** @description Unexpected server error */
@@ -16140,6 +16197,171 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    search_tags_api_v1_tags_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagCatalogResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "TAG_UNAVAILABLE",
+                     *         "message": "Unable to complete the tag operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TagErrorResponse"];
+                };
+            };
+        };
+    };
+    create_tag_api_v1_tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagCreateForm"];
+            };
+        };
+        responses: {
+            /** @description Existing normalized tag reused. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "USER_NOT_FOUND",
+                     *         "message": "User not found."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AuthErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "TAG_UNAVAILABLE",
+                     *         "message": "Unable to complete the tag operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["TagErrorResponse"];
                 };
             };
         };

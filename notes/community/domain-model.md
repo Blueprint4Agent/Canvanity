@@ -111,7 +111,7 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 
 ## 단계별 마이그레이션
 
-현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약만 제공하며 위 표의 공개본/태그/에셋 컬럼·전체 수명주기는 단계별 목표다.
+현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes, 에셋은0027, 자유 Tag는0028로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약을 제공하며 위 표의 공개본·전체 수명주기는 단계별 목표다. 에셋/태그의 실제 구현 경계는 아래 별도 계약을 따른다.
 
 1. #22/#23: Board/등급/멤버/정책/감사/Shelf/홈/Interest. 신규 테이블만 생성하고 기존 users/Interest 데이터는 보존한다. 계정 삭제 소유 검사는 Board 종료/에셋 정리 기반까지 연결한 뒤 활성화한다.
 2. #8 기반/#24: Canvas/Document/Publication/Tag, 복합 FK·조회 인덱스. 초기 빈 문서 생성은 API에 연결할 때 함께 구현한다.
@@ -129,3 +129,7 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 ## Canvas 이미지 구현 경계 — #6
 
 0027_canvas_assets는 [이미지 에셋 계약](canvas-assets.md)의 assets/canvas_asset_refs/asset_deletion_outbox와 Canvas 복합 유니크 인덱스를 추가한다. 현재 에셋은 Board/Canvas 소속이 필수이고 프로필/Board avatar·cover와 통합하지 않는다. storage_fingerprint/object_key 조합이 고유하며 content_type/byte_size/frame_count, pending/ready/deleting, upload_deadline/expires_at을 사용한다. 참조 FK는 같은 Board/Canvas의 ready 상태만 허용한다. outbox는 부모 FK 없이 원래 위치와 키를 보존한다. [본문 저장 #47](canvas-document-save.md)은 기존 테이블로 실제 JSON Image 참조를 추출해 같은 트랜잭션에 동기화하며 새 migration은 없다. publication 참조를 만드는 게시 경로는 #8 후속이다. 위 전체 목표 스키마와 현재 구현의 경계를 구분한다.
+
+## 자유 Tag 구현 경계 — #49 / #24
+
+0028_canvas_tags는 [자유 태그 계약](canvas-tags.md)의 tags/canvas_tags와 정규화 고유/역방향 조회 인덱스만 추가한다. 표시명은 valid UTF-8·제어/포맷 문자 거부·NFC/trim 1~40자, 고유 키는 casefold 뒤 다시 NFC 1~80자다. 최초 표시명/ID를 전역 재사용하고 공개 검색은 ID/이름만 반환한다. Canvas 생성/metadata PATCH는 최대10개 고유 tag_ids를 같은 트랜잭션에 연결하며 응답 tags는 정렬한 요약이다. 동일 태그 집합은 no-op이고 실제 변경은 metadata revision을 1회 증가시킨다. Canvas FK는 CASCADE, Tag FK는 RESTRICT이며 계정 삭제 뒤 사전/연결은 보존한다. 공식 Interest와 Board 자유 Tag·UI·공개 snapshot은 별도 범위다.
