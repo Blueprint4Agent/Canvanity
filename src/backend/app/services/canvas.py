@@ -14,6 +14,8 @@ from app.models.canvas import (
     CanvasContent,
     CanvasCreateForm,
     CanvasDocumentResponse,
+    CanvasDocumentSaveForm,
+    CanvasDocumentSaveResponse,
     CanvasMetadata,
     CanvasPatchForm,
     CanvasRepository,
@@ -59,6 +61,7 @@ class CanvasService:
             capabilities=CanvasCapabilities(
                 read_document=True,
                 edit_metadata=canvas.status == "draft" and can_write,
+                edit_document=canvas.status == "draft" and can_write,
                 trash=canvas.status == "draft" and board.status == "active",
                 restore=canvas.status == "trashed" and can_write and not self._expired(canvas),
             ),
@@ -104,6 +107,17 @@ class CanvasService:
             await tx.patch(canvas, form)
             result = await self._response(tx, board, member, canvas)
         return result
+
+    async def save_document(
+        self, user_id: int, canvas_id: UUID, form: CanvasDocumentSaveForm
+    ) -> CanvasDocumentSaveResponse:
+        async with self.repository.transaction() as tx:
+            board, member, canvas = await self.access.context(tx, user_id, canvas_id, write=True)
+            await self.access.require_write(tx, board, member, canvas.shelf_id)
+            if canvas.status != "draft":
+                raise CanvasException(CanvasErrorCode.INVALID_STATE)
+            revision = await tx.save_document(canvas, form)
+        return CanvasDocumentSaveResponse(revision=revision)
 
     async def trash(self, user_id: int, canvas_id: UUID, form: CanvasRevisionForm) -> int:
         async with self.repository.transaction() as tx:

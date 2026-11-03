@@ -67,3 +67,7 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 ## 사용자 Board 개설 구현
 
 사용자 요청으로 회원/운영 권한 관리 화면에 앞서 [Board 개설 흐름](notes/community/board-creation.md)을 구현한다. 실제 목록→개설 모달→기본 홈을 연결하고 생성 트랜잭션에서 Owner·뉴커머/피너/큐레이터·공지/자유 Shelf·기본 정책/홈을 준비한다. 공개/비공개 조회와 빈 Board 되돌리기를 제공하며 게시글·가입/초대·등급/운영진/Shelf 편집은 다음 범위다. 기존 초기화의 미구현 기록은 당시 상태이며 현재 범위/검증 결과는 worklog/0275-board-membership-shelves.md를 따른다.
+
+## Canvas 본문 저장 후속 작업
+
+2026-11-03: 선행 Board·회원/등급·Shelf·초안·이미지와 PR #46의 객체 스키마를 기반으로 [#47 본문 저장](notes/community/canvas-document-save.md)을 연결한다. PUT의 현재 작성자/정책·draft 검사, 문서 전용 revision CAS, 같은 트랜잭션의 draft 이미지 참조·TTL/outbox 갱신을 제공한다. 제품 편집기·자동 저장/복구 UI·공개 게시/목록과 운영 배포는 보류한다. 실제 검증/PR 게시·main 병합은 worklog/0292-canvas-document-save.md와 이슈/PR에서 구분한다.

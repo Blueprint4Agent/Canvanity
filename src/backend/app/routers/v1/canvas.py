@@ -1,22 +1,58 @@
+from collections.abc import Awaitable, Callable
 from typing import Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi.routing import APIRoute
+from starlette.types import Message
 
-from app.core.error.canvas_exception import CanvasErrorCode, canvas_error_responses
+from app.core.error.asset_exception import AssetErrorCode, asset_error_responses
+from app.core.error.canvas_exception import CanvasErrorCode, CanvasException, canvas_error_responses
 from app.core.error.response_contracts import current_user_error_responses
 from app.deps import get_current_session_user
 from app.models.canvas import (
     CanvasCreateForm,
     CanvasDocumentResponse,
+    CanvasDocumentSaveForm,
+    CanvasDocumentSaveResponse,
+    CanvasDocumentValidationErrorResponse,
     CanvasPatchForm,
     CanvasResponse,
     CanvasRevisionForm,
 )
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
+from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_REQUEST_BYTES
+
+
+class CanvasDocumentRoute(APIRoute):
+    def get_route_handler(self) -> Callable[[Request], Awaitable[Response]]:
+        handler = super().get_route_handler()
+
+        async def bounded_document(request: Request) -> Response:
+            body = bytearray()
+            async for chunk in request.stream():
+                if len(body) + len(chunk) > MAX_CANVAS_DOCUMENT_REQUEST_BYTES:
+                    raise CanvasException(CanvasErrorCode.DOCUMENT_TOO_LARGE)
+                body.extend(chunk)
+            payload = bytes(body)
+            del body
+            replayed = False
+
+            async def receive() -> Message:
+                nonlocal replayed
+                if not replayed:
+                    replayed = True
+                    return {"type": "http.request", "body": payload, "more_body": False}
+                return await request.receive()
+
+            return await handler(Request(request.scope, receive=receive))
+
+        return bounded_document
+
 
 router = APIRouter()
+document_router = APIRouter(route_class=CanvasDocumentRoute)
 READ_CODES = (CanvasErrorCode.NOT_FOUND, CanvasErrorCode.UNAVAILABLE)
 READ_ERRORS = current_user_error_responses(canvas_error_responses(*READ_CODES))
 WRITE_CODES = (*READ_CODES, CanvasErrorCode.FORBIDDEN, CanvasErrorCode.CONFLICT)
@@ -71,6 +107,37 @@ async def get_canvas_document(
     return await service.document(user.id, canvas_id)
 
 
+@document_router.put(
+    "/canvases/{canvas_id}/document",
+    response_model=CanvasDocumentSaveResponse,
+    responses=current_user_error_responses(
+        canvas_error_responses(
+            *READ_CODES,
+            CanvasErrorCode.FORBIDDEN,
+            CanvasErrorCode.INVALID_STATE,
+            CanvasErrorCode.DOCUMENT_CONFLICT,
+            CanvasErrorCode.DOCUMENT_TOO_LARGE,
+        ),
+        asset_error_responses(AssetErrorCode.INVALID_REFERENCE),
+        {
+            status.HTTP_422_UNPROCESSABLE_CONTENT: {
+                "model": CanvasDocumentValidationErrorResponse,
+                "description": "Request validation failed.",
+            }
+        },
+    ),
+)
+async def save_canvas_document(
+    canvas_id: UUID,
+    form: CanvasDocumentSaveForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasService = Depends(),
+) -> CanvasDocumentSaveResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.save_document(user.id, canvas_id, form)
+
+
 @router.patch(
     "/canvases/{canvas_id}",
     response_model=CanvasResponse,
@@ -123,3 +190,6 @@ async def restore_canvas(
 ) -> CanvasResponse:
     response.headers["Cache-Control"] = "private, no-store"
     return await service.restore(user.id, canvas_id, form)
+
+
+router.include_router(document_router)

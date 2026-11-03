@@ -151,6 +151,7 @@ def test_operating_roles_and_public_visibility_never_expose_another_authors_draf
     for method, suffix, body in [
         ("GET", "", None),
         ("GET", "/document", None),
+        ("PUT", "/document", {"expected_revision": 0, "document": {}}),
         ("PATCH", "", {"expected_revision": 0, "title": "금지"}),
         ("DELETE", "", {"expected_revision": 0}),
         ("POST", "/restore", {"expected_revision": 0}),
@@ -174,6 +175,7 @@ def test_current_grade_demotion_allows_own_read_and_trash_but_blocks_edit_and_re
     assert own.json()["capabilities"] == {
         "read_document": True,
         "edit_metadata": False,
+        "edit_document": False,
         "trash": True,
         "restore": False,
     }
@@ -238,6 +240,7 @@ def test_current_member_and_board_status_hide_own_drafts(draft, state):
     for method, suffix, body in [
         ("GET", "", None),
         ("GET", "/document", None),
+        ("PUT", "/document", {"expected_revision": 0, "document": {}}),
         ("PATCH", "", {"expected_revision": 0, "title": "불가"}),
         ("DELETE", "", {"expected_revision": 0}),
         ("POST", "/restore", {"expected_revision": 0}),
@@ -257,6 +260,7 @@ def test_archived_board_allows_author_read_and_hides_others_before_write_status(
     assert r.client.get(r.canvas_path, headers=r.headers["member"]).json()["capabilities"] == {
         "read_document": True,
         "edit_metadata": False,
+        "edit_document": False,
         "trash": False,
         "restore": False,
     }

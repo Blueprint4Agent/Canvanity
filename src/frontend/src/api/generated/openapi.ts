@@ -1142,7 +1142,8 @@ export interface paths {
         };
         /** Get Canvas Document */
         get: operations["get_canvas_document_api_v1_canvases__canvas_id__document_get"];
-        put?: never;
+        /** Save Canvas Document */
+        put: operations["save_canvas_document_api_v1_canvases__canvas_id__document_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2994,6 +2995,8 @@ export interface components {
         };
         /** CanvasCapabilities */
         CanvasCapabilities: {
+            /** Edit Document */
+            edit_document: boolean;
             /** Edit Metadata */
             edit_metadata: boolean;
             /** Read Document */
@@ -3004,18 +3007,40 @@ export interface components {
             trash: boolean;
         };
         /** CanvasContent */
-        CanvasContent: {
+        "CanvasContent-Input": {
             /** Edges */
-            edges?: components["schemas"]["CanvasEdge"][];
+            edges?: components["schemas"]["CanvasEdge-Input"][];
             /** Element Order */
             element_order?: string[];
             engine?: components["schemas"]["CanvasEngine"];
             /** Nodes */
             nodes?: (
-                | components["schemas"]["CanvasTextNode"]
-                | components["schemas"]["CanvasShapeNode"]
-                | components["schemas"]["CanvasImageNode"]
-                | components["schemas"]["CanvasDrawingNode"]
+                | components["schemas"]["CanvasTextNode-Input"]
+                | components["schemas"]["CanvasShapeNode-Input"]
+                | components["schemas"]["CanvasImageNode-Input"]
+                | components["schemas"]["CanvasDrawingNode-Input"]
+            )[];
+            /**
+             * Schema Version
+             * @default 1
+             * @constant
+             */
+            schema_version: 1;
+            settings?: components["schemas"]["CanvasSettings"];
+        };
+        /** CanvasContent */
+        "CanvasContent-Output": {
+            /** Edges */
+            edges?: components["schemas"]["CanvasEdge-Output"][];
+            /** Element Order */
+            element_order?: string[];
+            engine?: components["schemas"]["CanvasEngine"];
+            /** Nodes */
+            nodes?: (
+                | components["schemas"]["CanvasTextNode-Output"]
+                | components["schemas"]["CanvasShapeNode-Output"]
+                | components["schemas"]["CanvasImageNode-Output"]
+                | components["schemas"]["CanvasDrawingNode-Output"]
             )[];
             /**
              * Schema Version
@@ -3048,7 +3073,7 @@ export interface components {
         };
         /** CanvasDocumentResponse */
         CanvasDocumentResponse: {
-            document: components["schemas"]["CanvasContent"];
+            document: components["schemas"]["CanvasContent-Output"];
             /** Revision */
             revision: number;
             /**
@@ -3058,8 +3083,55 @@ export interface components {
              */
             view: "draft";
         };
+        /**
+         * CanvasDocumentSaveForm
+         * @description Expected revision belongs to the draft document, independently of metadata.
+         */
+        CanvasDocumentSaveForm: {
+            document: components["schemas"]["CanvasContent-Input"];
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** CanvasDocumentSaveResponse */
+        CanvasDocumentSaveResponse: {
+            /** Revision */
+            revision: number;
+            /**
+             * View
+             * @default draft
+             * @constant
+             */
+            view: "draft";
+        };
+        /** CanvasDocumentValidationErrorDetail */
+        CanvasDocumentValidationErrorDetail: {
+            /** Loc */
+            loc: (string | number)[];
+            /** Msg */
+            msg: string;
+            /** Type */
+            type: string;
+        };
+        /** CanvasDocumentValidationErrorResponse */
+        CanvasDocumentValidationErrorResponse: {
+            /** Detail */
+            detail: components["schemas"]["CanvasDocumentValidationErrorDetail"][];
+        };
         /** CanvasDrawingNode */
-        CanvasDrawingNode: {
+        "CanvasDrawingNode-Input": {
+            engine_element: components["schemas"]["CanvasEngineDrawing"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "drawing";
+        };
+        /** CanvasDrawingNode */
+        "CanvasDrawingNode-Output": {
             engine_element: components["schemas"]["CanvasEngineDrawing"];
             /** Id */
             id: string;
@@ -3072,7 +3144,27 @@ export interface components {
             type: "drawing";
         };
         /** CanvasEdge */
-        CanvasEdge: {
+        "CanvasEdge-Input": {
+            /** Engine Element */
+            engine_element:
+                | components["schemas"]["CanvasEngineLine"]
+                | components["schemas"]["CanvasEngineArrow"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /** Source Node Id */
+            source_node_id: string | null;
+            /** Target Node Id */
+            target_node_id: string | null;
+            /**
+             * Type
+             * @constant
+             */
+            type: "edge";
+        };
+        /** CanvasEdge */
+        "CanvasEdge-Output": {
             /** Engine Element */
             engine_element:
                 | components["schemas"]["CanvasEngineLine"]
@@ -3666,6 +3758,8 @@ export interface components {
                 | "CANVAS_FORBIDDEN"
                 | "CANVAS_INVALID_SHELF"
                 | "CANVAS_REVISION_CONFLICT"
+                | "CANVAS_DOCUMENT_REVISION_CONFLICT"
+                | "CANVAS_DOCUMENT_TOO_LARGE"
                 | "CANVAS_INVALID_STATE"
                 | "CANVAS_RESTORE_EXPIRED"
                 | "CANVAS_UNAVAILABLE";
@@ -3700,7 +3794,21 @@ export interface components {
             y: number;
         };
         /** CanvasImageNode */
-        CanvasImageNode: {
+        "CanvasImageNode-Input": {
+            content: components["schemas"]["CanvasImageContent"];
+            engine_element: components["schemas"]["CanvasEngineImage"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "image";
+        };
+        /** CanvasImageNode */
+        "CanvasImageNode-Output": {
             content: components["schemas"]["CanvasImageContent"];
             engine_element: components["schemas"]["CanvasEngineImage"];
             /** Id */
@@ -3830,7 +3938,20 @@ export interface components {
             width: number;
         };
         /** CanvasShapeNode */
-        CanvasShapeNode: {
+        "CanvasShapeNode-Input": {
+            engine_element: components["schemas"]["CanvasEngineShape"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "shape";
+        };
+        /** CanvasShapeNode */
+        "CanvasShapeNode-Output": {
             engine_element: components["schemas"]["CanvasEngineShape"];
             /** Id */
             id: string;
@@ -3850,7 +3971,20 @@ export interface components {
             width: number;
         };
         /** CanvasTextNode */
-        CanvasTextNode: {
+        "CanvasTextNode-Input": {
+            engine_element: components["schemas"]["CanvasEngineText"];
+            /** Id */
+            id: string;
+            position: components["schemas"]["CanvasPosition"];
+            size: components["schemas"]["CanvasSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "text";
+        };
+        /** CanvasTextNode */
+        "CanvasTextNode-Output": {
             engine_element: components["schemas"]["CanvasEngineText"];
             /** Id */
             id: string;
@@ -13846,6 +13980,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    save_canvas_document_api_v1_canvases__canvas_id__document_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CanvasDocumentSaveForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanvasDocumentSaveResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_INVALID_STATE",
+                     *         "message": "Restore the canvas before editing it."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_DOCUMENT_TOO_LARGE",
+                     *         "message": "Canvas document request exceeds the byte limit."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AssetErrorResponse"]
+                        | components["schemas"]["CanvasDocumentValidationErrorResponse"];
                 };
             };
             /** @description Unexpected server error */

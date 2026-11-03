@@ -91,7 +91,7 @@ erDiagram
 | restore trash   | trashed → draft                    | 30일 이내 작성자 복구. 자동 재게시하지 않음                                                             |
 | purge           | trashed → 제거                     | 30일 후 DB 참조 제거, 미참조 파일 비동기 정리. 물리 파일 삭제 성공을 DB 트랜잭션으로 보장하지 않음      |
 
-POST publish는 expected_document_revision, expected_metadata_revision을 받고 Canvas 행 잠금 → 현재 권한·Board/Shelf 상태 검사 → 초안 행 잠금 → revision 검증 → snapshot/메타/참조를 함께 commit한다. 저장·이동·게시 취소도 같은 잠금 순서(Board → Canvas → Document)를 유지한다. 문서 갱신은 조건부 UPDATE와 RETURNING으로 최종 CAS를 수행한다.
+후속 POST publish는 expected_document_revision, expected_metadata_revision을 받고 현재 권한·Board/Shelf 상태와 revision을 검사한 뒤 snapshot/메타/참조를 함께 commit한다. 저장·이동·게시 취소의 공통 잠금 순서는 Board → 활성 User 공유 잠금 → Canvas → Document → 정렬한 해당 Canvas Asset → outbox다. User 잠금은 계정 삭제의 User→Canvas SET NULL과 순서를 맞춘다. 현재 [본문 PUT](canvas-document-save.md)은 조건부 UPDATE와 RETURNING으로 최종 CAS를 수행하고 같은 트랜잭션에서 draft 참조를 교체한다. 이동처럼 문서/에셋을 바꾸지 않는 작업은 해당 행을 추가로 잠그지 않는다.
 
 게시글 이동은 동일 Board 내 Manual Shelf만 허용한다. 이동 즉시 새 Shelf 권한이 적용되며 공개 snapshot 제목/본문은 유지한다. 새 Shelf에서 공개 visibility가 허용되는지 검사한다. 공개 제목/태그/미리보기 수정은 재게시 때 반영한다. 읽기 응답은 현재 Board/Shelf/멤버 권한을 재검사한 뒤 공개 snapshot에서 가져온다.
 
@@ -101,7 +101,7 @@ Board archived는 읽기와 Owner의 명시적 복원·소유권 이전만 허�
 
 ## JSON 문서와 버전
 
-Content v1은 `schema_version`, `engine`(name/version/adapter_version), `settings`, `nodes`, `edges`를 갖는다. [객체 스키마](canvas-content-schema.md)가 현재 모델의 허용 타입/필드·엔진 스냅샷·참조/크기 검증 기준이다. [편집기 어댑터](editor-decision.md)처럼 고정 버전 필드를 보존하며 임의 JSON을 통과시키지 않는다. text/image/drawing/shape만 nodes, 연결선은 edges. 전체 z 순서는 element_order로 보존한다. node/edge ID는 문서 내 유일한 길이 1~80 문자열이며 동일 문서 안 참조만 허용한다. 자유 화살표의 source/target은 null을 허용한다. 객체 validator는 구현되어 있지만 문서 PUT/CAS와 실제 에셋 참조 갱신은 #7 후속이다.
+Content v1은 `schema_version`, `engine`(name/version/adapter_version), `settings`, `nodes`, `edges`, `element_order`를 갖는다. [객체 스키마](canvas-content-schema.md)가 현재 모델의 허용 타입/필드·엔진 스냅샷·참조/크기 검증 기준이다. [편집기 어댑터](editor-decision.md)처럼 고정 버전 필드를 보존하며 임의 JSON을 통과시키지 않는다. text/image/drawing/shape만 nodes, 연결선은 edges. 전체 z 순서는 element_order로 보존한다. node/edge ID는 문서 내 유일한 길이 1~80 문자열이며 동일 문서 안 참조만 허용한다. 자유 화살표의 source/target은 null을 허용한다. [본문 저장 #47](canvas-document-save.md)이 이 validator를 PUT 입력으로 사용하고 CAS·실제 에셋의 소속/ready 검증·draft 참조를 원자 갱신한다.
 
 기본 세계 크기 3200×2100, 좌표는 유한값·절댓값 최대 100,000, size는 일반 shape/image는 양수 최대 100,000, edge/drawing은 각 축 0 이상이며 둘 다 0은 거부한다. 줌은 임시 상태다. 본문 최대 UTF-8 JSON 2 MiB, 노드+연결선 합계 2,000, text 노드당 20,000자, drawing당 point 20,000. 수치는 MVP 거부 상한이며 성능 보장은 아니다. 이미지 바이너리는 JSON에서 제외하고 asset_id로만 참조한다.
 
@@ -128,4 +128,4 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 
 ## Canvas 이미지 구현 경계 — #6
 
-0027_canvas_assets는 [이미지 에셋 계약](canvas-assets.md)의 assets/canvas_asset_refs/asset_deletion_outbox와 Canvas 복합 유니크 인덱스를 추가한다. 현재 에셋은 Board/Canvas 소속이 필수이고 프로필/Board avatar·cover와 통합하지 않는다. storage_fingerprint/object_key 조합이 고유하며 content_type/byte_size/frame_count, pending/ready/deleting, upload_deadline/expires_at을 사용한다. 참조 FK는 같은 Board/Canvas의 ready 상태만 허용한다. outbox는 부모 FK 없이 원래 위치와 키를 보존한다. 문서 저장/게시가 실제 JSON 참조를 추출하고 같은 트랜잭션에 동기화하는 경로는 #7/#8 후속이다. 위 전체 목표 스키마와 현재 구현의 경계를 구분한다.
+0027_canvas_assets는 [이미지 에셋 계약](canvas-assets.md)의 assets/canvas_asset_refs/asset_deletion_outbox와 Canvas 복합 유니크 인덱스를 추가한다. 현재 에셋은 Board/Canvas 소속이 필수이고 프로필/Board avatar·cover와 통합하지 않는다. storage_fingerprint/object_key 조합이 고유하며 content_type/byte_size/frame_count, pending/ready/deleting, upload_deadline/expires_at을 사용한다. 참조 FK는 같은 Board/Canvas의 ready 상태만 허용한다. outbox는 부모 FK 없이 원래 위치와 키를 보존한다. [본문 저장 #47](canvas-document-save.md)은 기존 테이블로 실제 JSON Image 참조를 추출해 같은 트랜잭션에 동기화하며 새 migration은 없다. publication 참조를 만드는 게시 경로는 #8 후속이다. 위 전체 목표 스키마와 현재 구현의 경계를 구분한다.

@@ -301,7 +301,11 @@ class AssetTransaction:
                 for a in (
                     await self._db.scalars(
                         select(Asset)
-                        .where(Asset.id.in_(affected))
+                        .where(
+                            Asset.id.in_(affected),
+                            Asset.board_id == canvas.board_id,
+                            Asset.canvas_id == canvas.id,
+                        )
                         .order_by(Asset.id)
                         .with_for_update()
                     )

@@ -20,6 +20,7 @@ from sqlalchemy import (
     Uuid,
     select,
     text,
+    update,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import SQLAlchemyError
@@ -29,6 +30,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.core.db.session import Base, get_db
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
 from app.models.board import BoardTransaction, Shelf
+from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_BYTES
 
 MAX_CANVAS_REVISION = 2**63 - 1
 CANVAS_TRASH_RETENTION_DAYS = 30
@@ -93,7 +95,6 @@ class CanvasDocument(Base):
 
 
 MAX_CANVAS_ELEMENTS = 2_000
-MAX_CANVAS_DOCUMENT_BYTES = 2 * 1024 * 1024
 MAX_CANVAS_TEXT_LENGTH = 20_000
 MAX_CANVAS_POINTS = 20_000
 MAX_CANVAS_COORDINATE = 100_000
@@ -478,6 +479,12 @@ class CanvasRevisionForm(BaseModel):
     expected_revision: int = Field(ge=0, le=MAX_CANVAS_REVISION, strict=True)
 
 
+class CanvasDocumentSaveForm(CanvasRevisionForm):
+    """Expected revision belongs to the draft document, independently of metadata."""
+
+    document: CanvasContent
+
+
 def _patch_schema(schema: dict) -> None:
     for field in CANVAS_FIELDS:
         schema["properties"][field].pop("default", None)
@@ -524,6 +531,7 @@ class CanvasMetadata(BaseModel):
 class CanvasCapabilities(BaseModel):
     read_document: bool
     edit_metadata: bool
+    edit_document: bool
     trash: bool
     restore: bool
 
@@ -541,6 +549,22 @@ class CanvasDocumentResponse(BaseModel):
     view: Literal["draft"] = "draft"
 
 
+class CanvasDocumentSaveResponse(BaseModel):
+    revision: int
+    view: Literal["draft"] = "draft"
+
+
+class CanvasDocumentValidationErrorDetail(BaseModel):
+    loc: list[str | int]
+    msg: str
+    type: str
+
+
+class CanvasDocumentValidationErrorResponse(BaseModel):
+    # Match FastAPI's validation envelope alongside the domain-specific Asset 422.
+    detail: list[CanvasDocumentValidationErrorDetail]
+
+
 class CanvasTransaction:
     def __init__(self, db: AsyncSession):
         self._db = db
@@ -555,6 +579,48 @@ class CanvasTransaction:
 
     async def document(self, canvas_id: UUID) -> CanvasDocument | None:
         return await self._db.get(CanvasDocument, canvas_id)
+
+    async def save_document(self, canvas: Canvas, form: CanvasDocumentSaveForm) -> int:
+        # Same-session composition avoids a second transaction and circular initialization.
+        from app.models.asset import AssetTransaction
+
+        document = await self._db.scalar(
+            select(CanvasDocument).where(CanvasDocument.canvas_id == canvas.id).with_for_update()
+        )
+        if document is None:
+            raise CanvasException(CanvasErrorCode.UNAVAILABLE)
+        if document.revision != form.expected_revision or document.revision >= MAX_CANVAS_REVISION:
+            raise CanvasException(
+                CanvasErrorCode.DOCUMENT_CONFLICT, {"current_revision": document.revision}
+            )
+        revision = await self._db.scalar(
+            update(CanvasDocument)
+            .where(
+                CanvasDocument.canvas_id == canvas.id,
+                CanvasDocument.revision == form.expected_revision,
+                CanvasDocument.revision < MAX_CANVAS_REVISION,
+            )
+            .values(
+                document=form.document.model_dump(mode="json"),
+                revision=CanvasDocument.revision + 1,
+                updated_at=utc_now(),
+            )
+            .returning(CanvasDocument.revision)
+        )
+        if revision is None:
+            current = await self._db.scalar(
+                select(CanvasDocument.revision).where(CanvasDocument.canvas_id == canvas.id)
+            )
+            if current is None:
+                raise CanvasException(CanvasErrorCode.UNAVAILABLE)
+            raise CanvasException(CanvasErrorCode.DOCUMENT_CONFLICT, {"current_revision": current})
+        asset_ids = {
+            node.content.asset_id
+            for node in form.document.nodes
+            if isinstance(node, CanvasImageNode)
+        }
+        await AssetTransaction(self._db).replace_refs(canvas, asset_ids, scope="draft")
+        return revision
 
     async def shelf(self, board_id: UUID, shelf_id: UUID) -> Shelf | None:
         return await self._db.scalar(

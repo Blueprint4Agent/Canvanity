@@ -3660,6 +3660,10 @@
       },
       "CanvasCapabilities": {
         "properties": {
+          "edit_document": {
+            "title": "Edit Document",
+            "type": "boolean"
+          },
           "edit_metadata": {
             "title": "Edit Metadata",
             "type": "boolean"
@@ -3680,18 +3684,19 @@
         "required": [
           "read_document",
           "edit_metadata",
+          "edit_document",
           "trash",
           "restore"
         ],
         "title": "CanvasCapabilities",
         "type": "object"
       },
-      "CanvasContent": {
+      "CanvasContent-Input": {
         "additionalProperties": false,
         "properties": {
           "edges": {
             "items": {
-              "$ref": "#/components/schemas/CanvasEdge"
+              "$ref": "#/components/schemas/CanvasEdge-Input"
             },
             "maxItems": 2000,
             "title": "Edges",
@@ -3714,25 +3719,92 @@
             "items": {
               "discriminator": {
                 "mapping": {
-                  "drawing": "#/components/schemas/CanvasDrawingNode",
-                  "image": "#/components/schemas/CanvasImageNode",
-                  "shape": "#/components/schemas/CanvasShapeNode",
-                  "text": "#/components/schemas/CanvasTextNode"
+                  "drawing": "#/components/schemas/CanvasDrawingNode-Input",
+                  "image": "#/components/schemas/CanvasImageNode-Input",
+                  "shape": "#/components/schemas/CanvasShapeNode-Input",
+                  "text": "#/components/schemas/CanvasTextNode-Input"
                 },
                 "propertyName": "type"
               },
               "oneOf": [
                 {
-                  "$ref": "#/components/schemas/CanvasTextNode"
+                  "$ref": "#/components/schemas/CanvasTextNode-Input"
                 },
                 {
-                  "$ref": "#/components/schemas/CanvasShapeNode"
+                  "$ref": "#/components/schemas/CanvasShapeNode-Input"
                 },
                 {
-                  "$ref": "#/components/schemas/CanvasImageNode"
+                  "$ref": "#/components/schemas/CanvasImageNode-Input"
                 },
                 {
-                  "$ref": "#/components/schemas/CanvasDrawingNode"
+                  "$ref": "#/components/schemas/CanvasDrawingNode-Input"
+                }
+              ]
+            },
+            "maxItems": 2000,
+            "title": "Nodes",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": 1,
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "settings": {
+            "$ref": "#/components/schemas/CanvasSettings"
+          }
+        },
+        "title": "CanvasContent",
+        "type": "object"
+      },
+      "CanvasContent-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/CanvasEdge-Output"
+            },
+            "maxItems": 2000,
+            "title": "Edges",
+            "type": "array"
+          },
+          "element_order": {
+            "items": {
+              "maxLength": 80,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 2000,
+            "title": "Element Order",
+            "type": "array"
+          },
+          "engine": {
+            "$ref": "#/components/schemas/CanvasEngine"
+          },
+          "nodes": {
+            "items": {
+              "discriminator": {
+                "mapping": {
+                  "drawing": "#/components/schemas/CanvasDrawingNode-Output",
+                  "image": "#/components/schemas/CanvasImageNode-Output",
+                  "shape": "#/components/schemas/CanvasShapeNode-Output",
+                  "text": "#/components/schemas/CanvasTextNode-Output"
+                },
+                "propertyName": "type"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CanvasTextNode-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/CanvasShapeNode-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/CanvasImageNode-Output"
+                },
+                {
+                  "$ref": "#/components/schemas/CanvasDrawingNode-Output"
                 }
               ]
             },
@@ -3793,7 +3865,7 @@
       "CanvasDocumentResponse": {
         "properties": {
           "document": {
-            "$ref": "#/components/schemas/CanvasContent"
+            "$ref": "#/components/schemas/CanvasContent-Output"
           },
           "revision": {
             "title": "Revision",
@@ -3813,7 +3885,96 @@
         "title": "CanvasDocumentResponse",
         "type": "object"
       },
-      "CanvasDrawingNode": {
+      "CanvasDocumentSaveForm": {
+        "additionalProperties": false,
+        "description": "Expected revision belongs to the draft document, independently of metadata.",
+        "properties": {
+          "document": {
+            "$ref": "#/components/schemas/CanvasContent-Input"
+          },
+          "expected_revision": {
+            "maximum": 9.223372036854776e+18,
+            "minimum": 0.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "document"
+        ],
+        "title": "CanvasDocumentSaveForm",
+        "type": "object"
+      },
+      "CanvasDocumentSaveResponse": {
+        "properties": {
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "view": {
+            "const": "draft",
+            "default": "draft",
+            "title": "View",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision"
+        ],
+        "title": "CanvasDocumentSaveResponse",
+        "type": "object"
+      },
+      "CanvasDocumentValidationErrorDetail": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Loc",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Msg",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "CanvasDocumentValidationErrorDetail",
+        "type": "object"
+      },
+      "CanvasDocumentValidationErrorResponse": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/CanvasDocumentValidationErrorDetail"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "required": [
+          "detail"
+        ],
+        "title": "CanvasDocumentValidationErrorResponse",
+        "type": "object"
+      },
+      "CanvasDrawingNode-Input": {
         "additionalProperties": false,
         "properties": {
           "engine_element": {
@@ -3847,7 +4008,118 @@
         "title": "CanvasDrawingNode",
         "type": "object"
       },
-      "CanvasEdge": {
+      "CanvasDrawingNode-Output": {
+        "additionalProperties": false,
+        "properties": {
+          "engine_element": {
+            "$ref": "#/components/schemas/CanvasEngineDrawing"
+          },
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/CanvasPosition"
+          },
+          "size": {
+            "$ref": "#/components/schemas/CanvasSize"
+          },
+          "type": {
+            "const": "drawing",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "size",
+          "engine_element",
+          "type"
+        ],
+        "title": "CanvasDrawingNode",
+        "type": "object"
+      },
+      "CanvasEdge-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "engine_element": {
+            "discriminator": {
+              "mapping": {
+                "arrow": "#/components/schemas/CanvasEngineArrow",
+                "line": "#/components/schemas/CanvasEngineLine"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CanvasEngineLine"
+              },
+              {
+                "$ref": "#/components/schemas/CanvasEngineArrow"
+              }
+            ],
+            "title": "Engine Element"
+          },
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/CanvasPosition"
+          },
+          "size": {
+            "$ref": "#/components/schemas/CanvasSize"
+          },
+          "source_node_id": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Node Id"
+          },
+          "target_node_id": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Node Id"
+          },
+          "type": {
+            "const": "edge",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "size",
+          "engine_element",
+          "type",
+          "source_node_id",
+          "target_node_id"
+        ],
+        "title": "CanvasEdge",
+        "type": "object"
+      },
+      "CanvasEdge-Output": {
         "additionalProperties": false,
         "properties": {
           "engine_element": {
@@ -5646,6 +5918,8 @@
               "CANVAS_FORBIDDEN",
               "CANVAS_INVALID_SHELF",
               "CANVAS_REVISION_CONFLICT",
+              "CANVAS_DOCUMENT_REVISION_CONFLICT",
+              "CANVAS_DOCUMENT_TOO_LARGE",
               "CANVAS_INVALID_STATE",
               "CANVAS_RESTORE_EXPIRED",
               "CANVAS_UNAVAILABLE"
@@ -5744,7 +6018,45 @@
         "title": "CanvasImageCrop",
         "type": "object"
       },
-      "CanvasImageNode": {
+      "CanvasImageNode-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/components/schemas/CanvasImageContent"
+          },
+          "engine_element": {
+            "$ref": "#/components/schemas/CanvasEngineImage"
+          },
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/CanvasPosition"
+          },
+          "size": {
+            "$ref": "#/components/schemas/CanvasSize"
+          },
+          "type": {
+            "const": "image",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "size",
+          "engine_element",
+          "type",
+          "content"
+        ],
+        "title": "CanvasImageNode",
+        "type": "object"
+      },
+      "CanvasImageNode-Output": {
         "additionalProperties": false,
         "properties": {
           "content": {
@@ -6046,7 +6358,41 @@
         "title": "CanvasSettings",
         "type": "object"
       },
-      "CanvasShapeNode": {
+      "CanvasShapeNode-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "engine_element": {
+            "$ref": "#/components/schemas/CanvasEngineShape"
+          },
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/CanvasPosition"
+          },
+          "size": {
+            "$ref": "#/components/schemas/CanvasSize"
+          },
+          "type": {
+            "const": "shape",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "size",
+          "engine_element",
+          "type"
+        ],
+        "title": "CanvasShapeNode",
+        "type": "object"
+      },
+      "CanvasShapeNode-Output": {
         "additionalProperties": false,
         "properties": {
           "engine_element": {
@@ -6103,7 +6449,41 @@
         "title": "CanvasSize",
         "type": "object"
       },
-      "CanvasTextNode": {
+      "CanvasTextNode-Input": {
+        "additionalProperties": false,
+        "properties": {
+          "engine_element": {
+            "$ref": "#/components/schemas/CanvasEngineText"
+          },
+          "id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Id",
+            "type": "string"
+          },
+          "position": {
+            "$ref": "#/components/schemas/CanvasPosition"
+          },
+          "size": {
+            "$ref": "#/components/schemas/CanvasSize"
+          },
+          "type": {
+            "const": "text",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "position",
+          "size",
+          "engine_element",
+          "type"
+        ],
+        "title": "CanvasTextNode",
+        "type": "object"
+      },
+      "CanvasTextNode-Output": {
         "additionalProperties": false,
         "properties": {
           "engine_element": {
@@ -20744,6 +21124,185 @@
           }
         ],
         "summary": "Get Canvas Document",
+        "tags": [
+          "Canvases"
+        ]
+      },
+      "put": {
+        "operationId": "save_canvas_document_api_v1_canvases__canvas_id__document_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "canvas_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Canvas Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CanvasDocumentSaveForm"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasDocumentSaveResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    }
+                  ],
+                  "title": "Response 401 Save Canvas Document Api V1 Canvases  Canvas Id  Document Put"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/APIKeyErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 403 Save Canvas Document Api V1 Canvases  Canvas Id  Document Put"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasErrorResponse"
+                    }
+                  ],
+                  "title": "Response 404 Save Canvas Document Api V1 Canvases  Canvas Id  Document Put"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_INVALID_STATE",
+                    "message": "Restore the canvas before editing it."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_DOCUMENT_TOO_LARGE",
+                    "message": "Canvas document request exceeds the byte limit."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AssetErrorResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/CanvasDocumentValidationErrorResponse"
+                    }
+                  ],
+                  "title": "Response 422 Save Canvas Document Api V1 Canvases  Canvas Id  Document Put"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InternalErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected server error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "error": "CANVAS_UNAVAILABLE",
+                    "message": "Unable to complete the canvas operation."
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/CanvasErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "summary": "Save Canvas Document",
         "tags": [
           "Canvases"
         ]
