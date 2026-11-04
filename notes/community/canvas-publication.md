@@ -83,3 +83,7 @@ SQL·세션·ORM 쓰기·트랜잭션·DB 오류 변환은 `models/canvas.py`와
 API/SQLite 검사는 공개본 불변·현재 권한/view/API Key·이미지·CAS/overflow·휴지통/SET NULL/Board 삭제·flush/commit/불확실한 commit을 확인한다. opt-in 실제 PostgreSQL 검사는 고유 임시 schema에서 migration·JSONB·게시/취소/저장/metadata 경쟁, 현재 권한 회수의 lock wait, 공개 읽기의 공유 잠금 양방향, 취소/cleanup 양방향과 계정 삭제 경쟁을 확인하고 schema 제거를 재검증한다. 기본 전체 검사에서 opt-in은 skip되므로 별도 실행 결과를 worklog에 기록한다.
 
 [목록/Plaza·cursor/필터 #53](canvas-feed.md)은 별도 백엔드 계약이다. [공식 홈 #55](board-home-layout.md)의 collection도 공개 header/고정 Tag와 현재 권한만 사용하고 작성자/Owner의 미게시 초안은 섞지 않는다. 개인 draft 목록·운영자 moderation·Canvas archive/자동 purge·썸네일 생성·신규 UI/운영 배포는 이 단위에 포함하지 않는다. #51 완료가 상위 #8/#6/#7/#24 전체 완료를 의미하지 않는다.
+
+## 내 Canvas 목록·휴지통 #57
+
+[세션 전용 내 목록](canvas-list.md)은 현재 active 계정·Board active/archived·active 멤버인 본인의 기존 Board 소속 행만 조회한다. 낮은 Shelf 등급도 본인 초안 읽기를 막지 않고 단건과 같은 capabilities/30일 복구 기한을 적용한다. metadata/본문 최근 수정순과 독립 status/publication 필터를 사용하며 공개 snapshot 목록·단건 공개본 읽기 경계를 넓히지 않는다. 제품 UI는 후속이다.

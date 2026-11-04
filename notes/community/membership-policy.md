@@ -136,3 +136,7 @@ members PATCH는 role/status/grade_id를 한 번에 받을 수 있으나 **제�
 ## Shelf·정책 설정 — #23
 
 [Shelf 관리 계약](shelf-management.md)은 active Owner/Admin에게 분류·정렬과 Board 기본/Shelf 재정의 정책 편집을 제공한다. 홈·메뉴·직접 조회·관리 응답의 capabilities는 공통 평가기를 사용하며 읽기가 막히면 작성/댓글/반응도 false다. 정책 관리는 읽기 등급과 별개여서 Owner/Admin이 설정을 복구할 수 있다. 공지 작성/댓글은 staff_only 재정의를 유지하고 null로 우회하지 않는다. 숨김은 메뉴 표시 설정이며 직접 URL은 실제 정책으로 판단한다. Canvas/댓글/에셋·목록의 위 행렬 적용과 UI는 각 도메인 연결 후 검증할 범위다.
+
+## 내 Canvas 목록·휴지통 #57
+
+[세션 전용 내 목록](canvas-list.md)은 현재 active 계정·Board active/archived·active 멤버인 본인의 기존 Board 소속 행만 조회한다. 낮은 Shelf 등급도 본인 초안 읽기를 막지 않고 단건과 같은 capabilities/30일 복구 기한을 적용한다. metadata/본문 최근 수정순과 독립 status/publication 필터를 사용하며 공개 snapshot 목록·단건 공개본 읽기 경계를 넓히지 않는다. 제품 UI는 후속이다.

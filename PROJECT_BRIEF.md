@@ -90,3 +90,8 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 ## Board 공식 홈 레이아웃 후속 작업
 
 2026-11-04: #53/PR #54의 main 반영 뒤 [#55 공식 홈](notes/community/board-home-layout.md)은 현재 active Owner/Admin의 layout GET/PUT·독립 INTEGER32 CAS/no-op/최소 감사와 방문자별 typed layout/widget_data를 연결한다. 제한 Shelf source 위젯은 ID/config까지 생략하고 현재 권한의 공개 header/고정 태그만 일관 snapshot에서 batch 조회한다. 새 migration/제품 UI/개인 배치/Board 미디어 연결은 포함하지 않는다. 실제 검증·ready PR·main 병합은 worklog0296와 이슈/PR에서 구분한다.
+
+
+## 내 Canvas 목록·휴지통 후속 작업
+
+2026-11-04: [#57 본인 목록](notes/community/canvas-list.md)은 현재 활성 세션 작성자의 기존 Board 소속 초안/휴지통 metadata·현재 Tags·게시 상태·수정순 커서와 복구 기한을 제공한다. 단건 작성자 scope/정책을 재사용하고 snapshot의 고정 batch로 본문 없이 읽는다. 신규 UI·독립 개인 Canvas·자동 purge/영구삭제는 보류한다. 실제 검증·게시·main 병합은 worklog0297과 이슈/PR을 따른다.

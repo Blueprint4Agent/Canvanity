@@ -1,6 +1,5 @@
 """Draft ownership and metadata workflows; operational roles never grant draft access."""
 
-from datetime import timedelta
 from uuid import UUID
 
 from fastapi import Depends
@@ -8,7 +7,6 @@ from fastapi import Depends
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
 from app.models.board import Board, BoardMember
 from app.models.canvas import (
-    CANVAS_TRASH_RETENTION_DAYS,
     Canvas,
     CanvasCapabilities,
     CanvasContent,
@@ -30,7 +28,6 @@ from app.models.canvas import (
     CanvasRevisionForm,
     CanvasTransaction,
     CanvasUnpublishForm,
-    as_utc,
     utc_now,
 )
 from app.services.canvas_access import CanvasAccessService
@@ -52,9 +49,7 @@ class CanvasService:
 
     @staticmethod
     def _expired(canvas: Canvas) -> bool:
-        return canvas.trashed_at is not None and as_utc(canvas.trashed_at) <= utc_now() - timedelta(
-            days=CANVAS_TRASH_RETENTION_DAYS
-        )
+        return CanvasAccessService.trash_expired(canvas, at=utc_now())
 
     async def _response(
         self, tx: CanvasTransaction, board: Board, member: BoardMember, canvas: Canvas
@@ -69,14 +64,8 @@ class CanvasService:
                 update={"tags": await tx.tags(canvas.id)}
             ),
             document_revision=document.revision,
-            capabilities=CanvasCapabilities(
-                read_document=True,
-                edit_metadata=canvas.status == "draft" and can_write,
-                edit_document=canvas.status == "draft" and can_write,
-                trash=canvas.status == "draft" and board.status == "active",
-                restore=canvas.status == "trashed" and can_write and not self._expired(canvas),
-                publish=canvas.status == "draft" and can_write,
-                unpublish=publication is not None and board.status == "active",
+            capabilities=self.access.capabilities(
+                board, canvas, can_write=can_write, published=publication is not None, at=utc_now()
             ),
             publication_revision=await tx.publication_revision(canvas.id),
             publication=CanvasPublicationInfo.model_validate(publication) if publication else None,

@@ -11,6 +11,7 @@ from tests.fixtures.payload_data import build_login_payload, build_signup_payloa
 pytestmark = pytest.mark.primary_data
 
 SESSION_ONLY = [
+    ("GET", "/api/v1/me/canvases", None),
     ("POST", "/api/v1/tags", {"name": "session-only-tag"}),
     ("POST", "/api/v1/auth/me/password/code/verify", {"code": "123456"}),
     ("POST", "/api/v1/auth/me/deletion-code/verify", {"code": "123456"}),

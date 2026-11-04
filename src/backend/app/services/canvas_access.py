@@ -1,5 +1,6 @@
 """Shared current author/Board policy and lock ordering for Canvas resources."""
 
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from fastapi import Depends
@@ -8,13 +9,58 @@ from app.core.error.auth_exception import AuthErrorCode, AuthException
 from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
 from app.models.board import Board, BoardMember, Shelf
-from app.models.canvas import Canvas, CanvasPublication, CanvasTransaction
+from app.models.canvas import (
+    CANVAS_TRASH_RETENTION_DAYS,
+    Canvas,
+    CanvasCapabilities,
+    CanvasPublication,
+    CanvasTransaction,
+    as_utc,
+    utc_now,
+)
 from app.services.board_permission import BoardPermissionService
 
 
 class CanvasAccessService:
     def __init__(self, permissions: BoardPermissionService = Depends()):
         self.permissions = permissions
+
+    @staticmethod
+    def trash_expires_at(canvas: Canvas) -> datetime | None:
+        return (
+            as_utc(canvas.trashed_at) + timedelta(days=CANVAS_TRASH_RETENTION_DAYS)
+            if canvas.trashed_at is not None
+            else None
+        )
+
+    @classmethod
+    def trash_expired(cls, canvas: Canvas, *, at: datetime | None = None) -> bool:
+        expires = cls.trash_expires_at(canvas)
+        return expires is not None and (at if at is not None else utc_now()) >= expires
+
+    @classmethod
+    def capabilities(
+        cls,
+        board: Board,
+        canvas: Canvas,
+        *,
+        can_write: bool,
+        published: bool,
+        at: datetime | None = None,
+    ) -> CanvasCapabilities:
+        """Author read is established before this pure projection; staff is not ownership."""
+        draft = canvas.status == "draft"
+        return CanvasCapabilities(
+            read_document=True,
+            edit_metadata=draft and can_write,
+            edit_document=draft and can_write,
+            trash=draft and board.status == "active",
+            restore=canvas.status == "trashed"
+            and can_write
+            and not cls.trash_expired(canvas, at=at),
+            publish=draft and can_write,
+            unpublish=published and board.status == "active",
+        )
 
     async def board(
         self,

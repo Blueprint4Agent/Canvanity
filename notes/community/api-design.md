@@ -112,7 +112,7 @@ Owner 전용 `POST /boards/{board_id}/ownership-transfer`는 expected_revision/t
 | POST   | /canvases/{canvas_id}/unpublish | 현재 active 작성자, expected_publication_revision. 최신 token의 미게시 상태는200 no-op                           |
 | GET    | /canvases                       | Plaza 공개 snapshot 조회. interest_id/tag_id/board_id/shelf_id/cursor/limit/sort=latest, 현재 권한 필터                             |
 | GET    | /boards/{board_id}/canvases     | 동일 공개 목록 + Board 범위. 공통 query만 허용                                                                                      |
-| GET    | /boards/{board_id}/my-canvases  | 후속: 로그인 본인 초안/공개/보관/휴지통, status 필터. 프로필 My Canvas와 별도 데이터                                   |
+| GET    | /me/canvases                   | 세션 본인 초안/휴지통·독립 publication 필터·Board/Shelf 범위·최근 수정순 커서·복구 기한. [#57 계약](canvas-list.md) |
 
 author_id/board_id/published_at/publication_revision은 서버 전용 필드다. DTO extra='forbid'로 과다 필드를 422로 거부한다. metadata revision과 document revision을 혼용하지 않는다.
 
@@ -158,3 +158,7 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## 회원 운영 API 구현 — #31
 
 [회원 운영 계약](member-administration.md)을 따른다. GET members는 Owner/Admin의 관리 항목과 Moderator의 최소 공개 제재 대상 항목을 구분한다. PATCH members는 expected_revision/reason과 role/status/grade_id를 받고 필드 전체의 권한을 원자적으로 검사한다. GET member-audit의 since/until은 시간대 포함 필수 입력이며 최대 180일, target_user_id와 cursor를 지원한다. 목록/감사 정렬은 시각·식별자 내림차순이다. 이번 변경은 UI와 등급 정의 CRUD를 포함하지 않는다.
+
+## 내 Canvas 목록 — #57
+
+[내 목록 계약](canvas-list.md)은 `GET /me/canvases`의 status=draft/trashed/all, publication=all/published/unpublished를 AND하고 sort=last_modified(메타데이터/본문 중 최신 시각)·UUID keyset을 사용한다. 세션 전용이며 현재 작성자 단건 scope/capabilities를 유지한다. 응답은 `{items,as_of,next_cursor}`이고 본문/관계 이름/total은 제외한다. 낮은 Shelf 등급의 자기 초안은 읽되 편집은 현재 정책을 검사한다. Shelf scope는 현재 읽기 허용 또는 필터와 독립적인 본인 Canvas 존재를 요구해 제한/no-own 분류의 존재를 노출하지 않는다. 기존 공개 피드의 sort=latest/게시 snapshot 계약과 구분한다.
