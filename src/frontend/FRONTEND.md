@@ -674,4 +674,6 @@ ToastCard의 tone은 neutral/success/error다. useToast의 두 번째 인자 { t
 
 ## Board 개설 흐름
 
+로그인 성공과 이미 로그인한 사용자의 인증 화면 가드는 `resolveLoginReturnPath`를 공유한다. `next`는 기존 `/profile`, `/my-canvas`, `/board`와 `/b/{slug}`만 허용하며 외부 URL·쿼리·임의 경로는 `/home`으로 보낸다. 보드 상세에서 인증 후 같은 보드로 돌아가며 실제 객체 접근 권한은 서버가 계속 검사한다.
+
 `/board`의 실제 목록·공용 개설 모달과 `/b/{slug}` 기본 홈은 useBoards/useBoardActions → 생성 타입 기반 boardsApi를 사용한다. 계정별 조회 key·요청 취소로 이전 계정 응답을 숨기고 실패한 개설 입력을 유지한다. [개설 범위와 상태](../../notes/community/board-creation.md), notes/page-families.md를 따른다.

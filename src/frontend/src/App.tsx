@@ -1,3 +1,4 @@
+import { resolveLoginReturnPath } from "./utils/authReturnPath";
 import { InterestCatalogProvider } from "./hooks/api/interests/useInterestCatalog";
 import { CanvasSnapshotCacheProvider } from "./hooks/useCanvasSnapshotCache";
 import { AppLayoutProvider } from "./hooks/useAppLayout";
@@ -174,7 +175,7 @@ function AuthDialogRoute({
     const { user, loading } = useAuthContext();
     const [params] = useSearchParams();
     if (guestOnly && !loading && user && params.get("switch") !== "1")
-        return <Navigate to="/home" replace />;
+        return <Navigate to={resolveLoginReturnPath(params.get("next"))} replace />;
     return (
         <>
             <HomePage />
