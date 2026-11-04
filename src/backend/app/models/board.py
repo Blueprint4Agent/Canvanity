@@ -1,13 +1,14 @@
 """Community aggregate and transport schemas; no HTTP or provider dependencies."""
 
+import hashlib
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
-from typing import Annotated, Literal
+from typing import TYPE_CHECKING, Annotated, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator, model_validator
 from pydantic.json_schema import SkipJsonSchema
 from sqlalchemy import (
     JSON,
@@ -38,8 +39,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.db.session import Base, get_db
 from app.core.error.board_exception import BoardErrorCode, BoardException
+from app.models.board_layout import (
+    BoardLayoutAuditChange,
+    BoardLayoutDocument,
+    BoardLayoutSaveForm,
+)
 from app.models.interest import Interest
 from app.models.user import User
+from app.utils.board_layout_limits import MAX_BOARD_LAYOUT_REVISION
+
+if TYPE_CHECKING:
+    from app.models.canvas_feed import CanvasFeedItem
 
 MAX_BOARD_USER_ID = 2**31 - 1
 MAX_BOARD_INTERESTS = 3
@@ -538,16 +548,6 @@ class PolicyAuditChange(BaseModel):
     after: ShelfPolicyActions
 
 
-class BoardHomeResponse(BaseModel):
-    board: BoardSummary
-    rules: str
-    membership: MembershipSummary | None
-    grades: list[GradeSummary]
-    shelves: list[ShelfSummary]
-    layout: dict
-    layout_revision: int
-
-
 def _patch_schema(schema: dict, changes: tuple[str, ...]) -> None:
     # Omission preserves a field; explicit null is invalid in the request contract.
     for field in changes:
@@ -798,6 +798,7 @@ class BoardMemberAuditResponse(BaseModel):
     ownership_change: BoardOwnershipAuditChange | None = None
     shelf_change: ShelfAuditChange | None = None
     policy_change: PolicyAuditChange | None = None
+    layout_change: BoardLayoutAuditChange | None = None
     created_at: datetime
 
 
@@ -828,6 +829,8 @@ class BoardHomeData:
     shelves: list[Shelf]
     interests: list[str]
     layout: BoardLayout | None
+    account_active: bool
+    collections: dict[UUID | None, list["CanvasFeedItem"]]
 
 
 @dataclass
@@ -945,6 +948,53 @@ class BoardTransaction:
 
     async def locked_board(self, board_id: UUID) -> Board | None:
         return await self._db.scalar(select(Board).where(Board.id == board_id).with_for_update())
+
+    async def layout(self, board_id: UUID) -> BoardLayout | None:
+        return await self._db.scalar(
+            select(BoardLayout).where(BoardLayout.board_id == board_id).with_for_update()
+        )
+
+    async def layout_source_shelves(self, board_id: UUID) -> set[UUID]:
+        return set(
+            (await self._db.scalars(select(Shelf.id).where(Shelf.board_id == board_id))).all()
+        )
+
+    async def save_layout(
+        self, layout: BoardLayout, actor_user_id: int, form: BoardLayoutSaveForm
+    ) -> None:
+        if layout.revision != form.expected_revision:
+            raise BoardException(
+                BoardErrorCode.LAYOUT_CONFLICT, {"current_revision": layout.revision}
+            )
+        try:
+            previous = BoardLayoutDocument.model_validate(layout.document).canonical_bytes()
+        except ValidationError as error:
+            raise BoardException(BoardErrorCode.UNAVAILABLE) from error
+        desired = form.document.canonical_bytes()
+        if previous == desired:
+            return
+        if layout.revision >= MAX_BOARD_LAYOUT_REVISION:
+            raise BoardException(BoardErrorCode.LAYOUT_REVISION_EXHAUSTED)
+        before_revision = layout.revision
+        layout.document = form.document.model_dump(mode="json", exclude_none=True)
+        layout.revision += 1
+        self._db.add(
+            BoardMemberAudit(
+                board_id=layout.board_id,
+                actor_user_id=actor_user_id,
+                target_user_id=None,
+                action="layout_updated",
+                changes={
+                    "before_revision": before_revision,
+                    "after_revision": layout.revision,
+                    "before_hash": hashlib.sha256(previous).hexdigest(),
+                    "after_hash": hashlib.sha256(desired).hexdigest(),
+                    "widget_count": len(form.document.widgets),
+                    "reason": form.reason,
+                },
+            )
+        )
+        await self._db.flush()
 
     async def member(self, board_id: UUID, user_id: int) -> BoardMember | None:
         return await self._db.get(BoardMember, (board_id, user_id))
@@ -1740,12 +1790,26 @@ class BoardTransaction:
 class BoardRepository:
     @asynccontextmanager
     async def transaction(
-        self, *, write: bool = True, create_slug: str | None = None, deleting: bool = False
+        self,
+        *,
+        write: bool = True,
+        create_slug: str | None = None,
+        deleting: bool = False,
+        snapshot: bool = False,
     ) -> AsyncIterator[BoardTransaction]:
         try:
             async with get_db() as db:
                 if write and db.bind.dialect.name == "sqlite":
                     await db.execute(text("BEGIN IMMEDIATE"))
+                elif snapshot:
+                    # Begin before the first read, including on SQLite's legacy driver mode.
+                    await db.execute(
+                        text(
+                            "BEGIN"
+                            if db.bind.dialect.name == "sqlite"
+                            else "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY"
+                        )
+                    )
                 yield BoardTransaction(db)
                 if write:
                     await db.commit()
@@ -1830,7 +1894,9 @@ class BoardRepository:
     async def home_data(
         self, user_id: int | None, *, board_id: UUID | None = None, slug: str | None = None
     ) -> BoardHomeData | None:
-        async with self.transaction(write=False) as tx:
+        from app.models.canvas_feed import CanvasFeedRepository
+
+        async with self.transaction(write=False, snapshot=True) as tx:
             db = tx._db
             board = await db.scalar(
                 select(Board).where(
@@ -1865,7 +1931,7 @@ class BoardRepository:
                 (
                     await db.scalars(
                         select(Shelf)
-                        .where(Shelf.board_id == board.id, Shelf.is_visible.is_(True))
+                        .where(Shelf.board_id == board.id)
                         .order_by(Shelf.sort_order, Shelf.id)
                     )
                 ).all()
@@ -1881,6 +1947,39 @@ class BoardRepository:
                 ).all()
             )
             layout = await db.get(BoardLayout, board.id)
+            account_active = (
+                user_id is None
+                or await db.scalar(
+                    select(User.id).where(User.id == user_id, User.is_active.is_(True))
+                )
+                is not None
+            )
+            sources: dict[UUID | None, int] = {}
+            if layout is not None:
+                try:
+                    document = BoardLayoutDocument.model_validate(layout.document)
+                except ValidationError as error:
+                    raise BoardException(BoardErrorCode.UNAVAILABLE) from error
+                for widget in document.widgets:
+                    if widget.type == "canvas_collection":
+                        if widget.source.board_id != board.id:
+                            raise BoardException(BoardErrorCode.UNAVAILABLE)
+                        key = widget.source.shelf_id
+                        sources[key] = max(sources.get(key, 0), widget.source.limit)
+            collections = (
+                await CanvasFeedRepository().read_home(db, user_id, board.id, sources)
+                if account_active and sources
+                else {}
+            )
             return BoardHomeData(
-                board, member, grades, policies, overrides, shelves, interests, layout
+                board,
+                member,
+                grades,
+                policies,
+                overrides,
+                shelves,
+                interests,
+                layout,
+                account_active,
+                collections,
             )

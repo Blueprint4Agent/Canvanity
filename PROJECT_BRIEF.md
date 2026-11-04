@@ -85,3 +85,8 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 ## 공개 Canvas 목록 후속 작업
 
 2026-11-03: #51/PR #52의 main 반영 뒤 [#53 공개 목록](notes/community/canvas-feed.md)은 Plaza·Board·Shelf의 게시 snapshot header를 같은 현재 권한으로 조회한다. 단일 statement의 계정/scope·Board/Shelf/회원 정책·정렬 header/게시태그, 최신순 keyset/엄격 cursor·공식 Interest/게시 Tag AND 필터를 제공하고 본문 JSONB를 읽지 않는다. 기존 인덱스를 재사용하며 새 migration은 없다. 신규 UI·Board 홈 동적 위젯/공식 layout·개인 draft 목록·썸네일/추천·moderation·archive는 후속이고 실제 검증/게시/병합은 worklog0295와 이슈/PR을 따른다.
+
+
+## Board 공식 홈 레이아웃 후속 작업
+
+2026-11-04: #53/PR #54의 main 반영 뒤 [#55 공식 홈](notes/community/board-home-layout.md)은 현재 active Owner/Admin의 layout GET/PUT·독립 INTEGER32 CAS/no-op/최소 감사와 방문자별 typed layout/widget_data를 연결한다. 제한 Shelf source 위젯은 ID/config까지 생략하고 현재 권한의 공개 header/고정 태그만 일관 snapshot에서 batch 조회한다. 새 migration/제품 UI/개인 배치/Board 미디어 연결은 포함하지 않는다. 실제 검증·ready PR·main 병합은 worklog0296와 이슈/PR에서 구분한다.

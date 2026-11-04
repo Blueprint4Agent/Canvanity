@@ -141,6 +141,8 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("POST", "/api/v1/boards/{board_id}/ownership-transfer"),
         ("PATCH", "/api/v1/boards/{board_id}/members/{user_id}"),
         ("GET", "/api/v1/boards/{board_id}/member-audit"),
+        ("GET", "/api/v1/boards/{board_id}/layout"),
+        ("PUT", "/api/v1/boards/{board_id}/layout"),
         ("POST", "/api/v1/boards/{board_id}/grades"),
         ("PATCH", "/api/v1/boards/{board_id}/grades/order"),
         ("PATCH", "/api/v1/boards/{board_id}/grades/{grade_id}"),

@@ -1835,6 +1835,91 @@
                 "title": "BoardAuditState",
                 "type": "object"
             },
+            "BoardCollectionSource": {
+                "additionalProperties": false,
+                "properties": {
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "limit": {
+                        "default": 6,
+                        "maximum": 20.0,
+                        "minimum": 1.0,
+                        "title": "Limit",
+                        "type": "integer"
+                    },
+                    "shelf_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Shelf Id"
+                    },
+                    "sort": {
+                        "const": "latest",
+                        "default": "latest",
+                        "title": "Sort",
+                        "type": "string"
+                    }
+                },
+                "required": ["board_id"],
+                "title": "BoardCollectionSource",
+                "type": "object"
+            },
+            "BoardCoverData": {
+                "properties": {
+                    "id": {
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "media": {
+                        "title": "Media",
+                        "type": "null"
+                    },
+                    "type": {
+                        "const": "board_cover",
+                        "default": "board_cover",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id"],
+                "title": "BoardCoverData",
+                "type": "object"
+            },
+            "BoardCoverWidget": {
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/BoardWidgetPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/BoardWidgetSize"
+                    },
+                    "type": {
+                        "const": "board_cover",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "type"],
+                "title": "BoardCoverWidget",
+                "type": "object"
+            },
             "BoardCreateForm": {
                 "additionalProperties": false,
                 "properties": {
@@ -1925,6 +2010,10 @@
                             "BOARD_INVALID_SETTINGS",
                             "BOARD_INVALID_CURSOR",
                             "BOARD_REVISION_CONFLICT",
+                            "BOARD_INVALID_LAYOUT_SOURCE",
+                            "BOARD_LAYOUT_TOO_LARGE",
+                            "BOARD_LAYOUT_REVISION_CONFLICT",
+                            "BOARD_LAYOUT_REVISION_EXHAUSTED",
                             "BOARD_DELETE_CONFIRMATION",
                             "BOARD_NOT_EMPTY",
                             "BOARD_OWNER_CANNOT_LEAVE",
@@ -2202,9 +2291,7 @@
                         "type": "array"
                     },
                     "layout": {
-                        "additionalProperties": true,
-                        "title": "Layout",
-                        "type": "object"
+                        "$ref": "#/components/schemas/BoardLayoutDocument-Output"
                     },
                     "layout_revision": {
                         "title": "Layout Revision",
@@ -2230,6 +2317,36 @@
                         },
                         "title": "Shelves",
                         "type": "array"
+                    },
+                    "widget_data": {
+                        "items": {
+                            "discriminator": {
+                                "mapping": {
+                                    "board_cover": "#/components/schemas/BoardCoverData",
+                                    "board_intro": "#/components/schemas/BoardIntroData",
+                                    "canvas_collection": "#/components/schemas/CanvasCollectionData",
+                                    "shelf_navigation": "#/components/schemas/ShelfNavigationData"
+                                },
+                                "propertyName": "type"
+                            },
+                            "oneOf": [
+                                {
+                                    "$ref": "#/components/schemas/BoardIntroData"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/BoardCoverData"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/ShelfNavigationData"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/CanvasCollectionData"
+                                }
+                            ]
+                        },
+                        "maxItems": 100,
+                        "title": "Widget Data",
+                        "type": "array"
                     }
                 },
                 "required": [
@@ -2239,9 +2356,227 @@
                     "grades",
                     "shelves",
                     "layout",
-                    "layout_revision"
+                    "layout_revision",
+                    "widget_data"
                 ],
                 "title": "BoardHomeResponse",
+                "type": "object"
+            },
+            "BoardIntroData": {
+                "properties": {
+                    "board": {
+                        "$ref": "#/components/schemas/BoardSummary"
+                    },
+                    "id": {
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "rules": {
+                        "title": "Rules",
+                        "type": "string"
+                    },
+                    "type": {
+                        "const": "board_intro",
+                        "default": "board_intro",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "board", "rules"],
+                "title": "BoardIntroData",
+                "type": "object"
+            },
+            "BoardIntroWidget": {
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/BoardWidgetPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/BoardWidgetSize"
+                    },
+                    "type": {
+                        "const": "board_intro",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "type"],
+                "title": "BoardIntroWidget",
+                "type": "object"
+            },
+            "BoardLayoutAuditChange": {
+                "additionalProperties": false,
+                "properties": {
+                    "after_hash": {
+                        "title": "After Hash",
+                        "type": "string"
+                    },
+                    "after_revision": {
+                        "title": "After Revision",
+                        "type": "integer"
+                    },
+                    "before_hash": {
+                        "title": "Before Hash",
+                        "type": "string"
+                    },
+                    "before_revision": {
+                        "title": "Before Revision",
+                        "type": "integer"
+                    },
+                    "widget_count": {
+                        "title": "Widget Count",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "before_revision",
+                    "after_revision",
+                    "before_hash",
+                    "after_hash",
+                    "widget_count"
+                ],
+                "title": "BoardLayoutAuditChange",
+                "type": "object"
+            },
+            "BoardLayoutDocument-Input": {
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "maximum": 1.0,
+                        "minimum": 1.0,
+                        "title": "Schema Version",
+                        "type": "integer"
+                    },
+                    "widgets": {
+                        "items": {
+                            "discriminator": {
+                                "mapping": {
+                                    "board_cover": "#/components/schemas/BoardCoverWidget",
+                                    "board_intro": "#/components/schemas/BoardIntroWidget",
+                                    "canvas_collection": "#/components/schemas/CanvasCollectionWidget",
+                                    "shelf_navigation": "#/components/schemas/ShelfNavigationWidget"
+                                },
+                                "propertyName": "type"
+                            },
+                            "oneOf": [
+                                {
+                                    "$ref": "#/components/schemas/BoardIntroWidget"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/BoardCoverWidget"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/ShelfNavigationWidget"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/CanvasCollectionWidget"
+                                }
+                            ]
+                        },
+                        "maxItems": 100,
+                        "title": "Widgets",
+                        "type": "array"
+                    }
+                },
+                "required": ["schema_version", "widgets"],
+                "title": "BoardLayoutDocument",
+                "type": "object"
+            },
+            "BoardLayoutDocument-Output": {
+                "additionalProperties": false,
+                "properties": {
+                    "schema_version": {
+                        "maximum": 1.0,
+                        "minimum": 1.0,
+                        "title": "Schema Version",
+                        "type": "integer"
+                    },
+                    "widgets": {
+                        "items": {
+                            "discriminator": {
+                                "mapping": {
+                                    "board_cover": "#/components/schemas/BoardCoverWidget",
+                                    "board_intro": "#/components/schemas/BoardIntroWidget",
+                                    "canvas_collection": "#/components/schemas/CanvasCollectionWidget",
+                                    "shelf_navigation": "#/components/schemas/ShelfNavigationWidget"
+                                },
+                                "propertyName": "type"
+                            },
+                            "oneOf": [
+                                {
+                                    "$ref": "#/components/schemas/BoardIntroWidget"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/BoardCoverWidget"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/ShelfNavigationWidget"
+                                },
+                                {
+                                    "$ref": "#/components/schemas/CanvasCollectionWidget"
+                                }
+                            ]
+                        },
+                        "maxItems": 100,
+                        "title": "Widgets",
+                        "type": "array"
+                    }
+                },
+                "required": ["schema_version", "widgets"],
+                "title": "BoardLayoutDocument",
+                "type": "object"
+            },
+            "BoardLayoutResponse": {
+                "additionalProperties": false,
+                "properties": {
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "document": {
+                        "$ref": "#/components/schemas/BoardLayoutDocument-Output"
+                    },
+                    "layout_revision": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Layout Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": ["board_id", "document", "layout_revision"],
+                "title": "BoardLayoutResponse",
+                "type": "object"
+            },
+            "BoardLayoutSaveForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "document": {
+                        "$ref": "#/components/schemas/BoardLayoutDocument-Input"
+                    },
+                    "expected_revision": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "document", "reason"],
+                "title": "BoardLayoutSaveForm",
                 "type": "object"
             },
             "BoardMemberAuditResponse": {
@@ -2310,6 +2645,16 @@
                         "format": "uuid",
                         "title": "Id",
                         "type": "string"
+                    },
+                    "layout_change": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardLayoutAuditChange"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "ownership_change": {
                         "anyOf": [
@@ -3099,6 +3444,46 @@
                 "title": "BoardUpdateResponse",
                 "type": "object"
             },
+            "BoardWidgetPosition": {
+                "additionalProperties": false,
+                "properties": {
+                    "x": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "X",
+                        "type": "number"
+                    },
+                    "y": {
+                        "maximum": 100000.0,
+                        "minimum": -100000.0,
+                        "title": "Y",
+                        "type": "number"
+                    }
+                },
+                "required": ["x", "y"],
+                "title": "BoardWidgetPosition",
+                "type": "object"
+            },
+            "BoardWidgetSize": {
+                "additionalProperties": false,
+                "properties": {
+                    "height": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
+                        "title": "Height",
+                        "type": "number"
+                    },
+                    "width": {
+                        "exclusiveMinimum": 0.0,
+                        "maximum": 100000.0,
+                        "title": "Width",
+                        "type": "number"
+                    }
+                },
+                "required": ["width", "height"],
+                "title": "BoardWidgetSize",
+                "type": "object"
+            },
             "Body_oauth_token_login_api_v1_auth_token_post": {
                 "properties": {
                     "client_id": {
@@ -3241,6 +3626,60 @@
                 },
                 "required": ["read_document", "edit_metadata", "edit_document", "trash", "restore"],
                 "title": "CanvasCapabilities",
+                "type": "object"
+            },
+            "CanvasCollectionData": {
+                "properties": {
+                    "id": {
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/CanvasFeedItem"
+                        },
+                        "maxItems": 20,
+                        "title": "Items",
+                        "type": "array"
+                    },
+                    "type": {
+                        "const": "canvas_collection",
+                        "default": "canvas_collection",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "items"],
+                "title": "CanvasCollectionData",
+                "type": "object"
+            },
+            "CanvasCollectionWidget": {
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/BoardWidgetPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/BoardWidgetSize"
+                    },
+                    "source": {
+                        "$ref": "#/components/schemas/BoardCollectionSource"
+                    },
+                    "type": {
+                        "const": "canvas_collection",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "type", "source"],
+                "title": "CanvasCollectionWidget",
                 "type": "object"
             },
             "CanvasContent-Input": {
@@ -7729,6 +8168,56 @@
                 },
                 "required": ["detail"],
                 "title": "ShelfErrorResponse",
+                "type": "object"
+            },
+            "ShelfNavigationData": {
+                "properties": {
+                    "id": {
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "shelves": {
+                        "items": {
+                            "$ref": "#/components/schemas/ShelfSummary"
+                        },
+                        "title": "Shelves",
+                        "type": "array"
+                    },
+                    "type": {
+                        "const": "shelf_navigation",
+                        "default": "shelf_navigation",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "shelves"],
+                "title": "ShelfNavigationData",
+                "type": "object"
+            },
+            "ShelfNavigationWidget": {
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "maxLength": 80,
+                        "minLength": 1,
+                        "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]*$",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "position": {
+                        "$ref": "#/components/schemas/BoardWidgetPosition"
+                    },
+                    "size": {
+                        "$ref": "#/components/schemas/BoardWidgetSize"
+                    },
+                    "type": {
+                        "const": "shelf_navigation",
+                        "title": "Type",
+                        "type": "string"
+                    }
+                },
+                "required": ["id", "position", "size", "type"],
+                "title": "ShelfNavigationWidget",
                 "type": "object"
             },
             "ShelfOrderForm": {
@@ -17820,6 +18309,310 @@
                     }
                 ],
                 "summary": "Join Board",
+                "tags": ["Boards"]
+            }
+        },
+        "/api/v1/boards/{board_id}/layout": {
+            "get": {
+                "operationId": "get_layout_api_v1_boards__board_id__layout_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardLayoutResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Get Layout Api V1 Boards  Board Id  Layout Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Get Layout Api V1 Boards  Board Id  Layout Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Get Layout Api V1 Boards  Board Id  Layout Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Get Layout",
+                "tags": ["Boards"]
+            },
+            "put": {
+                "operationId": "save_layout_api_v1_boards__board_id__layout_put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BoardLayoutSaveForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardLayoutResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Save Layout Api V1 Boards  Board Id  Layout Put"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Save Layout Api V1 Boards  Board Id  Layout Put"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Save Layout Api V1 Boards  Board Id  Layout Put"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_LAYOUT_REVISION_CONFLICT",
+                                        "message": "Reload the latest official layout."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_LAYOUT_TOO_LARGE",
+                                        "message": "The layout request exceeds the byte limit."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Content Too Large"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_INVALID_LAYOUT_SOURCE",
+                                        "message": "Use this Board and its existing Shelves only."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_UNAVAILABLE",
+                                        "message": "Unable to complete the board operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Save Layout",
                 "tags": ["Boards"]
             }
         },

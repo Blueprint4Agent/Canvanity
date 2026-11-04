@@ -38,7 +38,7 @@ Board API는 Bearer 세션을 사용한다. 공개 GET은 무인증도 가능하
 | POST   | /api/v1/boards                | 로그인 사용자 개설, 201·Location·BoardSummary                          |
 | GET    | /api/v1/boards/by-slug/{slug} | BoardHomeResponse                                                      |
 | GET    | /api/v1/boards/{id}           | 같은 Board aggregate 홈 응답                                           |
-| GET    | /api/v1/boards/{id}/home      | 소개·현재 멤버십·등급·허용 Shelf/액션·기본 레이아웃                    |
+| GET    | /api/v1/boards/{id}/home      | 소개·현재 멤버십·등급·허용 Shelf/액션·typed 방문자 레이아웃/동적 widget_data([#55](board-home-layout.md))                    |
 | DELETE | /api/v1/boards/{id}           | Owner·현재 revision·정확한 confirm_slug, 다른 회원 없는 빈 Board만 204 |
 
 목록의 cursor는 검색 필터와 마지막 created_at/id를 포함한다. 정렬과 권한을 서버에서 다시 적용하고 잘못된 cursor는 422로 거부한다. 비공개·정지·차단된 객체는 404로 숨긴다. 첫 단계에서 GET /boards/{id}는 단독 메타데이터 대신 홈 aggregate를 반환하는 것으로 계약을 구체화했다.

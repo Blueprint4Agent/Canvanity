@@ -15,7 +15,6 @@ from app.models.board import (
     Board,
     BoardCreateForm,
     BoardDeleteForm,
-    BoardHomeResponse,
     BoardOwnershipTransferForm,
     BoardOwnershipTransferResponse,
     BoardPageResponse,
@@ -27,6 +26,14 @@ from app.models.board import (
     MembershipSummary,
     ShelfSummary,
 )
+from app.models.board_home import (
+    BoardCoverData,
+    BoardHomeResponse,
+    BoardIntroData,
+    CanvasCollectionData,
+    ShelfNavigationData,
+)
+from app.models.board_layout import BoardLayoutDocument
 from app.services.board_permission import BoardPermissionService
 
 
@@ -163,15 +170,20 @@ class BoardService:
         data = await self.repository.home_data(user_id, board_id=board_id, slug=slug)
         if data is None:
             raise BoardException(BoardErrorCode.NOT_FOUND)
+        if not data.account_active:
+            raise AuthException(code=AuthErrorCode.USER_NOT_FOUND)
         board, member = data.board, data.member
         self.permissions.check_read(board, member)
         by_id = {grade.id: grade for grade in data.grades}
         shelves = []
+        readable_shelves = set()
         for shelf in data.shelves:
             capabilities = self.permissions.shelf_capabilities(
                 board, member, shelf.id, by_id, data.policies, data.overrides
             )
             if capabilities["read_canvas"]:
+                readable_shelves.add(shelf.id)
+            if capabilities["read_canvas"] and shelf.is_visible:
                 shelves.append(
                     ShelfSummary(
                         id=shelf.id,
@@ -188,6 +200,28 @@ class BoardService:
                 )
         if data.layout is None:
             raise BoardException(BoardErrorCode.UNAVAILABLE)
+        document = BoardLayoutDocument.model_validate(data.layout.document)
+        widgets, widget_data = [], []
+        summary = self._summary(board, data.interests)
+        for widget in document.widgets:
+            if widget.type == "canvas_collection":
+                source = widget.source
+                # Missing/deleted and unreadable sources both disappear, including custom IDs.
+                if source.shelf_id is not None and source.shelf_id not in readable_shelves:
+                    continue
+                widget_data.append(
+                    CanvasCollectionData(
+                        id=widget.id,
+                        items=data.collections.get(source.shelf_id, [])[: source.limit],
+                    )
+                )
+            elif widget.type == "board_intro":
+                widget_data.append(BoardIntroData(id=widget.id, board=summary, rules=board.rules))
+            elif widget.type == "board_cover":
+                widget_data.append(BoardCoverData(id=widget.id))
+            else:
+                widget_data.append(ShelfNavigationData(id=widget.id, shelves=shelves))
+            widgets.append(widget)
         membership = (
             MembershipSummary(
                 role=member.role,
@@ -199,7 +233,7 @@ class BoardService:
             else None
         )
         return BoardHomeResponse(
-            board=self._summary(board, data.interests),
+            board=summary,
             rules=board.rules,
             membership=membership,
             grades=[
@@ -207,8 +241,9 @@ class BoardService:
                 for g in data.grades
             ],
             shelves=shelves,
-            layout=data.layout.document,
+            layout=BoardLayoutDocument(schema_version=1, widgets=widgets),
             layout_revision=data.layout.revision,
+            widget_data=widget_data,
         )
 
     async def transfer_ownership(
