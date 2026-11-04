@@ -1,8 +1,11 @@
+from collections.abc import Awaitable, Callable
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
+from fastapi.routing import APIRoute
+from starlette.types import Message
 
-from app.core.error.board_exception import BoardErrorCode, board_error_responses
+from app.core.error.board_exception import BoardErrorCode, BoardException, board_error_responses
 from app.core.error.response_contracts import current_user_error_responses
 from app.deps import get_current_session_user, get_current_token_user
 from app.models.board import (
@@ -16,7 +19,6 @@ from app.models.board import (
     BoardGradePatchForm,
     BoardGradeResponse,
     BoardGradesResponse,
-    BoardHomeResponse,
     BoardMemberInviteForm,
     BoardMemberListResponse,
     BoardMemberPatchForm,
@@ -30,12 +32,43 @@ from app.models.board import (
     BoardUpdateResponse,
     MembershipSummary,
 )
+from app.models.board_home import BoardHomeResponse
+from app.models.board_layout import BoardLayoutResponse, BoardLayoutSaveForm
 from app.models.user import UserResponse
 from app.services.board import BoardService
 from app.services.board_grade import BoardGradeService
+from app.services.board_layout import BoardLayoutService
 from app.services.board_membership import BoardMembershipService
+from app.utils.board_layout_limits import MAX_BOARD_LAYOUT_REQUEST_BYTES
+
+
+class BoardLayoutRoute(APIRoute):
+    def get_route_handler(self) -> Callable[[Request], Awaitable[Response]]:
+        handler = super().get_route_handler()
+
+        async def bounded_layout(request: Request) -> Response:
+            body = bytearray()
+            async for chunk in request.stream():
+                if len(body) + len(chunk) > MAX_BOARD_LAYOUT_REQUEST_BYTES:
+                    raise BoardException(BoardErrorCode.LAYOUT_TOO_LARGE)
+                body.extend(chunk)
+            payload = bytes(body)
+            replayed = False
+
+            async def receive() -> Message:
+                nonlocal replayed
+                if not replayed:
+                    replayed = True
+                    return {"type": "http.request", "body": payload, "more_body": False}
+                return await request.receive()
+
+            return await handler(Request(request.scope, receive=receive))
+
+        return bounded_layout
+
 
 router = APIRouter()
+layout_router = APIRouter(route_class=BoardLayoutRoute)
 READ_ERRORS = current_user_error_responses(
     board_error_responses(BoardErrorCode.NOT_FOUND, BoardErrorCode.UNAVAILABLE)
 )
@@ -450,3 +483,52 @@ async def member_audit(
 ) -> BoardAuditPageResponse:
     response.headers["Cache-Control"] = "private, no-store"
     return await service.member_audit(user.id, board_id, query)
+
+
+LAYOUT_ERRORS = current_user_error_responses(
+    board_error_responses(
+        BoardErrorCode.NOT_FOUND,
+        BoardErrorCode.FORBIDDEN,
+        BoardErrorCode.UNAVAILABLE,
+    )
+)
+
+
+@router.get("/{board_id}/layout", response_model=BoardLayoutResponse, responses=LAYOUT_ERRORS)
+async def get_layout(
+    board_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardLayoutService = Depends(),
+) -> BoardLayoutResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.get(user.id, board_id)
+
+
+@layout_router.put(
+    "/{board_id}/layout",
+    response_model=BoardLayoutResponse,
+    responses=current_user_error_responses(
+        board_error_responses(
+            BoardErrorCode.NOT_FOUND,
+            BoardErrorCode.FORBIDDEN,
+            BoardErrorCode.UNAVAILABLE,
+            BoardErrorCode.INVALID_LAYOUT_SOURCE,
+            BoardErrorCode.LAYOUT_TOO_LARGE,
+            BoardErrorCode.LAYOUT_CONFLICT,
+            BoardErrorCode.LAYOUT_REVISION_EXHAUSTED,
+        )
+    ),
+)
+async def save_layout(
+    board_id: UUID,
+    form: BoardLayoutSaveForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardLayoutService = Depends(),
+) -> BoardLayoutResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.save(user.id, board_id, form)
+
+
+router.include_router(layout_router)

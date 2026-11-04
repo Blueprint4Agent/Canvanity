@@ -57,7 +57,7 @@ class ShelfService:
         member = await tx.member(board.id, user_id) if user_id is not None else None
         self.permissions.check_read(board, member)
         if manage:
-            self.permissions.check_manage_shelves(board, member, write=write)
+            self.permissions.check_manage_structure(board, member, write=write)
         if expected_revision is not None and board.revision != expected_revision:
             raise BoardException(BoardErrorCode.CONFLICT, {"current_revision": board.revision})
         return board, member

@@ -94,7 +94,9 @@ class BoardPermissionService:
         }
         return {action: value and allowed["read_canvas"] for action, value in allowed.items()}
 
-    def check_manage_shelves(self, board: Board, actor: BoardMember | None, *, write: bool) -> None:
+    def check_manage_structure(
+        self, board: Board, actor: BoardMember | None, *, write: bool
+    ) -> None:
         self.member_scope(board, actor, audit=True)
         if write and board.status != "active":
             raise BoardException(BoardErrorCode.FORBIDDEN)

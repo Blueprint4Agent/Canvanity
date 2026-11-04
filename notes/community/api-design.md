@@ -138,7 +138,7 @@ publish/unpublish 응답은 현재 metadata_revision/document_revision/publicati
 
 - #49/#24 [자유 Tag 계약](canvas-tags.md): 공개 GET /tags?q=…&limit=20(최대50), 현재 active 계정의 세션 전용 POST /tags `{name}`. NFC/trim 표시명40자·NFC(casefold) 키80자를 사용하고 최초 ID/표시명을 재사용한다. 기존 키는200/신규201이며 단건 GET과 Location은 없다. 검색은 키의 literal 부분일치·binary 키/UUID 순서로 ID/표시명만 반환한다. Canvas 생성/metadata PATCH의 tag_ids는 최대10개 고유 UUID이며 동일 집합은 no-op, 태그/일반 metadata는 현재 권한/revision 아래 원자 변경한다. 이전 사용자별 분당30회 제안은 현재 구현하지 않으며 익명 공개 검색을 포함한 분산 rate limit은 후속이다.
 - #6 POST /canvases/{id}/assets (multipart 이미지 한 개), GET /canvases/{id}/assets/{asset_id}, DELETE 동일 경로(미참조 업로드만). 실제 형식 PNG/JPEG/WebP/GIF·8 MiB·16MP, 본문/공개본에 연결된 asset 삭제 409. 기존 object storage 사용·서명 URL 영속 금지. 세부 이미지 변환/애니메이션 정책은 #6에서 실제 구현과 확정한다.
-- #25 PUT /boards/{id}/layout `{expected_revision,document:{schema_version,widgets}}`, Owner/Admin. GET home에 layout_revision 포함. 엔진 nodes/edges 문서는 422.
+- [#55 공식 홈](board-home-layout.md): GET/PUT /boards/{id}/layout, 현재 active Owner/Admin. PUT은 `{expected_revision,reason,document:{schema_version,widgets}}`, 독립 INTEGER32 revision/no-op/stale/포화·최소 감사. GET home은 typed 방문자 layout/layout_revision과 별도 widget_data를 제공한다. 제한 Shelf source 위젯은ID/config까지 생략하고 collections는현재 권한의 공개 header/고정 Tag만 읽는다. 엔진 nodes/edges 문서는 422, Cover media는 null이며 제품 UI/개인 배치는 후속이다.
 - 댓글·좋아요·구독·통계 API는 #26에서 추가하며 Shelf create_comment/react 정책을 재사용한다. 자동 승급 API와 Smart Shelf endpoint는 아직 노출하지 않는다.
 
 ## 화면·상태 소유권

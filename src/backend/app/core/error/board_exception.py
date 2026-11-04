@@ -45,6 +45,26 @@ class BoardErrorCode(Enum):
         "Board revision conflict. Reload the latest board information.",
         status.HTTP_409_CONFLICT,
     )
+    INVALID_LAYOUT_SOURCE = ServiceErrorCode(
+        "BOARD_INVALID_LAYOUT_SOURCE",
+        "Use this Board and its existing Shelves only.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+    LAYOUT_TOO_LARGE = ServiceErrorCode(
+        "BOARD_LAYOUT_TOO_LARGE",
+        "The layout request exceeds the byte limit.",
+        status.HTTP_413_CONTENT_TOO_LARGE,
+    )
+    LAYOUT_CONFLICT = ServiceErrorCode(
+        "BOARD_LAYOUT_REVISION_CONFLICT",
+        "Reload the latest official layout.",
+        status.HTTP_409_CONFLICT,
+    )
+    LAYOUT_REVISION_EXHAUSTED = ServiceErrorCode(
+        "BOARD_LAYOUT_REVISION_EXHAUSTED",
+        "The layout revision limit has been reached.",
+        status.HTTP_409_CONFLICT,
+    )
     DELETE_CONFIRMATION = ServiceErrorCode(
         "BOARD_DELETE_CONFIRMATION",
         "Enter the exact board slug to confirm deletion.",

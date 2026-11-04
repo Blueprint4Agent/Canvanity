@@ -7,8 +7,9 @@ from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import and_, case, exists, false, func, or_, select, true
+from sqlalchemy import and_, case, exists, false, func, literal, or_, select, true, union_all
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.core.db.session import get_db
@@ -191,29 +192,9 @@ class CanvasFeedRepository:
             .cte("readable_shelves")
         )
 
-    async def read(
-        self,
-        user_id: int | None,
-        query: CanvasFeedQuery,
-        before: tuple[datetime, UUID] | None,
-    ) -> CanvasFeedRows:
-        boards = self._readable_boards(user_id, query.board_id)
-        shelves = self._readable_shelves(boards, query.shelf_id)
-        scope = true()
-        if query.shelf_id is not None:
-            target = select(shelves.c.shelf_id).where(shelves.c.shelf_id == query.shelf_id)
-            if query.board_id is not None:
-                target = target.where(shelves.c.board_id == query.board_id)
-            scope = target.exists()
-        elif query.board_id is not None:
-            scope = select(boards.c.board_id).where(boards.c.board_id == query.board_id).exists()
-        account = (
-            exists().where(User.id == user_id, User.is_active.is_(True))
-            if user_id is not None
-            else true()
-        )
-        flags = select(account.label("account_active"), scope.label("scope_readable")).cte("scope")
-        header = (
+    @staticmethod
+    def publication_header(shelves):
+        return (
             select(
                 Canvas.id.label("canvas_id"),
                 Canvas.board_id,
@@ -244,6 +225,30 @@ class CanvasFeedRepository:
                 ),
             )
         )
+
+    async def read(
+        self,
+        user_id: int | None,
+        query: CanvasFeedQuery,
+        before: tuple[datetime, UUID] | None,
+    ) -> CanvasFeedRows:
+        boards = self._readable_boards(user_id, query.board_id)
+        shelves = self._readable_shelves(boards, query.shelf_id)
+        scope = true()
+        if query.shelf_id is not None:
+            target = select(shelves.c.shelf_id).where(shelves.c.shelf_id == query.shelf_id)
+            if query.board_id is not None:
+                target = target.where(shelves.c.board_id == query.board_id)
+            scope = target.exists()
+        elif query.board_id is not None:
+            scope = select(boards.c.board_id).where(boards.c.board_id == query.board_id).exists()
+        account = (
+            exists().where(User.id == user_id, User.is_active.is_(True))
+            if user_id is not None
+            else true()
+        )
+        flags = select(account.label("account_active"), scope.label("scope_readable")).cte("scope")
+        header = self.publication_header(shelves)
         if query.board_id is not None:
             header = header.where(Canvas.board_id == query.board_id)
         if query.shelf_id is not None:
@@ -297,6 +302,14 @@ class CanvasFeedRepository:
                 rows = (await db.execute(statement)).mappings().all()
         except SQLAlchemyError as error:
             raise CanvasException(CanvasErrorCode.UNAVAILABLE) from error
+        return CanvasFeedRows(
+            bool(rows[0]["account_active"]),
+            bool(rows[0]["scope_readable"]),
+            self.items_from_rows(rows),
+        )
+
+    @staticmethod
+    def items_from_rows(rows) -> list[CanvasFeedItem]:
         items: dict[UUID, CanvasFeedItem] = {}
         for row in rows:
             if row["canvas_id"] is None:
@@ -328,6 +341,70 @@ class CanvasFeedRepository:
                 items[row["canvas_id"]] = item
             if row["tag_id"] is not None:
                 item.canvas.tags.append(TagResponse(id=row["tag_id"], name=row["tag_name"]))
-        return CanvasFeedRows(
-            bool(rows[0]["account_active"]), bool(rows[0]["scope_readable"]), list(items.values())
+        return list(items.values())
+
+    async def read_home(
+        self,
+        db: AsyncSession,
+        user_id: int | None,
+        board_id: UUID,
+        sources: dict[UUID | None, int],
+    ) -> dict[UUID | None, list[CanvasFeedItem]]:
+        """Model-only composition: one ranked header/tag batch in the caller's snapshot.
+
+        Source keys are deduplicated before SQL. No body/document columns, item queries,
+        count, cursor or private metadata are loaded. At most 100 sources × 20 headers.
+        """
+        if not sources:
+            return {}
+        keys = list(sources)
+        requested = union_all(
+            *[
+                select(
+                    literal(index).label("source_index"),
+                    literal(key, type_=Canvas.shelf_id.type).label("source_shelf"),
+                    literal(sources[key]).label("source_limit"),
+                )
+                for index, key in enumerate(keys)
+            ]
+        ).cte("home_sources")
+        boards = self._readable_boards(user_id, board_id)
+        shelves = self._readable_shelves(boards, None)
+        header = self.publication_header(shelves).cte("home_headers")
+        ranked = (
+            select(
+                requested.c.source_index,
+                requested.c.source_limit,
+                header,
+                func.row_number()
+                .over(
+                    partition_by=requested.c.source_index,
+                    order_by=(header.c.published_at.desc(), header.c.canvas_id.desc()),
+                )
+                .label("source_rank"),
+            )
+            .select_from(requested)
+            .join(
+                header,
+                or_(
+                    requested.c.source_shelf.is_(None),
+                    requested.c.source_shelf == header.c.shelf_id,
+                ),
+            )
+            .cte("home_ranked")
         )
+        page = select(ranked).where(ranked.c.source_rank <= ranked.c.source_limit).cte("home_page")
+        statement = (
+            select(
+                page,
+                CanvasPublicationTag.tag_id,
+                CanvasPublicationTag.name.label("tag_name"),
+            )
+            .outerjoin(CanvasPublicationTag, CanvasPublicationTag.canvas_id == page.c.canvas_id)
+            .order_by(page.c.source_index, page.c.source_rank, CanvasPublicationTag.position)
+        )
+        rows = (await db.execute(statement)).mappings().all()
+        grouped = {key: [] for key in keys}
+        for row in rows:
+            grouped[keys[row["source_index"]]].append(row)
+        return {key: self.items_from_rows(value) for key, value in grouped.items()}

@@ -941,6 +941,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/layout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Layout */
+        get: operations["get_layout_api_v1_boards__board_id__layout_get"];
+        /** Save Layout */
+        put: operations["save_layout_api_v1_boards__board_id__layout_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boards/{board_id}/member-audit": {
         parameters: {
             query?: never;
@@ -2472,6 +2490,51 @@ export interface components {
             /** Status */
             status?: ("active" | "pending" | "suspended" | "banned") | null;
         };
+        /** BoardCollectionSource */
+        BoardCollectionSource: {
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            /**
+             * Limit
+             * @default 6
+             */
+            limit: number;
+            /** Shelf Id */
+            shelf_id?: string | null;
+            /**
+             * Sort
+             * @default latest
+             * @constant
+             */
+            sort: "latest";
+        };
+        /** BoardCoverData */
+        BoardCoverData: {
+            /** Id */
+            id: string;
+            /** Media */
+            media?: null;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "board_cover";
+        };
+        /** BoardCoverWidget */
+        BoardCoverWidget: {
+            /** Id */
+            id: string;
+            position: components["schemas"]["BoardWidgetPosition"];
+            size: components["schemas"]["BoardWidgetSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "board_cover";
+        };
         /** BoardCreateForm */
         BoardCreateForm: {
             /**
@@ -2525,6 +2588,10 @@ export interface components {
                 | "BOARD_INVALID_SETTINGS"
                 | "BOARD_INVALID_CURSOR"
                 | "BOARD_REVISION_CONFLICT"
+                | "BOARD_INVALID_LAYOUT_SOURCE"
+                | "BOARD_LAYOUT_TOO_LARGE"
+                | "BOARD_LAYOUT_REVISION_CONFLICT"
+                | "BOARD_LAYOUT_REVISION_EXHAUSTED"
                 | "BOARD_DELETE_CONFIRMATION"
                 | "BOARD_NOT_EMPTY"
                 | "BOARD_OWNER_CANNOT_LEAVE"
@@ -2649,10 +2716,7 @@ export interface components {
             board: components["schemas"]["BoardSummary"];
             /** Grades */
             grades: components["schemas"]["GradeSummary"][];
-            /** Layout */
-            layout: {
-                [key: string]: unknown;
-            };
+            layout: components["schemas"]["BoardLayoutDocument-Output"];
             /** Layout Revision */
             layout_revision: number;
             membership: components["schemas"]["MembershipSummary"] | null;
@@ -2660,6 +2724,94 @@ export interface components {
             rules: string;
             /** Shelves */
             shelves: components["schemas"]["ShelfSummary"][];
+            /** Widget Data */
+            widget_data: (
+                | components["schemas"]["BoardIntroData"]
+                | components["schemas"]["BoardCoverData"]
+                | components["schemas"]["ShelfNavigationData"]
+                | components["schemas"]["CanvasCollectionData"]
+            )[];
+        };
+        /** BoardIntroData */
+        BoardIntroData: {
+            board: components["schemas"]["BoardSummary"];
+            /** Id */
+            id: string;
+            /** Rules */
+            rules: string;
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "board_intro";
+        };
+        /** BoardIntroWidget */
+        BoardIntroWidget: {
+            /** Id */
+            id: string;
+            position: components["schemas"]["BoardWidgetPosition"];
+            size: components["schemas"]["BoardWidgetSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "board_intro";
+        };
+        /** BoardLayoutAuditChange */
+        BoardLayoutAuditChange: {
+            /** After Hash */
+            after_hash: string;
+            /** After Revision */
+            after_revision: number;
+            /** Before Hash */
+            before_hash: string;
+            /** Before Revision */
+            before_revision: number;
+            /** Widget Count */
+            widget_count: number;
+        };
+        /** BoardLayoutDocument */
+        "BoardLayoutDocument-Input": {
+            /** Schema Version */
+            schema_version: number;
+            /** Widgets */
+            widgets: (
+                | components["schemas"]["BoardIntroWidget"]
+                | components["schemas"]["BoardCoverWidget"]
+                | components["schemas"]["ShelfNavigationWidget"]
+                | components["schemas"]["CanvasCollectionWidget"]
+            )[];
+        };
+        /** BoardLayoutDocument */
+        "BoardLayoutDocument-Output": {
+            /** Schema Version */
+            schema_version: number;
+            /** Widgets */
+            widgets: (
+                | components["schemas"]["BoardIntroWidget"]
+                | components["schemas"]["BoardCoverWidget"]
+                | components["schemas"]["ShelfNavigationWidget"]
+                | components["schemas"]["CanvasCollectionWidget"]
+            )[];
+        };
+        /** BoardLayoutResponse */
+        BoardLayoutResponse: {
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            document: components["schemas"]["BoardLayoutDocument-Output"];
+            /** Layout Revision */
+            layout_revision: number;
+        };
+        /** BoardLayoutSaveForm */
+        BoardLayoutSaveForm: {
+            document: components["schemas"]["BoardLayoutDocument-Input"];
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
         };
         /** BoardMemberAuditResponse */
         BoardMemberAuditResponse: {
@@ -2681,6 +2833,7 @@ export interface components {
              * Format: uuid
              */
             id: string;
+            layout_change?: components["schemas"]["BoardLayoutAuditChange"] | null;
             ownership_change?: components["schemas"]["BoardOwnershipAuditChange"] | null;
             policy_change?: components["schemas"]["PolicyAuditChange"] | null;
             /** Reason */
@@ -3042,6 +3195,20 @@ export interface components {
             /** Rules */
             rules: string;
         };
+        /** BoardWidgetPosition */
+        BoardWidgetPosition: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+        };
+        /** BoardWidgetSize */
+        BoardWidgetSize: {
+            /** Height */
+            height: number;
+            /** Width */
+            width: number;
+        };
         /** Body_oauth_token_login_api_v1_auth_token_post */
         Body_oauth_token_login_api_v1_auth_token_post: {
             /** Client Id */
@@ -3102,6 +3269,31 @@ export interface components {
              * @default false
              */
             unpublish: boolean;
+        };
+        /** CanvasCollectionData */
+        CanvasCollectionData: {
+            /** Id */
+            id: string;
+            /** Items */
+            items: components["schemas"]["CanvasFeedItem"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "canvas_collection";
+        };
+        /** CanvasCollectionWidget */
+        CanvasCollectionWidget: {
+            /** Id */
+            id: string;
+            position: components["schemas"]["BoardWidgetPosition"];
+            size: components["schemas"]["BoardWidgetSize"];
+            source: components["schemas"]["BoardCollectionSource"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "canvas_collection";
         };
         /** CanvasContent */
         "CanvasContent-Input": {
@@ -4965,6 +5157,30 @@ export interface components {
         /** ShelfErrorResponse */
         ShelfErrorResponse: {
             detail: components["schemas"]["ShelfErrorDetail"];
+        };
+        /** ShelfNavigationData */
+        ShelfNavigationData: {
+            /** Id */
+            id: string;
+            /** Shelves */
+            shelves: components["schemas"]["ShelfSummary"][];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "shelf_navigation";
+        };
+        /** ShelfNavigationWidget */
+        ShelfNavigationWidget: {
+            /** Id */
+            id: string;
+            position: components["schemas"]["BoardWidgetPosition"];
+            size: components["schemas"]["BoardWidgetSize"];
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "shelf_navigation";
         };
         /** ShelfOrderForm */
         ShelfOrderForm: {
@@ -12446,6 +12662,234 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    get_layout_api_v1_boards__board_id__layout_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardLayoutResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_UNAVAILABLE",
+                     *         "message": "Unable to complete the board operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    save_layout_api_v1_boards__board_id__layout_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardLayoutSaveForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardLayoutResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_LAYOUT_REVISION_CONFLICT",
+                     *         "message": "Reload the latest official layout."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_LAYOUT_TOO_LARGE",
+                     *         "message": "The layout request exceeds the byte limit."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_INVALID_LAYOUT_SOURCE",
+                     *         "message": "Use this Board and its existing Shelves only."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
                 };
             };
             /** @description Unexpected server error */

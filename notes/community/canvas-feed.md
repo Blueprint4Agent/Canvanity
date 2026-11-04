@@ -82,4 +82,4 @@ PostgreSQL의 단일 SELECT statement MVCC에서 계정/scope 허용 여부, rea
 
 API/SQLite 검사는 query/응답 whitelist·실제 Bearer/API Key·권한 행렬·동일시각 UUID tie·다중 태그·필터/초안 비노출·페이지 사이 제재·게시/재게시/취소/이동/휴지통/SET NULL과 단건 parity를 검증한다. opt-in 실제 PostgreSQL은 localhost의 고유 임시 schema에서 같은 시나리오와 단일 statement 결과 뒤 재게시/권한 축소가 완료되는 경쟁·EXPLAIN·기존 인덱스를 확인하고 schema 제거를 재검증한다. 기존 개발 DB/파일을 수정하지 않는다. 기본 전체 검사에서 opt-in skip과 별도 PostgreSQL 실행을 구분해 기록한다.
 
-새 UI·Board 홈 동적 widget/공식 layout #25·개인 draft 목록·썸네일 생성·추천/인기순·운영자 moderation·Canvas archive/자동 purge·댓글/좋아요/구독 #26·운영 배포는 후속이다. #53 완료는 상위 #8/#24 전체 UI 완료를 의미하지 않는다.
+Board 홈 동적 widget/공식 layout 백엔드는 [#55 계약](board-home-layout.md)으로 연결한다. 공개 header/정렬 Tag와 현재 읽기 SQL을 공유하며 홈 전체 snapshot 안에서 source를 중복 제거해 한 ranked query로 읽는다. 새 UI·공식 홈 제품 편집/개인 배치 #25·개인 draft 목록·썸네일 생성·추천/인기순·운영자 moderation·Canvas archive/자동 purge·댓글/좋아요/구독 #26·운영 배포는 후속이다. #53 완료는 상위 #8/#24 전체 UI 완료를 의미하지 않는다.
