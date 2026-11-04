@@ -1,6 +1,6 @@
 # 백엔드 빠른 가이드
 
-Canvanity 커뮤니티 구현은 [도메인 문서](../../notes/community/README.md), 이미지 API·삭제 outbox·정리 CLI는 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md), PUT/CAS·본문과 이미지 참조의 원자 갱신은 [Canvas 본문 저장](../../notes/community/canvas-document-save.md)을 따른다. 자동 저장/복구 UI·게시와 신규 UI는 후속이다.
+Canvanity 커뮤니티 구현은 [도메인 문서](../../notes/community/README.md), 이미지 API·삭제 outbox·정리 CLI는 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md), PUT/CAS·본문과 이미지 참조의 원자 갱신은 [Canvas 본문 저장](../../notes/community/canvas-document-save.md)을 따른다. [게시·단건 공개본](../../notes/community/canvas-publication.md)과 [공개 목록·커서·필터](../../notes/community/canvas-feed.md)는 별도 구현 계약을 따른다. 자동 저장/복구·목록 UI는 후속이다.
 
 > Canvanity 적용: 개발 문서·커밋·PR은 한국어이며, src/frontend는 같은 저장소의 일반 디렉터리입니다. 아래 기반 템플릿의 별도 저장소·서브모듈 절차는 적용하지 않습니다. 루트 AGENTS.md와 PROJECT_BRIEF.md를 우선합니다.
 

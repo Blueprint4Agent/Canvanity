@@ -4,7 +4,7 @@
 
 ## 서비스 경계
 
-FastAPI 모듈러 모놀리스를 유지한다. `routers/v1/<domain>.py → services/<domain>.py → models/<domain>.py`와 도메인 에러 모듈의 기존 경계를 사용한다. BoardService는 생성 트랜잭션을 조정하고 MembershipService는 역할/등급/상태 및 BoardPermissionService를 소유한다. ShelfService는 분류/정책, CanvasService는 게시 수명주기/메타데이터/문서, MediaService는 에셋, DiscoveryService는 권한이 적용된 목록을 소유한다.
+FastAPI 모듈러 모놀리스를 유지한다. `routers/v1/<domain>.py → services/<domain>.py → models/<domain>.py`와 도메인 에러 모듈의 기존 경계를 사용한다. BoardService는 생성 트랜잭션을 조정하고 MembershipService는 역할/등급/상태 및 BoardPermissionService를 소유한다. ShelfService는 분류/정책, CanvasService는 게시 수명주기/메타데이터/문서, MediaService는 에셋, 공개 목록은 CanvasFeedService가 담당하고 models/canvas_feed.py가 현재 권한을 적용한 SQL을 소유한다.
 
 현재 `get_db()`는 세션 수명만 관리하며 자동 commit하지 않는다. 세션·SQL·트랜잭션·ORM 쓰기와 드라이버 오류 변환은 각 모델/저장소가 소유하고 복합 작업도 하나의 저장소 트랜잭션으로 조합한다. 서비스는 DI로 받은 저장소 결과/도메인 실패를 사용하고 관계형 세션을 열거나 전달하지 않는다. 객체 저장소 호출은 DB 트랜잭션과 원자적이지 않으므로 파일 실패 보상을 별도로 처리한다.
 
@@ -96,7 +96,7 @@ erDiagram
 
 POST publish는 expected_document_revision/expected_metadata_revision/expected_publication_revision을 받고 현재 작성자·Board/Shelf 작성 권한과 source를 검사한 뒤 snapshot/태그/publication 참조를 함께 commit한다. unpublish는 expected_publication_revision만 받고 작성 등급이 낮아진 active 작성자도 자기 공개본을 철회할 수 있다. 실제 공개 상태 전이마다 지속 token을 증가시켜 취소 전 stale 요청의 재실행과 번호 재사용을 막는다. meta/doc clock은 게시/취소로 변하지 않는다.
 
-저장·이동·게시 취소의 공통 잠금 순서는 Board → 활성 User 공유 잠금 → Canvas → Document → 정렬한 해당 Canvas Asset → outbox다. User 잠금은 계정 삭제의 User→Canvas SET NULL과 순서를 맞춘다. 공개 읽기는 Board/User/Canvas 공유 잠금 아래 현재 정책과 snapshot/참조를 읽고, SQLite는 명시적 읽기 transaction을 사용한다. [본문 PUT](canvas-document-save.md)은 최종 CAS와 같은 트랜잭션에서 draft 참조를 교체한다. 이동처럼 문서/에셋을 바꾸지 않는 작업은 해당 행을 추가로 잠그지 않는다.
+저장·이동·게시 취소의 공통 잠금 순서는 Board → 활성 User 공유 잠금 → Canvas → Document → 정렬한 해당 Canvas Asset → outbox다. User 잠금은 계정 삭제의 User→Canvas SET NULL과 순서를 맞춘다. 공개 단건 읽기는 Board/User/Canvas 공유 잠금 아래 현재 정책과 snapshot/참조를 읽고, SQLite는 명시적 읽기 transaction을 사용한다. [공개 목록](canvas-feed.md)은 계정/scope·현재 정책·header page·정렬 태그를 한 SELECT의 MVCC로 읽고 본문을 선택하지 않는다. [본문 PUT](canvas-document-save.md)은 최종 CAS와 같은 트랜잭션에서 draft 참조를 교체한다. 이동처럼 문서/에셋을 바꾸지 않는 작업은 해당 행을 추가로 잠그지 않는다.
 
 게시글 이동은 동일 Board 내 Manual Shelf만 허용한다. 이동 즉시 새 Shelf 권한이 적용되며 공개 snapshot 제목/본문은 유지한다. 현재 Canvas visibility와 snapshot.visibility의 교집합을 적용해 축소는 즉시, 확대는 재게시 후 적용한다. 공개 제목/태그 수정도 재게시 때 반영하며 썸네일 생성은 후속이다. 읽기 응답은 현재 Board/Shelf/멤버 권한을 재검사한 뒤 공개 snapshot에서 가져온다.
 
@@ -116,7 +116,7 @@ UI v1은 schema_version/widgets만 사용한다. 위젯 최대 100개·256 KiB, 
 
 ## 단계별 마이그레이션
 
-현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes, 에셋은0027, 자유 Tag는0028, 독립 publication/counter/태그는0029로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약을 제공하며 공개본 단건은 [게시 계약](canvas-publication.md)을 따르고 archive/자동 purge·공개 목록은 단계별 목표다. 에셋/태그의 실제 구현 경계는 아래 별도 계약을 따른다.
+현재 Canvas 최소 기반은 0026_canvas_drafts다. Board/Shelf는 0024_board_creation, 회원/감사 인덱스는 0025_board_member_indexes, 에셋은0027, 자유 Tag는0028, 독립 publication/counter/태그는0029로 적용한다. 이후 번호는 예약하지 않으며 구현 시 실제 head의 다음 번호를 사용한다. [Canvas 초안 구현](canvas-drafts.md)은 draft/trashed·메타데이터/빈 문서와 소속 제약을 제공하며 공개본 단건은 [게시 계약](canvas-publication.md)을 따르고 [공개 목록](canvas-feed.md)은 별도 조회 계약을 따르고 archive/자동 purge는 후속이다. 에셋/태그의 실제 구현 경계는 아래 별도 계약을 따른다.
 
 1. #22/#23: Board/등급/멤버/정책/감사/Shelf/홈/Interest. 신규 테이블만 생성하고 기존 users/Interest 데이터는 보존한다. 계정 삭제 소유 검사는 Board 종료/에셋 정리 기반까지 연결한 뒤 활성화한다.
 2. #8 기반/#24: Canvas/Document/Publication/Tag, 복합 FK·조회 인덱스. 초기 빈 문서 생성은 API에 연결할 때 함께 구현한다.

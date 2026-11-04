@@ -45,6 +45,7 @@ MAX_BOARD_USER_ID = 2**31 - 1
 MAX_BOARD_INTERESTS = 3
 MAX_BOARD_GRADES = 20
 MAX_BOARD_SHELVES = 100
+BOARD_STAFF_ROLES = frozenset({"owner", "admin", "moderator"})
 SHELF_FIELDS = ("name", "slug", "description", "icon", "purpose", "classification", "is_visible")
 SHELF_AUDIT_ACTIONS = frozenset(
     {"shelf_created", "shelf_updated", "shelves_reordered", "shelf_deleted"}

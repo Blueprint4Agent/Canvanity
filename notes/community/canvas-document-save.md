@@ -1,6 +1,6 @@
 # Canvas 초안 본문 저장 — #47 / #7
 
-작성자 전용 `PUT /api/v1/canvases/{canvas_id}/document`를 제공한다. [객체 스키마](canvas-content-schema.md)와 [초안 메타데이터](canvas-drafts.md), [이미지 에셋](canvas-assets.md)을 같은 저장 트랜잭션에 연결한다. 구현·검증·PR 게시·main 병합은 [#47](https://github.com/Blueprint4Agent/Canvanity/issues/47)에서 구분한다. 자동 저장·충돌 복구 UI·제품 편집기는 #7의 후속이고, [#51 게시/공개본 단건](canvas-publication.md)은 현재 초안의 source revision을 고정한다. 공개 목록/Plaza는 #8의 후속이다.
+작성자 전용 `PUT /api/v1/canvases/{canvas_id}/document`를 제공한다. [객체 스키마](canvas-content-schema.md)와 [초안 메타데이터](canvas-drafts.md), [이미지 에셋](canvas-assets.md)을 같은 저장 트랜잭션에 연결한다. 구현·검증·PR 게시·main 병합은 [#47](https://github.com/Blueprint4Agent/Canvanity/issues/47)에서 구분한다. 자동 저장·충돌 복구 UI·제품 편집기는 #7의 후속이고, [#51 게시/공개본 단건](canvas-publication.md)은 현재 초안의 source revision을 고정한다. [공개 목록/Plaza #53](canvas-feed.md)은 공개 source clock과 snapshot header만 읽는 별도 계약이다.
 
 ## 요청·응답
 
