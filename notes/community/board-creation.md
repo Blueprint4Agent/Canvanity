@@ -78,7 +78,7 @@ DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/mode
 ## 공개 Board 가입·탈퇴 API
 
 
-개설 이후의 첫 참여 흐름으로 `POST /api/v1/boards/{board_id}/join`과 `DELETE /api/v1/boards/{board_id}/membership`을 추가한다. 두 API는 Bearer 세션만 허용한다. 이번 단계는 API/계약만 제공하며 가입·탈퇴 UI는 보류한다.
+개설 이후의 첫 참여 흐름으로 `POST /api/v1/boards/{board_id}/join`과 `DELETE /api/v1/boards/{board_id}/membership`을 추가했다. 두 API는 Bearer 세션만 허용한다. 선행 API 단계에서 보류했던 가입·탈퇴 UI는 아래 별도 범위로 연결한다.
 
 - public/open의 active Board 가입은 현재 `is_default` 등급과 `member/active` 상태를 부여한다. 요청자가 역할이나 등급을 지정할 수 없다. 이미 active 회원이면 변경·감사 중복 없이 현재 멤버십을 반환한다.
 - private/invite의 새 가입은 거부하며 기존 사용자 초대는 다음 관리 작업이다. archived Board는 새 가입을 거부하고 suspended Board는 조회·가입·탈퇴를 거부한다.
@@ -88,3 +88,11 @@ DB 쿼리·세션·행 잠금·flush/commit과 롤백 경계는 기존 `app/mode
 `BoardPermissionService`가 현재 Board/멤버 상태·역할·등급·정책을 평가한다. FastAPI가 이 평가기를 `BoardService`와 `BoardMembershipService`의 생성자에 주입한다. 라우터는 서비스를 주입받고, 서비스에는 `models/board.py`의 `BoardRepository`를 주입한다. 쿼리·세션·행 잠금·추가/삭제·commit/롤백은 같은 모델 파일의 Repository와 BoardTransaction이 담당한다. 서비스는 DB 세션을 직접 사용하지 않으며 잠금 문맥 안에서 현재 권한과 한도를 판단한다. 등급은 운영 역할이 아니며 앱 전역 관리자는 Board 운영진으로 자동 승격하지 않는다. 후속 Shelf/Canvas 서비스는 같은 평가기를 주입받아 사용한다.
 
 후속 운영 순서는 회원 목록·등급/역할·제재 관리와 기존 계정 초대, Board 정보 수정, 소유권 위임·보관/종료다. 이메일/링크 초대·자동 승급·임의 운영 역할 편집은 이 구현에 포함하지 않는다.
+
+## 가입·탈퇴 UI
+
+BoardHomePage는 공개/open/active 비회원에게 가입 또는 같은 보드로 복귀하는 로그인 링크를 제공한다. 현재 active 회원은 공용 Modal에서 탈퇴를 확인하고 Owner에게는 탈퇴 버튼을 제공하지 않는다. API 권한은 요청마다 서버가 검사하며 UI 상태만으로 역할·등급을 결정하지 않는다.
+
+요청은 기존 useBoardActions의 busy/error/취소·계정 교체 경계와 생성 타입 기반 boardsApi를 사용한다. 성공 후 home을 다시 읽어 서버의 현재 등급·회원 상태를 반영하며 실패한 탈퇴 확인창은 유지한다. 보드/계정 변경은 확인 상태를 초기화한다. 새로 연결한 탈퇴 동작도 서버 연결 불가 시 비활성화한다. 탈퇴 취소는 요청을 보내지 않는다.
+
+로그인 복귀는 선행 PR #61을 사용한다. 기존 stash의 프런트 변경만 별도 PR로 게시하며 실제 게시/검증 상태는 [worklog0300](../../worklog/0300-board-membership-ui.md)과 PR을 따른다. 기존 운영/등급/Shelf·공식 홈 관리 화면은 이 범위에 포함하지 않는다.

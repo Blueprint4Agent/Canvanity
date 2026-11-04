@@ -75,3 +75,20 @@ export async function deleteEmptyBoard(
     });
     if (error) reject(error);
 }
+
+export async function joinBoard(id: string, signal: AbortSignal): Promise<void> {
+    const { error } = await apiClient.POST("/api/v1/boards/{board_id}/join", {
+        headers: getAuthHeader(),
+        params: { path: { board_id: id } },
+        signal,
+    });
+    if (error) reject(error);
+}
+export async function leaveBoard(id: string, signal: AbortSignal): Promise<void> {
+    const { error } = await apiClient.DELETE("/api/v1/boards/{board_id}/membership", {
+        headers: getAuthHeader(),
+        params: { path: { board_id: id } },
+        signal,
+    });
+    if (error) reject(error);
+}

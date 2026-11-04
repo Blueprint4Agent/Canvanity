@@ -1673,7 +1673,7 @@
             "BOARD_LIMIT_REACHED": "You can create up to 20 boards.",
             "BOARD_INVALID_INTEREST": "Check your selected interests and try again.",
             "BOARD_NOT_FOUND": "This board does not exist or is not accessible.",
-            "BOARD_FORBIDDEN": "You do not have permission for this action.",
+            "BOARD_FORBIDDEN": "You cannot perform this action in this Board.",
             "BOARD_INVALID_CURSOR": "The list has changed. Start your search again.",
             "BOARD_REVISION_CONFLICT": "This board has changed. Reload it and try again.",
             "BOARD_DELETE_CONFIRMATION": "Enter the exact board address.",
@@ -1681,7 +1681,14 @@
             "BOARD_INVALID_INPUT": "Check the name, address, and interests.",
             "BOARD_UNAVAILABLE": "Could not load or save this board. Your input is kept. Try again.",
             "INVALID_TOKEN": "Your session expired. Sign in again.",
-            "USER_NOT_FOUND": "Your account could not be verified. Sign in again."
-        }
+            "USER_NOT_FOUND": "Your account could not be verified. Sign in again.",
+            "BOARD_OWNER_CANNOT_LEAVE": "Transfer ownership or remove your Board before leaving."
+        },
+        "join": "Join Board",
+        "loginToJoin": "Sign in to join",
+        "leave": "Leave Board",
+        "leaveTitle": "Leave this Board?",
+        "leaveHelp": "Your membership grade will be removed. Rejoining starts at the current default grade. Private boards require another invitation.",
+        "leaveConfirm": "Leave"
     }
 }

@@ -4,6 +4,8 @@ import {
     createBoard,
     deleteEmptyBoard,
     getBoardHome,
+    joinBoard,
+    leaveBoard,
     listBoards,
     type BoardCreateInput,
     type BoardHome,
@@ -110,6 +112,16 @@ export function useBoardActions() {
         available,
         clearError: () => setError(null),
         create: (input: BoardCreateInput) => submit((signal) => createBoard(input, signal)),
+        join: (id: string) =>
+            submit(async (signal) => {
+                await joinBoard(id, signal);
+                return true;
+            }),
+        leave: (id: string) =>
+            submit(async (signal) => {
+                await leaveBoard(id, signal);
+                return true;
+            }),
         remove: (board: BoardSummary, slug: string) =>
             submit(async (signal) => {
                 await deleteEmptyBoard(board.id, board.revision, slug, signal);
