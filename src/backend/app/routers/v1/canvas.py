@@ -27,9 +27,11 @@ from app.models.canvas import (
     CanvasUnpublishForm,
 )
 from app.models.canvas_feed import CanvasFeedFilters, CanvasFeedQuery, CanvasFeedResponse
+from app.models.canvas_list import CanvasListQuery, CanvasListResponse
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
 from app.services.canvas_feed import CanvasFeedService
+from app.services.canvas_list import CanvasListService
 from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_REQUEST_BYTES
 
 
@@ -68,6 +70,17 @@ FEED_ERRORS = current_user_error_responses(
     canvas_error_responses(*READ_CODES, CanvasErrorCode.INVALID_CURSOR),
     {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
 )
+
+
+@router.get("/me/canvases", response_model=CanvasListResponse, responses=FEED_ERRORS)
+async def list_my_canvases(
+    query: Annotated[CanvasListQuery, Query()],
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasListService = Depends(),
+) -> CanvasListResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.list(user.id, query)
 
 
 @router.get(

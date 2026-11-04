@@ -1495,6 +1495,23 @@ export interface paths {
         patch: operations["update_api_v1_interests_admin__interest_id__patch"];
         trace?: never;
     };
+    "/api/v1/me/canvases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List My Canvases */
+        get: operations["list_my_canvases_api_v1_me_canvases_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/shelves/{shelf_id}": {
         parameters: {
             query?: never;
@@ -4157,6 +4174,51 @@ export interface components {
              * @enum {string}
              */
             type: "image";
+        };
+        /** CanvasListItem */
+        CanvasListItem: {
+            canvas: components["schemas"]["CanvasMetadata"];
+            capabilities: components["schemas"]["CanvasCapabilities"];
+            /** Document Revision */
+            document_revision: number;
+            /**
+             * Document Updated At
+             * Format: date-time
+             */
+            document_updated_at: string;
+            /**
+             * Last Modified At
+             * Format: date-time
+             */
+            last_modified_at: string;
+            publication?: components["schemas"]["CanvasPublicationInfo"] | null;
+            /**
+             * Publication Revision
+             * @default 0
+             */
+            publication_revision: number;
+            /** Trash Expired */
+            trash_expired: boolean;
+            /** Trash Expires At */
+            trash_expires_at: string | null;
+            /**
+             * View
+             * @default draft
+             * @constant
+             */
+            view: "draft";
+        };
+        /** CanvasListResponse */
+        CanvasListResponse: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /** Items */
+            items: components["schemas"]["CanvasListItem"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
         };
         /** CanvasMetadata */
         CanvasMetadata: {
@@ -16792,6 +16854,104 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+        };
+    };
+    list_my_canvases_api_v1_me_canvases_get: {
+        parameters: {
+            query?: {
+                status?: "draft" | "trashed" | "all";
+                publication?: "all" | "published" | "unpublished";
+                board_id?: string | null;
+                shelf_id?: string | null;
+                sort?: "last_modified";
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanvasListResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
                 };
             };
         };

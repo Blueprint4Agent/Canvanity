@@ -45,3 +45,7 @@ Board archived는 작성자 조회만 허용하고 변경/휴지통/복구/새 �
 Shelf 삭제는 초안·휴지통·작성자가 삭제된 문서를 모두 비어 있지 않음으로 계산해 SHELF_NOT_EMPTY 409다. 같은 Board의 다른 Shelf로 문서를 옮기면 비기본 빈 Shelf를 삭제할 수 있다. active 빈 Board 되돌리기도 Canvas가 하나라도 있으면 409다. 보관된 Board의 Owner 확인 삭제는 현재 모든 CanvasDocument/Canvas를 Shelf보다 먼저 같은 트랜잭션에서 정리하고 다른 Board/계정/프로필 파일을 보존한다.
 
 [이미지 에셋](canvas-assets.md)이 업로드/조회/미참조 삭제·참조 FK·Board 삭제 outbox/worker를 연결한다. 객체 타입·문서 내부 validator는 [객체 스키마](canvas-content-schema.md), 문서 PUT/CAS·본문과 draft 참조의 원자 동기화는 [#47 저장 계약](canvas-document-save.md), 사전 검색/생성과 metadata 태그 연결은 [#49 태그 계약](canvas-tags.md)을 따른다. #7 자동 저장/복구 UI, #24 태그 UI/발견, #51 [게시/공개본 단건 열람](canvas-publication.md)은 별도 구현 계약이며 #53 [공개 목록·cursor·Plaza API](canvas-feed.md)는 별도 구현 계약이다. 신규 UI는 후속이다. 자동 purge/휴지통 영구 삭제·운영자 공개글 moderation은 해당 수명주기와 함께 추가한다. 이번 최소 기반을 #8 전체 완료로 표시하지 않는다.
+
+## 내 Canvas 목록·휴지통 #57
+
+[세션 전용 내 목록](canvas-list.md)은 현재 active 계정·Board active/archived·active 멤버인 본인의 기존 Board 소속 행만 조회한다. 낮은 Shelf 등급도 본인 초안 읽기를 막지 않고 단건과 같은 capabilities/30일 복구 기한을 적용한다. metadata/본문 최근 수정순과 독립 status/publication 필터를 사용하며 공개 snapshot 목록·단건 공개본 읽기 경계를 넓히지 않는다. 제품 UI는 후속이다.

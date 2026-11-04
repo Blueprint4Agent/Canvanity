@@ -808,3 +808,6 @@ CanvasContent의 Text/Image/Drawing/Shape/Edge 모델과 고정 엔진 필드·�
 
 
 [Board 공식 홈 #55](../../notes/community/board-home-layout.md)은 기존 BoardRepository가 문서/revision/최소 감사와 읽기 snapshot을 소유한다. BoardLayoutService는 현재 활성 Owner/Admin과 허용 source를 판단하고 서비스에 DB 세션을 노출하지 않는다. 기존 INTEGER32와 API 상한을 일치시켜 새 migration이 없고 stale 우선/no-op/포화409를 구분하며 Board revision은 보존한다. 홈은 PG REPEATABLE READ READ ONLY/SQLite BEGIN 안에서 현재 계정/정책/layout과 공개 header/고정 태그를 읽는다. 모델 내부의 공개 batch 메서드로 같은 source를 중복 제거하고 한 ranked query로 source당 최대20개를 선택하며 본문 JSONB를 읽지 않는다. 제한/삭제 Shelf source의 위젯은 ID/config까지 생략하고 숨김 메뉴와 읽기 정책을 구분한다. 관리 GET은 전체 설정만 반환하며 Cover media는 null이다. 신규 UI/개인 배치/미디어 연결은 후속이다.
+
+
+[내 Canvas 목록 #57](../../notes/community/canvas-list.md)은 CanvasListService와 models/canvas_list.py 저장소를 DI로 조합한다. 세션 현재 작성자의 active 멤버/Board scope를 먼저 적용한 뒤 최근 metadata/document 수정순 header를 limit+1하고, PG RR READ ONLY/SQLite BEGIN 안에서 현재 Tags·grade·정책을 고정 batch로 읽는다. 본문 JSONB/관계 이름/total·N+1은 없고 현재 단건과 같은 순수 capabilities/30일 helper를 사용한다. status와 publication을 별도로 필터하며 as_of는 기한 평가 시각이다. 기존 author/Board/Shelf 키를 재사용하고 새 migration/UI는 없다.
