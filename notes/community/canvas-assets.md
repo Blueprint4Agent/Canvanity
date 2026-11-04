@@ -37,9 +37,9 @@ ready의 expires_at이 지나도 cleanup이 deleting으로 claim하기 전에는
 
 ## 삭제 outbox와 운영
 
-`asset_deletion_outbox`에는 부모 FK가 없다. 보관 Board 삭제는 같은 DB 트랜잭션에서 모든 에셋의 원래 위치·키를 기록하고 참조→에셋→본문→Canvas→Shelf를 정리한다. 실패하면 전부 롤백한다. User/다른 Board/프로필 파일을 삭제 대상으로 추측하지 않는다.
+`asset_deletion_outbox`에는 부모 FK가 없다. 보관 Board 삭제는 같은 DB 트랜잭션에서 모든 에셋의 원래 위치·키를 기록하고 참조→에셋→본문→Canvas→Shelf를 정리한다. 실패하면 전부 롤백한다. 실패한 pending이 이미 deleting이 된 뒤 Board를 삭제해도 원래 upload_pending/upload_failed의 기한/settle을 보존해 늦은 put을 조기에 정리하지 않는다. User/다른 Board/프로필 파일을 삭제 대상으로 추측하지 않는다.
 
-워커는 pending 또는 lease가 만료된 processing을 조회해 현재 참조와 위치를 확인한다. 다른 에셋·초안/공개본·기존 프로필 참조가 같은 키를 사용하면 보호한다. 저장소 지문 불일치는 blocked이며 DB에 저장된 위치로 임의 클라이언트를 만들지 않는다. ready→deleting 전환과 10분 lease/token을 커밋한 후 파일을 삭제한다. 이전 token의 늦은 완료는 무시한다. 실패는 60초부터 최대 1시간의 backoff로 5회까지 재시도한 뒤 dead로 보관한다. 허용된 Canvas 키 형식만 삭제한다.
+워커는 pending 또는 lease가 만료된 processing을 조회해 현재 참조와 위치를 확인한다. 양쪽 등록부의 다른 에셋·Canvas 초안/공개본·현재 Board 미디어·기존 프로필이 같은 key/fingerprint를 사용하면 보호한다. 다른 등록부의 같은 UUID도 key 기준으로 판단한다. 저장소 지문/descriptor 불일치와 invalid namespace/asset 소속 불일치는 물리 delete 전 claim에서 blocked(카운터 skipped)이며 DB에 저장된 위치로 임의 클라이언트를 만들지 않는다. ready→deleting 전환과 10분 lease/token을 커밋한 후 파일을 삭제한다. 이전 token의 늦은 완료는 무시한다. 실패는 60초부터 최대 1시간의 backoff로 5회까지 재시도한 뒤 dead로 보관한다. 허용된 Canvas/Board 미디어 키 형식만 삭제한다. [Board 미디어 #59](board-media.md)는 별도 등록부/ref로 같은 worker를 공유한다.
 
 Celery task `canvanity.assets.cleanup`를 singleton Beat가 60초마다 발행한다. API·워커·Beat는 같은 DB와 원래 ObjectStorage 설정을 사용해야 한다. local이면 같은 볼륨을 공유한다. 실행 안내는 [CELERY.md](../../src/backend/CELERY.md)와 [ObjectStorage](../object-storage.md)를 따른다. 별도 워커가 없으면 다음 CLI로 같은 정리를 수행할 수 있다.
 

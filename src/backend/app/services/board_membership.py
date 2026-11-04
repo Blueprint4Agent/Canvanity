@@ -35,6 +35,7 @@ from app.models.board import (
     ShelfAuditChange,
 )
 from app.models.board_layout import BoardLayoutAuditChange
+from app.models.board_media import BoardMediaAuditChange
 from app.services.board_permission import BoardPermissionService
 
 
@@ -262,8 +263,14 @@ class BoardMembershipService:
         shelf_change = row.action in SHELF_AUDIT_ACTIONS
         policy_change = row.action == "policies_updated"
         layout_change = row.action == "layout_updated"
+        media_change = row.action == "media_changed"
         structure_change = (
-            board_change or ownership_change or shelf_change or policy_change or layout_change
+            board_change
+            or ownership_change
+            or shelf_change
+            or policy_change
+            or layout_change
+            or media_change
         )
         return BoardMemberAuditResponse(
             id=row.id,
@@ -288,6 +295,11 @@ class BoardMembershipService:
                 {key: value for key, value in changes.items() if key != "reason"}
             )
             if layout_change
+            else None,
+            media_change=BoardMediaAuditChange.model_validate(
+                {key: value for key, value in changes.items() if key != "reason"}
+            )
+            if media_change
             else None,
             created_at=cls._utc(row.created_at),
         )

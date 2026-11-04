@@ -37,7 +37,7 @@ make frontend-dev
 - 로그인 활성화, 이메일·OAuth 비활성화. 이메일 가입/비밀번호 복구 등 이메일 의존 기능은 제공자 설정 전까지 사용할 수 없다.
 - 개발 문서·커밋·PR: 한국어. 자동화용 타입·섹션 이름은 유지한다.
 - 아이콘·로고·파비콘은 사용자 제공 파란 C 마크를 사용한다. 라이트/다크 블루 테마와 자산 원본은 [브랜드 가이드](branding/README.md)를 따른다. 기존 UI 소개용 이미지는 Canvanity 브랜드와 모의 데이터를 사용한 예시이며 캔버스 서비스의 실제 화면이 아니다.
-- [Canvas 이미지 API와 파일 정리](notes/community/canvas-assets.md), [본문 저장·버전 충돌·이미지 참조 갱신](notes/community/canvas-document-save.md), [자유 태그 검색·생성과 메타데이터 연결](notes/community/canvas-tags.md), [게시·게시 취소와 공개본 단건 열람](notes/community/canvas-publication.md), [Plaza·Board·Shelf 공개 목록과 커서·관심사/게시태그 필터](notes/community/canvas-feed.md)를 제공한다. [본인 Canvas 목록·휴지통·최근 수정순/복구 기한](notes/community/canvas-list.md)과 [공식 Board 홈 레이아웃·권한별 공개 위젯](notes/community/board-home-layout.md)의 백엔드도 제공한다. 제품 편집기·공식 홈 편집/개인 배치·자동 저장/복구 UI·목록 UI·협업은 후속 개발 범위다.
+- [Canvas 이미지 API와 파일 정리](notes/community/canvas-assets.md), [본문 저장·버전 충돌·이미지 참조 갱신](notes/community/canvas-document-save.md), [자유 태그 검색·생성과 메타데이터 연결](notes/community/canvas-tags.md), [게시·게시 취소와 공개본 단건 열람](notes/community/canvas-publication.md), [Plaza·Board·Shelf 공개 목록과 커서·관심사/게시태그 필터](notes/community/canvas-feed.md)를 제공한다. [본인 Canvas 목록·휴지통·최근 수정순/복구 기한](notes/community/canvas-list.md)과 [공식 Board 홈 레이아웃·권한별 공개 위젯](notes/community/board-home-layout.md), [대표 이미지·커버와 현재 권한/버전·파일 정리](notes/community/board-media.md)의 백엔드도 제공한다. 제품 편집기·공식 홈 편집/개인 배치·자동 저장/복구 UI·목록 UI·협업은 후속 개발 범위다.
 
 ## 개발 문서
 

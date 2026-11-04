@@ -1,6 +1,5 @@
 """Durable cleanup: claim/fence in DB, delete immutable objects outside transactions."""
 
-import re
 from uuid import UUID
 
 from app.core.config.settings import SETTINGS
@@ -9,6 +8,7 @@ from app.core.object_storage import ObjectStorage, StorageError, create_object_s
 from app.core.object_storage.identity import StorageLocation, object_storage_location
 from app.models import api_key  # noqa: F401 - standalone workers must register User.api_keys.
 from app.models.asset import AssetRepository
+from app.utils.asset_keys import valid_asset_key
 
 
 class AssetCleanupService:
@@ -22,15 +22,14 @@ class AssetCleanupService:
             raise ValueError("Cleanup limit must be between 1 and 100.")
         counts = {"done": 0, "failed": 0, "skipped": 0}
         for job_id in await self.repository.due(limit=limit):
-            claim = await self.repository.claim(job_id, self.location.fingerprint)
+            claim = await self.repository.claim(
+                job_id, self.location.fingerprint, self.location.descriptor
+            )
             if claim is None:
                 counts["skipped"] += 1
                 continue
             error = None
-            if not re.fullmatch(
-                rf"canvas-assets/{re.escape(str(claim.asset_id))}/[0-9a-f]{{32}}\.webp",
-                claim.object_key,
-            ):
+            if not valid_asset_key(claim.object_key, claim.asset_id):
                 error = "invalid_key"
             else:
                 try:

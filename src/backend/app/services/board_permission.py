@@ -101,6 +101,13 @@ class BoardPermissionService:
         if write and board.status != "active":
             raise BoardException(BoardErrorCode.FORBIDDEN)
 
+    def can_manage_structure(self, board: Board, actor: BoardMember | None, *, write: bool) -> bool:
+        try:
+            self.check_manage_structure(board, actor, write=write)
+        except BoardException:
+            return False
+        return True
+
     def check_owner_action(self, board: Board, actor: BoardMember | None) -> None:
         self.check_read(board, actor)
         if (

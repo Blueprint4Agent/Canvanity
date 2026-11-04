@@ -54,6 +54,7 @@ from app.routers.v1 import (
     billing,
     billing_webhook,
     board,
+    board_media,
     canvas,
     events,
     inbox,
@@ -297,6 +298,7 @@ def create_app() -> FastAPI:
     app.include_router(shelf.router, prefix="/api/v1", tags=["Shelves"])
     app.include_router(canvas.router, prefix="/api/v1", tags=["Canvases"])
     app.include_router(asset.router, prefix="/api/v1", tags=["Assets"])
+    app.include_router(board_media.router, prefix="/api/v1", tags=["Boards"])
     app.include_router(tag.router, prefix="/api/v1/tags", tags=["Tags"])
 
     if static_dist_dir.exists():

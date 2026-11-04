@@ -34,6 +34,7 @@ from app.models.board_home import (
     ShelfNavigationData,
 )
 from app.models.board_layout import BoardLayoutDocument
+from app.models.board_media import BoardMediaSummary
 from app.services.board_permission import BoardPermissionService
 
 
@@ -88,12 +89,17 @@ class BoardService:
                 interests = [by_slug[slug] for slug in form.interest_ids]
             slugs = await tx.update_settings(board, user_id, form, interests)
             result = BoardUpdateResponse(
-                board=self._summary(board, slugs), rules=board.rules, board_revision=board.revision
+                board=self._summary(board, slugs, (await tx.media_batch([board.id]))[board.id]),
+                rules=board.rules,
+                board_revision=board.revision,
             )
         return result
 
     @staticmethod
-    def _summary(board: Board, interests: list[str]) -> BoardSummary:
+    def _summary(
+        board: Board, interests: list[str], media: dict[str, BoardMediaSummary] | None = None
+    ) -> BoardSummary:
+        media = media or {}
         created = board.created_at
         if created.tzinfo is None:
             created = created.replace(tzinfo=UTC)
@@ -109,6 +115,10 @@ class BoardService:
             revision=board.revision,
             interest_ids=interests,
             created_at=created,
+            avatar_asset_id=media["avatar"].id if "avatar" in media else None,
+            cover_asset_id=media["cover"].id if "cover" in media else None,
+            avatar=media.get("avatar"),
+            cover=media.get("cover"),
         )
 
     async def list(
@@ -141,10 +151,14 @@ class BoardService:
                 before = (created, last_id)
             except (ValueError, KeyError, TypeError, UnicodeError):
                 raise BoardException(BoardErrorCode.INVALID_CURSOR) from None
-        boards, interests = await self.repository.list_visible(
+        boards, interests, media, account_active = await self.repository.list_visible(
             user_id, limit=limit, q=q, interest_id=interest_id, mine=mine, before=before
         )
-        items = [self._summary(board, interests[board.id]) for board in boards[:limit]]
+        if not account_active:
+            raise AuthException(code=AuthErrorCode.USER_NOT_FOUND)
+        items = [
+            self._summary(board, interests[board.id], media[board.id]) for board in boards[:limit]
+        ]
         next_cursor = None
         if len(boards) > limit:
             last = items[-1]
@@ -202,7 +216,7 @@ class BoardService:
             raise BoardException(BoardErrorCode.UNAVAILABLE)
         document = BoardLayoutDocument.model_validate(data.layout.document)
         widgets, widget_data = [], []
-        summary = self._summary(board, data.interests)
+        summary = self._summary(board, data.interests, data.media)
         for widget in document.widgets:
             if widget.type == "canvas_collection":
                 source = widget.source
@@ -218,7 +232,7 @@ class BoardService:
             elif widget.type == "board_intro":
                 widget_data.append(BoardIntroData(id=widget.id, board=summary, rules=board.rules))
             elif widget.type == "board_cover":
-                widget_data.append(BoardCoverData(id=widget.id))
+                widget_data.append(BoardCoverData(id=widget.id, media=summary.cover))
             else:
                 widget_data.append(ShelfNavigationData(id=widget.id, shelves=shelves))
             widgets.append(widget)
@@ -244,6 +258,7 @@ class BoardService:
             layout=BoardLayoutDocument(schema_version=1, widgets=widgets),
             layout_revision=data.layout.revision,
             widget_data=widget_data,
+            can_manage_media=self.permissions.can_manage_structure(board, member, write=True),
         )
 
     async def transfer_ownership(

@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict
@@ -35,6 +35,10 @@ from app.core.db.session import Base, get_db
 from app.core.error.asset_exception import AssetErrorCode, AssetException
 from app.models.canvas import Canvas, CanvasTransaction, as_utc, utc_now
 from app.models.user import User
+from app.utils.asset_keys import AssetNamespace, valid_asset_key
+
+if TYPE_CHECKING:
+    from app.models.board_media import BoardMediaAsset
 
 MAX_ASSETS_PER_CANVAS = 200
 PENDING_UPLOAD_SECONDS = 3600
@@ -165,6 +169,16 @@ class AssetTransaction:
         self._db = db
         self.context = CanvasTransaction(db)
 
+    @staticmethod
+    def cleanup_matches(asset: "Asset | BoardMediaAsset", job: AssetDeletionOutbox) -> bool:
+        return (
+            asset.board_id == job.board_id
+            and asset.object_key == job.object_key
+            and asset.storage_fingerprint == job.storage_fingerprint
+            and asset.storage_location == job.storage_location
+            and asset.state in {"pending", "ready", "deleting"}
+        )
+
     async def asset(self, asset_id: UUID, *, locked: bool = False) -> Asset | None:
         query = select(Asset).where(Asset.id == asset_id)
         return await self._db.scalar(query.with_for_update() if locked else query)
@@ -189,7 +203,7 @@ class AssetTransaction:
             is not None
         )
 
-    async def _job(self, asset: Asset) -> AssetDeletionOutbox | None:
+    async def _job(self, asset: "Asset | BoardMediaAsset") -> AssetDeletionOutbox | None:
         return await self._db.scalar(
             select(AssetDeletionOutbox)
             .where(
@@ -199,8 +213,24 @@ class AssetTransaction:
             .with_for_update()
         )
 
-    async def enqueue(self, asset: Asset, *, reason: str, available_at: datetime) -> None:
+    async def enqueue(
+        self,
+        asset: "Asset | BoardMediaAsset",
+        *,
+        reason: str,
+        available_at: datetime,
+        preserve_upload_grace: bool = False,
+    ) -> None:
         job = await self._job(asset)
+        if (
+            preserve_upload_grace
+            and job is not None
+            and asset.state != "ready"
+            and job.reason in {"upload_pending", "upload_failed"}
+        ):
+            available_at = max(
+                as_utc(available_at), as_utc(asset.upload_deadline), as_utc(job.available_at)
+            )
         if job is None:
             job = AssetDeletionOutbox(
                 asset_id=asset.id,
@@ -215,6 +245,12 @@ class AssetTransaction:
         else:
             job.reason, job.available_at, job.state = reason, available_at, "pending"
             job.attempts, job.lease_token, job.last_error = 0, None, None
+        await self._db.flush()
+
+    async def protect(self, asset: "Asset | BoardMediaAsset") -> None:
+        job = await self._job(asset)
+        if job is not None:
+            job.state, job.lease_token, job.last_error = "protected", None, None
         await self._db.flush()
 
     async def reserve(
@@ -289,7 +325,9 @@ class AssetTransaction:
                 if asset.state == "pending"
                 else utc_now()
             )
-            await self.enqueue(asset, reason="board_deleted", available_at=when)
+            await self.enqueue(
+                asset, reason="board_deleted", available_at=when, preserve_upload_grace=True
+            )
         await self._db.execute(delete(CanvasAssetRef).where(CanvasAssetRef.board_id == board_id))
         await self._db.execute(delete(Asset).where(Asset.board_id == board_id))
 
@@ -359,18 +397,27 @@ class AssetTransaction:
                 await self.enqueue(asset, reason="unused_upload", available_at=asset.expires_at)
         await self._db.flush()
 
-    async def job_context(self, job_id: UUID) -> tuple[Asset | None, AssetDeletionOutbox | None]:
+    async def job_context(
+        self, job_id: UUID
+    ) -> tuple["Asset | BoardMediaAsset | None", AssetDeletionOutbox | None]:
+        from app.models.board_media import BoardMediaAsset
+
         row = (
             await self._db.execute(
-                select(AssetDeletionOutbox.board_id, AssetDeletionOutbox.asset_id).where(
-                    AssetDeletionOutbox.id == job_id
-                )
+                select(
+                    AssetDeletionOutbox.board_id,
+                    AssetDeletionOutbox.asset_id,
+                    AssetDeletionOutbox.object_key,
+                ).where(AssetDeletionOutbox.id == job_id)
             )
         ).first()
         if row is None:
             return None, None
         await self.context.board.locked_board(row.board_id)
-        asset = await self.asset(row.asset_id, locked=True)
+        model = BoardMediaAsset if row.object_key.startswith("board-media/") else Asset
+        asset = await self._db.scalar(
+            select(model).where(model.id == row.asset_id).with_for_update()
+        )
         job = await self._db.scalar(
             select(AssetDeletionOutbox)
             .where(AssetDeletionOutbox.id == job_id)
@@ -379,16 +426,39 @@ class AssetTransaction:
         return asset, job
 
     async def key_live(self, job: AssetDeletionOutbox) -> bool:
+        from app.models.board_media import BoardMediaAsset, BoardMediaRef
+
+        board_media = job.object_key.startswith("board-media/")
         other = await self._db.scalar(
             select(Asset.id)
             .where(
                 Asset.storage_fingerprint == job.storage_fingerprint,
                 Asset.object_key == job.object_key,
-                Asset.id != job.asset_id,
+                True if board_media else Asset.id != job.asset_id,
             )
             .limit(1)
         )
-        if other is not None or await self.has_refs(job.asset_id):
+        if other is not None or (not board_media and await self.has_refs(job.asset_id)):
+            return True
+        other_media = await self._db.scalar(
+            select(BoardMediaAsset.id)
+            .where(
+                BoardMediaAsset.storage_fingerprint == job.storage_fingerprint,
+                BoardMediaAsset.object_key == job.object_key,
+                BoardMediaAsset.id != job.asset_id if board_media else True,
+            )
+            .limit(1)
+        )
+        current_media = await self._db.scalar(
+            select(BoardMediaRef.asset_id)
+            .join(BoardMediaAsset, BoardMediaAsset.id == BoardMediaRef.asset_id)
+            .where(
+                BoardMediaAsset.storage_fingerprint == job.storage_fingerprint,
+                BoardMediaAsset.object_key == job.object_key,
+            )
+            .limit(1)
+        )
+        if other_media is not None or current_media is not None:
             return True
         # Profile references predate the asset registry and deliberately remain separate.
         return (
@@ -417,11 +487,19 @@ class AssetRepository:
         except SQLAlchemyError as error:
             raise AssetException(AssetErrorCode.UNAVAILABLE) from error
 
-    async def upload_failed(self, asset_id: UUID) -> None:
+    async def upload_failed(
+        self,
+        asset_id: UUID,
+        *,
+        namespace: AssetNamespace = "canvas-assets",
+    ) -> None:
         async with self.transaction() as tx:
             initial = (
                 await tx._db.execute(
-                    select(AssetDeletionOutbox.id).where(AssetDeletionOutbox.asset_id == asset_id)
+                    select(AssetDeletionOutbox.id).where(
+                        AssetDeletionOutbox.asset_id == asset_id,
+                        AssetDeletionOutbox.object_key.startswith(namespace + "/"),
+                    )
                 )
             ).scalar_one_or_none()
             if initial is None:
@@ -429,6 +507,9 @@ class AssetRepository:
             asset, job = await tx.job_context(initial)
             if job is None or (asset is not None and asset.state == "ready"):
                 return  # Ambiguous commit: never compensate a confirmed ready upload.
+            if asset is not None and not tx.cleanup_matches(asset, job):
+                job.state, job.last_error = "blocked", "asset_mismatch"
+                return
             if asset is not None:
                 asset.state = "deleting"
             job.state, job.reason = "pending", "upload_failed"
@@ -454,7 +535,9 @@ class AssetRepository:
                 ).all()
             )
 
-    async def claim(self, job_id: UUID, fingerprint: str) -> CleanupClaim | None:
+    async def claim(
+        self, job_id: UUID, fingerprint: str, location: dict | None = None
+    ) -> CleanupClaim | None:
         async with self.transaction() as tx:
             asset, job = await tx.job_context(job_id)
             if (
@@ -463,8 +546,16 @@ class AssetRepository:
                 or as_utc(job.available_at) > utc_now()
             ):
                 return None
-            if job.storage_fingerprint != fingerprint:
+            if job.storage_fingerprint != fingerprint or (
+                location is not None and job.storage_location != location
+            ):
                 job.state, job.last_error = "blocked", "storage_mismatch"
+                return None
+            if not valid_asset_key(job.object_key, job.asset_id):
+                job.state, job.last_error = "blocked", "invalid_key"
+                return None
+            if asset is not None and not tx.cleanup_matches(asset, job):
+                job.state, job.last_error = "blocked", "asset_mismatch"
                 return None
             if (
                 asset is not None
@@ -494,6 +585,17 @@ class AssetRepository:
         async with self.transaction() as tx:
             asset, job = await tx.job_context(claim.id)
             if job is None or job.state != "processing" or job.lease_token != claim.token:
+                return False
+            if (
+                job.asset_id != claim.asset_id
+                or job.object_key != claim.object_key
+                or job.storage_fingerprint != claim.fingerprint
+                or (
+                    asset is not None
+                    and (not tx.cleanup_matches(asset, job) or asset.state != "deleting")
+                )
+            ):
+                job.state, job.last_error, job.lease_token = "blocked", "asset_mismatch", None
                 return False
             if error is None:
                 if asset is not None:

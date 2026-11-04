@@ -16,6 +16,7 @@ from app.models import (
     asset,  # noqa: F401
     billing,  # noqa: F401
     board,  # noqa: F401
+    board_media,  # noqa: F401
     canvas,  # noqa: F401
     inbox,  # noqa: F401
     inquiry,  # noqa: F401

@@ -391,7 +391,7 @@ def test_live_profile_reference_and_invalid_namespace_never_delete_files(images,
     r.client.portal.call(invalid_key)
     delete = AsyncMock(wraps=r.storage.delete)
     monkeypatch.setattr(r.storage, "delete", delete)
-    assert drain(r)["failed"] == 1 and stored(r)[1][0].last_error == "invalid_key"
+    assert drain(r)["skipped"] == 1 and stored(r)[1][0].last_error == "invalid_key"
     delete.assert_not_awaited()
 
 
@@ -546,3 +546,37 @@ def test_standalone_cleanup_cli_uses_same_isolated_database_and_storage(images):
     report = json.loads(completed.stdout.strip().splitlines()[-1])
     assert report == {"done": 1, "failed": 0, "skipped": 0, "attention": []}
     assert stored(r)[0] == [] and stored(r)[1][0].state == "done"
+
+
+def test_failed_pending_canvas_grace_survives_board_delete_and_late_put(images, monkeypatch):
+    from tests.integration.api.v1.board.test_board_member_administration import revision
+
+    r = images
+    original_put = r.storage.put
+    monkeypatch.setattr(
+        r.storage, "put", AsyncMock(side_effect=StorageError(StorageErrorCode.UNAVAILABLE))
+    )
+    assert upload(r).status_code == 503
+    asset, job = stored(r)[0][0], stored(r)[1][0]
+    assert asset.state == "deleting" and job.reason == "upload_failed"
+    assert board_write(r, "PATCH", r.path, status="archived").status_code == 200
+    assert (
+        r.client.request(
+            "DELETE",
+            r.path,
+            headers=r.headers["owner"],
+            json={"expected_revision": revision(r), "confirm_slug": r.board["slug"]},
+        ).status_code
+        == 204
+    )
+    assert stored(r)[1][0].available_at >= job.available_at
+    assert (
+        r.client.portal.call(
+            r.repository.claim, job.id, r.location.fingerprint, r.location.descriptor
+        )
+        is None
+    )
+    r.client.portal.call(original_put, asset.object_key, b"late", "image/webp")
+    assert drain(r)["done"] == 0
+    due_now(r)
+    assert drain(r)["done"] == 1

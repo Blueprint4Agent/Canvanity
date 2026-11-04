@@ -158,3 +158,8 @@ DB 변경을 되돌리지 않습니다. 탈퇴 트랜잭션이 마지막 사진 
 ## 관리자 상태
 
 관리자 전용 `/admin/status`에 스토리지 제공자, 연결 방식, 포트, 상태, 응답 시간 및 캐시된 확인 시각을 추가합니다. 로컬은 임시 파일 쓰기·읽기·삭제, 원격은 HeadBucket으로 확인하며 업로드 권한이나 버킷 공개 여부를 검증하지 않습니다. 기존 프로세스별 60초 캐시·동시 요청 공유·응답 시간 제한을 재사용합니다. 비밀키, 원본 오류, 계정/프로젝트 식별자, 엔드포인트 호스트/URL, 버킷명, 리전, 로컬 경로는 응답에서 제외합니다. 화면에는 제공자 아이콘, 연결 방식/포트, 기존 상태·응답 시간을 표시하며 행별 확인 설명·시각은 표시하지 않습니다. 공개 readiness나 백그라운드 작업은 변경하지 않습니다.
+
+
+## Board 미디어·공유 cleanup
+
+[Board 대표 이미지/커버](community/board-media.md)는 board-media 불변 namespace와 별도 Board 소유 등록부/ready slot refs를 추가한다. 기존 Canvas assets/프로필은 별도 소유를 유지하며 parentless outbox/Beat/CLI는 공유한다. worker는 두 registry의 동일 key/fingerprint·현재 refs/프로필과 실제 바인딩 descriptor를 확인하고 오염된 namespace/소속/위치는 delete 전 blocked다. API/worker/CLI는 동일 DB/스토리지를 사용해야 하며 기존 lease/fencing/backoff/tombstone을 유지한다. 제공자 설정·파일의 자동 이관은 없다.

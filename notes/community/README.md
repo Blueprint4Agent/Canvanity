@@ -17,6 +17,7 @@
 | [Canvas 객체 스키마](canvas-content-schema.md) | Text/Image/Drawing/Shape/Edge·고정 버전 필드·참조/순서·문서 검증 |
 | [Canvas 본문 저장](canvas-document-save.md) | PUT·문서 revision CAS·현재 권한·같은 트랜잭션의 이미지 참조·정리 경쟁 |
 | [Canvas 게시·공개본](canvas-publication.md) | 초안/공개본 분리·게시 상태 CAS·현재 권한의 단건 metadata/document/이미지 열람 |
+| [Board 대표 이미지·커버](board-media.md) | 현재 Owner/Admin 업로드·Board CAS·ready 슬롯 FK·guarded bytes·공유 cleanup |
 | [공식 홈 레이아웃](board-home-layout.md) | 운영 GET/PUT·독립 revision/감사·방문자 projection·일관된 공개 위젯 |
 | [내 Canvas 목록·휴지통](canvas-list.md) | 세션 본인 metadata/현재 Tags·최근 수정순·엄격 커서·복구 기한 |
 | [공개 Canvas 목록](canvas-feed.md) | Plaza·Board·Shelf·현재 권한·최신순 커서·공식 Interest/게시Tag 필터 |
@@ -54,7 +55,7 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)는 PR #30으로 main에 반영했다. 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.
 
 
-회원 운영 #31/PR #33, 등급 설정 #32/PR #34, 초대 #35/PR #36, 기본 설정 #37/PR #38, 소유권·종료 #39/PR #40, Shelf 관리 #23/PR #41, Canvas 초안 #8/PR #42와 이미지 API/삭제 outbox #6/PR #43은 main에 반영했다. 기본 Board 운영 API는 있지만 avatar/cover 연결과 공식 홈/공개 목록/Plaza의 제품 UI #25/#8은 후속이다. [공식 홈 #55](board-home-layout.md)는 운영 layout GET/PUT과 권한별 공개 위젯 백엔드를 제공하며 검증·게시·병합은 worklog0296 및 이슈/PR을 따른다. [공개 목록 #53](canvas-feed.md)의 백엔드 API와 실제 검증·게시·병합은 worklog0295 및 이슈/PR을 따른다. #51의 [게시/공개본 단건 열람](canvas-publication.md)은 UI와 분리해 제공하며 실제 검증·ready PR·main 병합은 worklog0294와 이슈/PR을 따른다. 자동 승급·가입 승인·이메일/토큰 초대도 별도 후속 범위다.
+회원 운영 #31/PR #33, 등급 설정 #32/PR #34, 초대 #35/PR #36, 기본 설정 #37/PR #38, 소유권·종료 #39/PR #40, Shelf 관리 #23/PR #41, Canvas 초안 #8/PR #42와 이미지 API/삭제 outbox #6/PR #43은 main에 반영했다. 기본 Board 운영 API에 [대표 이미지/커버 백엔드 #59](board-media.md)를 연결한다. 실제 검증·게시·병합은 worklog0298과 이슈/PR을 따르며 공식 홈/공개 목록/Plaza의 제품 UI #25/#8은 후속이다. [공식 홈 #55](board-home-layout.md)는 운영 layout GET/PUT과 권한별 공개 위젯 백엔드를 제공하며 검증·게시·병합은 worklog0296 및 이슈/PR을 따른다. [공개 목록 #53](canvas-feed.md)의 백엔드 API와 실제 검증·게시·병합은 worklog0295 및 이슈/PR을 따른다. #51의 [게시/공개본 단건 열람](canvas-publication.md)은 UI와 분리해 제공하며 실제 검증·ready PR·main 병합은 worklog0294와 이슈/PR을 따른다. 자동 승급·가입 승인·이메일/토큰 초대도 별도 후속 범위다.
 
 #5의 [객체 스키마](canvas-content-schema.md)는 PR #46, #7에서 분리한 [#47 본문 PUT/CAS·에셋 참조 원자 동기화](canvas-document-save.md)는 PR #48로 main에 반영했다. #24에서 분리한 [#49 자유 Tag 백엔드](canvas-tags.md)와 #8에서 분리한 [#51 게시](canvas-publication.md)는 main에 반영했다. [#53 공개 목록](canvas-feed.md)은 별도 백엔드 완료 단위이며 검증·게시·병합 근거는 해당 이슈/PR을 따른다. 자동 저장/복구 UI는 #7에 남기고 신규 UI는 계속 보류한다.
 

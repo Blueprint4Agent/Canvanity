@@ -551,7 +551,7 @@ def test_real_postgres_publication_migration_state_cas_policy_cleanup_and_accoun
             async with test_db() as db:
                 assert (
                     await db.scalar(text("SELECT version_num FROM alembic_version"))
-                    == "0029_canvas_publications"
+                    == "0030_board_media"
                 )
                 assert (await db.scalars(select(CanvasPublicationTag))).first() is None
             await assert_publication_transactions(test_db, seed, tmp_path / "publication-assets")

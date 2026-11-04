@@ -133,6 +133,8 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
     }
     expected |= {
         ("POST", "/api/v1/boards"),
+        ("PUT", "/api/v1/boards/{board_id}/media/{slot}"),
+        ("DELETE", "/api/v1/boards/{board_id}/media/{slot}"),
         ("DELETE", "/api/v1/boards/{board_id}"),
         ("PATCH", "/api/v1/boards/{board_id}"),
         ("POST", "/api/v1/boards/{board_id}/join"),
@@ -303,6 +305,39 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
         ).status_code
         == 401
     )
+    assert (
+        client.put(
+            path + "/media/cover",
+            headers=key,
+            files={"file": ("x.png", b"image", "image/png")},
+            data={"expected_revision": "0", "reason": "키 거부"},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.request(
+            "DELETE",
+            path + "/media/cover",
+            headers=key,
+            json={"expected_revision": 0, "reason": "키 거부"},
+        ).status_code
+        == 401
+    )
+    from tests.unit.services.test_canvas_image import encoded_image
+
+    media = client.put(
+        path + "/media/cover",
+        headers=bearer,
+        files={"file": ("image.png", encoded_image(), "image/png")},
+        data={"expected_revision": "0", "reason": "세션 이미지"},
+    )
+    assert media.status_code == 200, media.text
+    media_url = media.json()["media"]["url"]
+    assert client.get(media_url, headers=key).status_code == 404
+    assert client.get(media_url, headers=bearer).status_code == 200
+    assert (
+        client.get(media_url, headers={**key, "Authorization": "Bearer invalid"}).status_code == 401
+    )
     grade_ids = [g["id"] for g in client.get(path + "/grades", headers=bearer).json()["items"]]
     assert client.get(path + "/grades", headers=key).status_code == 404
     for method, suffix, changes in [
@@ -411,6 +446,7 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
     schema = client.app.openapi()
     assert {} in schema["paths"]["/api/v1/boards"]["get"]["security"]
     for template in (
+        "/api/v1/boards/{board_id}/media/{slot}/{asset_id}",
         "/api/v1/canvases/{canvas_id}",
         "/api/v1/canvases/{canvas_id}/document",
         "/api/v1/canvases/{canvas_id}/assets/{asset_id}",

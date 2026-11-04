@@ -95,3 +95,8 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 ## 내 Canvas 목록·휴지통 후속 작업
 
 2026-11-04: [#57 본인 목록](notes/community/canvas-list.md)은 현재 활성 세션 작성자의 기존 Board 소속 초안/휴지통 metadata·현재 Tags·게시 상태·수정순 커서와 복구 기한을 제공한다. 단건 작성자 scope/정책을 재사용하고 snapshot의 고정 batch로 본문 없이 읽는다. 신규 UI·독립 개인 Canvas·자동 purge/영구삭제는 보류한다. 실제 검증·게시·main 병합은 worklog0297과 이슈/PR을 따른다.
+
+
+## Board 대표 이미지·커버 후속 작업
+
+2026-11-04: [#59 미디어 계약](notes/community/board-media.md)은 Board 전용 등록부/ready slot refs·현재 Owner/Admin 업로드/제거·Board CAS/감사·현재 권한의 버전 이미지 읽기를 제공한다. 0030은 기존 부모/Canvas FK/outbox를 바꾸지 않고 두 테이블만 추가하며 기존 cleanup을 namespace/교차 참조/위치 보호로 확장한다. Board 목록/상세/홈 요약·실제 cover widget과 연결하고 신규 UI/크롭/썸네일·제공자 설정·운영 배포는 후속이다. 실제 검증·게시·병합은 worklog0298 및 이슈/PR에서 구분한다.
