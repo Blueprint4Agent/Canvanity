@@ -6,12 +6,15 @@ import { CommunityCanvas } from "../../components/features/explore/CommunityCanv
 import { ProfileInterestTags } from "../../components/features/profile/ProfileInterestsField";
 import { Button, ButtonLink, InlineMessage, InputField, Modal, Spinner } from "../../components/ui";
 import { useBoardActions, useBoardHome } from "../../hooks/api/boards/useBoards";
+import { useAuthContext } from "../../hooks/useAuth";
 import { useInterestCatalog } from "../../hooks/api/interests/useInterestCatalog";
 
 export function BoardHomePage() {
     const { slug = "" } = useParams();
     const { t, i18n } = useTranslation();
     const home = useBoardHome(slug);
+    const { user } = useAuthContext();
+    const [leaving, setLeaving] = useState(false);
     const catalog = useInterestCatalog();
     const actions = useBoardActions();
     const navigate = useNavigate();
@@ -19,9 +22,10 @@ export function BoardHomePage() {
     const [confirmation, setConfirmation] = useState("");
     const data = home.data;
     useEffect(() => {
+        setLeaving(false);
         setDeleting(false);
         setConfirmation("");
-    }, [slug]);
+    }, [slug, user?.id]);
     return (
         <>
             <CommunityCanvas
@@ -87,6 +91,47 @@ export function BoardHomePage() {
                                 </p>
                             ) : null}
                             {data.rules ? <p className="board-rules">{data.rules}</p> : null}
+                            {!data.membership &&
+                            data.board.status === "active" &&
+                            data.board.visibility === "public" &&
+                            data.board.join_policy === "open" ? (
+                                user ? (
+                                    <Button
+                                        disabled={actions.busy || !actions.available}
+                                        onClick={async () => {
+                                            if (await actions.join(data.board.id)) home.reload();
+                                        }}
+                                    >
+                                        {t("boards.join")}
+                                    </Button>
+                                ) : (
+                                    <ButtonLink
+                                        to={`/login?next=${encodeURIComponent(`/b/${slug}`)}`}
+                                    >
+                                        {t("boards.loginToJoin")}
+                                    </ButtonLink>
+                                )
+                            ) : null}
+                            {data.membership?.status === "active" &&
+                            data.membership.role !== "owner" ? (
+                                <Button
+                                    appearance="pill-secondary"
+                                    disabled={actions.busy || !actions.available}
+                                    onClick={() => {
+                                        actions.clearError();
+                                        setLeaving(true);
+                                    }}
+                                >
+                                    {t("boards.leave")}
+                                </Button>
+                            ) : null}
+                            {actions.error && !deleting && !leaving ? (
+                                <InlineMessage tone="error">
+                                    {t(`boards.errors.${actions.error}`, {
+                                        defaultValue: t("boards.errors.BOARD_UNAVAILABLE"),
+                                    })}
+                                </InlineMessage>
+                            ) : null}
                         </section>
                         <section className="board-home-shelves" aria-label={t("boards.shelves")}>
                             <h2>{t("boards.shelves")}</h2>
@@ -135,6 +180,47 @@ export function BoardHomePage() {
                     </div>
                 ) : null}
             </CommunityCanvas>
+            {leaving && data?.membership && data.membership.role !== "owner" ? (
+                <Modal
+                    open
+                    keyboardDismissible
+                    title={t("boards.leaveTitle")}
+                    description={t("boards.leaveHelp")}
+                    onClose={() => {
+                        if (!actions.busy) setLeaving(false);
+                    }}
+                    footer={
+                        <>
+                            <Button
+                                appearance="pill-secondary"
+                                disabled={actions.busy}
+                                onClick={() => setLeaving(false)}
+                            >
+                                {t("boards.cancel")}
+                            </Button>
+                            <Button
+                                disabled={actions.busy || !actions.available}
+                                onClick={async () => {
+                                    if (await actions.leave(data.board.id)) {
+                                        setLeaving(false);
+                                        home.reload();
+                                    }
+                                }}
+                            >
+                                {t("boards.leaveConfirm")}
+                            </Button>
+                        </>
+                    }
+                >
+                    {actions.error ? (
+                        <InlineMessage tone="error">
+                            {t(`boards.errors.${actions.error}`, {
+                                defaultValue: t("boards.errors.BOARD_UNAVAILABLE"),
+                            })}
+                        </InlineMessage>
+                    ) : null}
+                </Modal>
+            ) : null}
             {deleting && data && data.membership?.role === "owner" ? (
                 <Modal
                     open
