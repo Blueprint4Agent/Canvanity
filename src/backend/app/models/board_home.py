@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 
 from app.models.board import BoardSummary, GradeSummary, MembershipSummary, ShelfSummary
 from app.models.board_layout import BoardLayoutDocument
+from app.models.board_media import BoardMediaSummary
 from app.models.canvas_feed import CanvasFeedItem
 
 
@@ -19,7 +20,7 @@ class BoardIntroData(BaseModel):
 class BoardCoverData(BaseModel):
     id: str
     type: Literal["board_cover"] = "board_cover"
-    media: None = None
+    media: BoardMediaSummary | None = None
 
 
 class ShelfNavigationData(BaseModel):
@@ -49,3 +50,4 @@ class BoardHomeResponse(BaseModel):
     layout: BoardLayoutDocument
     layout_revision: int
     widget_data: list[BoardWidgetData] = Field(max_length=100)
+    can_manage_media: bool = False

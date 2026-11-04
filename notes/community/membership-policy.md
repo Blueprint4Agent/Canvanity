@@ -140,3 +140,8 @@ members PATCH는 role/status/grade_id를 한 번에 받을 수 있으나 **제�
 ## 내 Canvas 목록·휴지통 #57
 
 [세션 전용 내 목록](canvas-list.md)은 현재 active 계정·Board active/archived·active 멤버인 본인의 기존 Board 소속 행만 조회한다. 낮은 Shelf 등급도 본인 초안 읽기를 막지 않고 단건과 같은 capabilities/30일 복구 기한을 적용한다. metadata/본문 최근 수정순과 독립 status/publication 필터를 사용하며 공개 snapshot 목록·단건 공개본 읽기 경계를 넓히지 않는다. 제품 UI는 후속이다.
+
+
+## Board 대표 이미지·커버 — #59
+
+[미디어 변경](board-media.md)은 현재 active 계정·active Board의 active Owner/Admin만 허용한다. Moderator/활동 등급/전역 admin/API Key는 변경 권한이 아니다. 현재 Board→User SHARE 잠금 아래 최종 권한과 공용 revision을 재검사한다. 바이트 GET은 현재 Board read/계정 정책과 선택된 ready 버전만 허용하고 I/O 뒤 다시 검사한다. 홈 can_manage_media는 같은 공개 관리 가드를 사용한다.

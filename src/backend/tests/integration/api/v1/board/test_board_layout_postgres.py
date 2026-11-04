@@ -229,7 +229,7 @@ def test_real_postgres_layout_locks_cas_snapshot_and_existing_data(monkeypatch):
             async with test_db() as db:
                 assert (
                     await db.scalar(text("SELECT version_num FROM alembic_version"))
-                    == "0029_canvas_publications"
+                    == "0030_board_media"
                 )
                 assert (
                     await db.scalar(

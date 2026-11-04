@@ -13,9 +13,11 @@
 | 소유권 위임·보관/복원·영구 삭제 | 구현. 보관 Board 확인 삭제와 에셋 정리 outbox를 연결한다. |
 | Shelf·액션 정책 | CRUD/전체 순서·숨김·직접 조회·Board 기본/Shelf 재정의 정책 구현. |
 | 공개 Canvas 목록 | [#53](canvas-feed.md)의 Plaza·Board·Shelf·최신순 cursor·공식 Interest/게시Tag AND 필터 API. 목록 제품 UI는 후속이며 동적 위젯은 아래 #55 계약을 따른다. |
-| 공식 홈/레이아웃 | [#55](board-home-layout.md)의 관리 GET/PUT·독립 layout revision/감사·현재 권한의 typed home projection/widget_data. Cover media는 null이며 제품 편집 UI/개인 배치는 후속이다. |
+| 공식 홈/레이아웃 | [#55](board-home-layout.md)의 관리 GET/PUT·독립 layout revision/감사·현재 권한의 typed home projection/widget_data. 현재 cover 요약은 아래 #59와 연결하며 제품 편집 UI/개인 배치는 후속이다. |
 
-따라서 기본 커뮤니티 운영 API는 마련됐지만 Board 관련 전체 계획의 완료 상태는 아니다. 대표 이미지/커버의 실제 미디어 연결(#22), 공식 홈 제품 편집 UI/개인 배치(#25), 공개 목록/Plaza의 제품 UI(#8)는 남아 있다. [#51 게시·공개본 단건 열람](canvas-publication.md)은 별도 백엔드 단위이며 실제 게시/병합 상태는 worklog0294와 이슈/PR을 따른다. 가입 승인·이메일/토큰 초대 고도화·활동량 자동 승급도 후속이다. 제품 UI는 보류한다.
+| 대표 이미지·커버 | [#59](board-media.md)의 세션 Owner/Admin PUT/DELETE·Board CAS/최소 감사·현재 ref GET·Board 요약/실제 cover widget·공유 정리 worker. 실제 검증·게시·병합은 worklog0298/이슈/PR을 따른다. |
+
+따라서 기본 커뮤니티 운영 API는 마련됐지만 Board 관련 전체 계획의 완료 상태는 아니다. 대표 이미지/커버의 제품 편집 UI(#22), 공식 홈 제품 편집 UI/개인 배치(#25), 공개 목록/Plaza의 제품 UI(#8)는 남아 있다. [#51 게시·공개본 단건 열람](canvas-publication.md)은 별도 백엔드 단위이며 실제 게시/병합 상태는 worklog0294와 이슈/PR을 따른다. 가입 승인·이메일/토큰 초대 고도화·활동량 자동 승급도 후속이다. 제품 UI는 보류한다.
 
 기존 설계의 `GET /boards/{id}/membership` 전용 경로는 현재 라우터/OpenAPI에 없다. 본인 membership/capabilities는 현재 Board 상세/홈 응답에 포함된다. 별도 조회 경로의 필요성·최종 계약은 #22에서 추적하며 모든 목표 endpoint가 구현됐다고 표시하지 않는다.
 

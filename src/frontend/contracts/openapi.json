@@ -1880,8 +1880,14 @@
                         "type": "string"
                     },
                     "media": {
-                        "title": "Media",
-                        "type": "null"
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardMediaSummary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
                     },
                     "type": {
                         "const": "board_cover",
@@ -2030,6 +2036,10 @@
                             "BOARD_LAST_GRADE",
                             "BOARD_INVALID_MEMBER_CHANGE",
                             "BOARD_INVALID_AUDIT_WINDOW",
+                            "BOARD_REVISION_EXHAUSTED",
+                            "BOARD_MEDIA_LIMIT_REACHED",
+                            "BOARD_MEDIA_CONFLICT",
+                            "BOARD_MEDIA_NOT_FOUND",
                             "BOARD_UNAVAILABLE"
                         ],
                         "example": "BOARD_NOT_FOUND",
@@ -2282,6 +2292,11 @@
                 "properties": {
                     "board": {
                         "$ref": "#/components/schemas/BoardSummary"
+                    },
+                    "can_manage_media": {
+                        "default": false,
+                        "title": "Can Manage Media",
+                        "type": "boolean"
                     },
                     "grades": {
                         "items": {
@@ -2579,6 +2594,175 @@
                 "title": "BoardLayoutSaveForm",
                 "type": "object"
             },
+            "BoardMediaAuditChange": {
+                "additionalProperties": false,
+                "properties": {
+                    "after_asset_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "After Asset Id"
+                    },
+                    "after_revision": {
+                        "title": "After Revision",
+                        "type": "integer"
+                    },
+                    "before_asset_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Before Asset Id"
+                    },
+                    "before_revision": {
+                        "title": "Before Revision",
+                        "type": "integer"
+                    },
+                    "slot": {
+                        "$ref": "#/components/schemas/BoardMediaSlot"
+                    }
+                },
+                "required": [
+                    "slot",
+                    "before_asset_id",
+                    "after_asset_id",
+                    "before_revision",
+                    "after_revision"
+                ],
+                "title": "BoardMediaAuditChange",
+                "type": "object"
+            },
+            "BoardMediaChangeForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "expected_revision": {
+                        "maximum": 2147483647.0,
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason"],
+                "title": "BoardMediaChangeForm",
+                "type": "object"
+            },
+            "BoardMediaMultipartError": {
+                "properties": {
+                    "detail": {
+                        "title": "Detail",
+                        "type": "string"
+                    }
+                },
+                "required": ["detail"],
+                "title": "BoardMediaMultipartError",
+                "type": "object"
+            },
+            "BoardMediaSlot": {
+                "enum": ["avatar", "cover"],
+                "title": "BoardMediaSlot",
+                "type": "string"
+            },
+            "BoardMediaSummary": {
+                "properties": {
+                    "byte_size": {
+                        "title": "Byte Size",
+                        "type": "integer"
+                    },
+                    "content_type": {
+                        "const": "image/webp",
+                        "title": "Content Type",
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "format": "date-time",
+                        "title": "Created At",
+                        "type": "string"
+                    },
+                    "frame_count": {
+                        "title": "Frame Count",
+                        "type": "integer"
+                    },
+                    "height": {
+                        "title": "Height",
+                        "type": "integer"
+                    },
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "url": {
+                        "title": "Url",
+                        "type": "string"
+                    },
+                    "width": {
+                        "title": "Width",
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "content_type",
+                    "byte_size",
+                    "width",
+                    "height",
+                    "frame_count",
+                    "created_at",
+                    "url"
+                ],
+                "title": "BoardMediaSummary",
+                "type": "object"
+            },
+            "BoardMediaUpdateResponse": {
+                "properties": {
+                    "board_id": {
+                        "format": "uuid",
+                        "title": "Board Id",
+                        "type": "string"
+                    },
+                    "board_revision": {
+                        "title": "Board Revision",
+                        "type": "integer"
+                    },
+                    "changed": {
+                        "title": "Changed",
+                        "type": "boolean"
+                    },
+                    "media": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardMediaSummary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "slot": {
+                        "$ref": "#/components/schemas/BoardMediaSlot"
+                    }
+                },
+                "required": ["board_id", "slot", "media", "board_revision", "changed"],
+                "title": "BoardMediaUpdateResponse",
+                "type": "object"
+            },
             "BoardMemberAuditResponse": {
                 "properties": {
                     "action": {
@@ -2650,6 +2834,16 @@
                         "anyOf": [
                             {
                                 "$ref": "#/components/schemas/BoardLayoutAuditChange"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "media_change": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardMediaAuditChange"
                             },
                             {
                                 "type": "null"
@@ -3357,6 +3551,50 @@
             },
             "BoardSummary": {
                 "properties": {
+                    "avatar": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardMediaSummary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "avatar_asset_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Avatar Asset Id"
+                    },
+                    "cover": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/components/schemas/BoardMediaSummary"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ]
+                    },
+                    "cover_asset_id": {
+                        "anyOf": [
+                            {
+                                "format": "uuid",
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Cover Asset Id"
+                    },
                     "created_at": {
                         "format": "date-time",
                         "title": "Created At",
@@ -3589,6 +3827,30 @@
                 },
                 "required": ["file"],
                 "title": "Body_upload_asset_api_v1_canvases__canvas_id__assets_post",
+                "type": "object"
+            },
+            "Body_upload_board_media_api_v1_boards__board_id__media__slot__put": {
+                "properties": {
+                    "expected_revision": {
+                        "ge": 0,
+                        "le": 2147483647,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "file": {
+                        "contentMediaType": "application/octet-stream",
+                        "title": "File",
+                        "type": "string"
+                    },
+                    "reason": {
+                        "maxLength": 500,
+                        "minLength": 1,
+                        "title": "Reason",
+                        "type": "string"
+                    }
+                },
+                "required": ["expected_revision", "reason", "file"],
+                "title": "Body_upload_board_media_api_v1_boards__board_id__media__slot__put",
                 "type": "object"
             },
             "CanvasCapabilities": {
@@ -18715,6 +18977,536 @@
                     }
                 ],
                 "summary": "Save Layout",
+                "tags": ["Boards"]
+            }
+        },
+        "/api/v1/boards/{board_id}/media/{slot}": {
+            "delete": {
+                "operationId": "remove_board_media_api_v1_boards__board_id__media__slot__delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "slot",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/BoardMediaSlot"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/BoardMediaChangeForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardMediaUpdateResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Remove Board Media Api V1 Boards  Board Id  Media  Slot  Delete"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Remove Board Media Api V1 Boards  Board Id  Media  Slot  Delete"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Remove Board Media Api V1 Boards  Board Id  Media  Slot  Delete"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "Board revision conflict. Reload the latest board information."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "ASSET_TOO_LARGE",
+                                        "message": "Image upload or normalized output exceeds 8 MiB."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssetErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Content Too Large"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "ASSET_INVALID_IMAGE",
+                                        "message": "Upload a supported image within the pixel and frame limits."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssetErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/AssetErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 503 Remove Board Media Api V1 Boards  Board Id  Media  Slot  Delete"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Remove Board Media",
+                "tags": ["Boards"]
+            },
+            "put": {
+                "operationId": "upload_board_media_api_v1_boards__board_id__media__slot__put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "slot",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/BoardMediaSlot"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "$ref": "#/components/schemas/Body_upload_board_media_api_v1_boards__board_id__media__slot__put"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardMediaUpdateResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardMediaMultipartError"
+                                }
+                            }
+                        },
+                        "description": "multipart 파일/필드 개수 또는 텍스트 part 한도 초과."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Upload Board Media Api V1 Boards  Board Id  Media  Slot  Put"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Upload Board Media Api V1 Boards  Board Id  Media  Slot  Put"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Upload Board Media Api V1 Boards  Board Id  Media  Slot  Put"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "BOARD_REVISION_CONFLICT",
+                                        "message": "Board revision conflict. Reload the latest board information."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/BoardErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "413": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "ASSET_TOO_LARGE",
+                                        "message": "Image upload or normalized output exceeds 8 MiB."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssetErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Content Too Large"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "ASSET_INVALID_IMAGE",
+                                        "message": "Upload a supported image within the pixel and frame limits."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssetErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/AssetErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 503 Upload Board Media Api V1 Boards  Board Id  Media  Slot  Put"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Upload Board Media",
+                "tags": ["Boards"]
+            }
+        },
+        "/api/v1/boards/{board_id}/media/{slot}/{asset_id}": {
+            "get": {
+                "operationId": "read_board_media_api_v1_boards__board_id__media__slot___asset_id__get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "board_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Board Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "slot",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/components/schemas/BoardMediaSlot"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "asset_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Asset Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "image/webp": {
+                                "schema": {
+                                    "format": "binary",
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "현재 Board 이미지."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Read Board Media Api V1 Boards  Board Id  Media  Slot   Asset Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Read Board Media Api V1 Boards  Board Id  Media  Slot   Asset Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Read Board Media Api V1 Boards  Board Id  Media  Slot   Asset Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/BoardErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/AssetErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 503 Read Board Media Api V1 Boards  Board Id  Media  Slot   Asset Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "Read Board Media",
                 "tags": ["Boards"]
             }
         },

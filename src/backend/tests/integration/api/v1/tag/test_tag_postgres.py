@@ -25,6 +25,7 @@ from app.models.board import (
     BoardMemberGrade,
     BoardRepository,
     BoardTransaction,
+    Shelf,
 )
 from app.models.canvas import (
     Canvas,
@@ -102,9 +103,11 @@ async def seed_existing_content(test_db):
         owner.id, BoardCreateForm(name="태그 이전 보드", slug="tag-existing")
     )
     other = await boards.create(owner.id, BoardCreateForm(name="다른 보드", slug="tag-other"))
-    home = await boards.home(owner.id, board_id=first.id)
-    shelf = next(s.id for s in home.shelves if s.is_default)
+    # The fixture intentionally seeds an older migration without calling current-schema reads.
     async with test_db() as db:
+        shelf = await db.scalar(
+            select(Shelf.id).where(Shelf.board_id == first.id, Shelf.is_default.is_(True))
+        )
         grades = list(
             (
                 await db.scalars(
@@ -397,7 +400,7 @@ def test_real_postgres_tag_race_metadata_cas_permissions_and_populated_migration
             async with test_db() as db:
                 assert (
                     await db.scalar(text("SELECT version_num FROM alembic_version"))
-                    == "0029_canvas_publications"
+                    == "0030_board_media"
                 )
             await assert_tag_transactions(test_db, seed)
         finally:

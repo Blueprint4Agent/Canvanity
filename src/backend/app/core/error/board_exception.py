@@ -136,6 +136,24 @@ class BoardErrorCode(Enum):
         status.HTTP_422_UNPROCESSABLE_CONTENT,
     )
 
+    REVISION_EXHAUSTED = ServiceErrorCode(
+        "BOARD_REVISION_EXHAUSTED",
+        "The board revision limit has been reached.",
+        status.HTTP_409_CONFLICT,
+    )
+    MEDIA_LIMIT_REACHED = ServiceErrorCode(
+        "BOARD_MEDIA_LIMIT_REACHED",
+        "Drain pending media cleanup before uploading more images.",
+        status.HTTP_409_CONFLICT,
+    )
+    MEDIA_CONFLICT = ServiceErrorCode(
+        "BOARD_MEDIA_CONFLICT",
+        "The upload is no longer pending. Upload the image again.",
+        status.HTTP_409_CONFLICT,
+    )
+    MEDIA_NOT_FOUND = ServiceErrorCode(
+        "BOARD_MEDIA_NOT_FOUND", "Current board media not found.", status.HTTP_404_NOT_FOUND
+    )
     UNAVAILABLE = ServiceErrorCode(
         "BOARD_UNAVAILABLE",
         "Unable to complete the board operation.",

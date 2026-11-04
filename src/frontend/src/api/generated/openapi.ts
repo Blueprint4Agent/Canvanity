@@ -959,6 +959,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{board_id}/media/{slot}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Upload Board Media */
+        put: operations["upload_board_media_api_v1_boards__board_id__media__slot__put"];
+        post?: never;
+        /** Remove Board Media */
+        delete: operations["remove_board_media_api_v1_boards__board_id__media__slot__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{board_id}/media/{slot}/{asset_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Read Board Media */
+        get: operations["read_board_media_api_v1_boards__board_id__media__slot___asset_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/boards/{board_id}/member-audit": {
         parameters: {
             query?: never;
@@ -2532,8 +2567,7 @@ export interface components {
         BoardCoverData: {
             /** Id */
             id: string;
-            /** Media */
-            media?: null;
+            media?: components["schemas"]["BoardMediaSummary"] | null;
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
@@ -2625,6 +2659,10 @@ export interface components {
                 | "BOARD_LAST_GRADE"
                 | "BOARD_INVALID_MEMBER_CHANGE"
                 | "BOARD_INVALID_AUDIT_WINDOW"
+                | "BOARD_REVISION_EXHAUSTED"
+                | "BOARD_MEDIA_LIMIT_REACHED"
+                | "BOARD_MEDIA_CONFLICT"
+                | "BOARD_MEDIA_NOT_FOUND"
                 | "BOARD_UNAVAILABLE";
             /** Message */
             message: string;
@@ -2731,6 +2769,11 @@ export interface components {
         /** BoardHomeResponse */
         BoardHomeResponse: {
             board: components["schemas"]["BoardSummary"];
+            /**
+             * Can Manage Media
+             * @default false
+             */
+            can_manage_media: boolean;
             /** Grades */
             grades: components["schemas"]["GradeSummary"][];
             layout: components["schemas"]["BoardLayoutDocument-Output"];
@@ -2830,6 +2873,77 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** BoardMediaAuditChange */
+        BoardMediaAuditChange: {
+            /** After Asset Id */
+            after_asset_id: string | null;
+            /** After Revision */
+            after_revision: number;
+            /** Before Asset Id */
+            before_asset_id: string | null;
+            /** Before Revision */
+            before_revision: number;
+            slot: components["schemas"]["BoardMediaSlot"];
+        };
+        /** BoardMediaChangeForm */
+        BoardMediaChangeForm: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason: string;
+        };
+        /** BoardMediaMultipartError */
+        BoardMediaMultipartError: {
+            /** Detail */
+            detail: string;
+        };
+        /**
+         * BoardMediaSlot
+         * @enum {string}
+         */
+        BoardMediaSlot: "avatar" | "cover";
+        /** BoardMediaSummary */
+        BoardMediaSummary: {
+            /** Byte Size */
+            byte_size: number;
+            /**
+             * Content Type
+             * @constant
+             */
+            content_type: "image/webp";
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Frame Count */
+            frame_count: number;
+            /** Height */
+            height: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Url */
+            url: string;
+            /** Width */
+            width: number;
+        };
+        /** BoardMediaUpdateResponse */
+        BoardMediaUpdateResponse: {
+            /**
+             * Board Id
+             * Format: uuid
+             */
+            board_id: string;
+            /** Board Revision */
+            board_revision: number;
+            /** Changed */
+            changed: boolean;
+            media: components["schemas"]["BoardMediaSummary"] | null;
+            slot: components["schemas"]["BoardMediaSlot"];
+        };
         /** BoardMemberAuditResponse */
         BoardMemberAuditResponse: {
             /** Action */
@@ -2851,6 +2965,7 @@ export interface components {
              */
             id: string;
             layout_change?: components["schemas"]["BoardLayoutAuditChange"] | null;
+            media_change?: components["schemas"]["BoardMediaAuditChange"] | null;
             ownership_change?: components["schemas"]["BoardOwnershipAuditChange"] | null;
             policy_change?: components["schemas"]["PolicyAuditChange"] | null;
             /** Reason */
@@ -3166,6 +3281,12 @@ export interface components {
         };
         /** BoardSummary */
         BoardSummary: {
+            avatar?: components["schemas"]["BoardMediaSummary"] | null;
+            /** Avatar Asset Id */
+            avatar_asset_id?: string | null;
+            cover?: components["schemas"]["BoardMediaSummary"] | null;
+            /** Cover Asset Id */
+            cover_asset_id?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -3263,6 +3384,15 @@ export interface components {
         Body_upload_asset_api_v1_canvases__canvas_id__assets_post: {
             /** File */
             file: string;
+        };
+        /** Body_upload_board_media_api_v1_boards__board_id__media__slot__put */
+        Body_upload_board_media_api_v1_boards__board_id__media__slot__put: {
+            /** Expected Revision */
+            expected_revision: number;
+            /** File */
+            file: string;
+            /** Reason */
+            reason: string;
         };
         /** CanvasCapabilities */
         CanvasCapabilities: {
@@ -12978,6 +13108,365 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+        };
+    };
+    upload_board_media_api_v1_boards__board_id__media__slot__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+                slot: components["schemas"]["BoardMediaSlot"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_board_media_api_v1_boards__board_id__media__slot__put"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMediaUpdateResponse"];
+                };
+            };
+            /** @description multipart 파일/필드 개수 또는 텍스트 part 한도 초과. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMediaMultipartError"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "ASSET_TOO_LARGE",
+                     *         "message": "Image upload or normalized output exceeds 8 MiB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "ASSET_INVALID_IMAGE",
+                     *         "message": "Upload a supported image within the pixel and frame limits."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+        };
+    };
+    remove_board_media_api_v1_boards__board_id__media__slot__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+                slot: components["schemas"]["BoardMediaSlot"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardMediaChangeForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BoardMediaUpdateResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "BOARD_REVISION_CONFLICT",
+                     *         "message": "Board revision conflict. Reload the latest board information."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Content Too Large */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "ASSET_TOO_LARGE",
+                     *         "message": "Image upload or normalized output exceeds 8 MiB."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "ASSET_INVALID_IMAGE",
+                     *         "message": "Upload a supported image within the pixel and frame limits."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["AssetErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+        };
+    };
+    read_board_media_api_v1_boards__board_id__media__slot___asset_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                board_id: string;
+                slot: components["schemas"]["BoardMediaSlot"];
+                asset_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description 현재 Board 이미지. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["BoardErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["BoardErrorResponse"]
+                        | components["schemas"]["AssetErrorResponse"];
                 };
             };
         };

@@ -162,3 +162,8 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## 내 Canvas 목록 — #57
 
 [내 목록 계약](canvas-list.md)은 `GET /me/canvases`의 status=draft/trashed/all, publication=all/published/unpublished를 AND하고 sort=last_modified(메타데이터/본문 중 최신 시각)·UUID keyset을 사용한다. 세션 전용이며 현재 작성자 단건 scope/capabilities를 유지한다. 응답은 `{items,as_of,next_cursor}`이고 본문/관계 이름/total은 제외한다. 낮은 Shelf 등급의 자기 초안은 읽되 편집은 현재 정책을 검사한다. Shelf scope는 현재 읽기 허용 또는 필터와 독립적인 본인 Canvas 존재를 요구해 제한/no-own 분류의 존재를 노출하지 않는다. 기존 공개 피드의 sort=latest/게시 snapshot 계약과 구분한다.
+
+
+## Board 미디어 — #59
+
+[대표 이미지/커버 계약](board-media.md)은 PUT/DELETE /boards/{board_id}/media/{slot}와 현재 버전 GET /media/{slot}/{asset_id}를 제공한다. multipart 한도/400 detail:string·strict revision·현재 Owner/Admin·optional Bearer·Board CAS/no-op/포화·미디어 요약과 typed 감사는 해당 계약/OpenAPI를 따른다. 목록/상세/slug/home/설정 응답은 현재 ref를 batch snapshot으로 제공하고 실제 cover widget에 같은 요약을 연결한다. 신규 UI는 후속이다.

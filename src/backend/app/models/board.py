@@ -44,6 +44,7 @@ from app.models.board_layout import (
     BoardLayoutDocument,
     BoardLayoutSaveForm,
 )
+from app.models.board_media import BoardMediaAuditChange, BoardMediaSummary
 from app.models.interest import Interest
 from app.models.user import User
 from app.utils.board_layout_limits import MAX_BOARD_LAYOUT_REVISION
@@ -382,6 +383,10 @@ class BoardSummary(BaseModel):
     revision: int
     interest_ids: list[str]
     created_at: datetime
+    avatar_asset_id: UUID | None = None
+    cover_asset_id: UUID | None = None
+    avatar: BoardMediaSummary | None = None
+    cover: BoardMediaSummary | None = None
 
 
 class BoardPageResponse(BaseModel):
@@ -799,6 +804,7 @@ class BoardMemberAuditResponse(BaseModel):
     shelf_change: ShelfAuditChange | None = None
     policy_change: PolicyAuditChange | None = None
     layout_change: BoardLayoutAuditChange | None = None
+    media_change: BoardMediaAuditChange | None = None
     created_at: datetime
 
 
@@ -831,6 +837,7 @@ class BoardHomeData:
     layout: BoardLayout | None
     account_active: bool
     collections: dict[UUID | None, list["CanvasFeedItem"]]
+    media: dict[str, BoardMediaSummary]
 
 
 @dataclass
@@ -845,6 +852,11 @@ class BoardTransaction:
 
     def __init__(self, db: AsyncSession):
         self._db = db
+
+    async def media_batch(self, board_ids: list[UUID]) -> dict[UUID, dict[str, BoardMediaSummary]]:
+        from app.models.board_media import BoardMediaTransaction
+
+        return await BoardMediaTransaction(self._db).current_batch(board_ids)
 
     async def lock_creator(self, user_id: int) -> bool:
         return (
@@ -1530,8 +1542,10 @@ class BoardTransaction:
 
     async def delete_board(self, board: Board) -> None:
         from app.models.asset import AssetTransaction
+        from app.models.board_media import BoardMediaTransaction
         from app.models.canvas import Canvas, CanvasDocument
 
+        await BoardMediaTransaction(self._db).delete_board_media(board.id)
         await AssetTransaction(self._db).delete_board_assets(board.id)
 
         canvas_ids = select(Canvas.id).where(Canvas.board_id == board.id)
@@ -1833,7 +1847,7 @@ class BoardRepository:
         interest_id: str | None,
         mine: bool,
         before: tuple[datetime, UUID] | None,
-    ) -> tuple[list[Board], dict[UUID, list[str]]]:
+    ) -> tuple[list[Board], dict[UUID, list[str]], dict[UUID, dict[str, BoardMediaSummary]], bool]:
         clause = Board.visibility == "public"
         if user_id is not None:
             active_member = exists().where(
@@ -1869,8 +1883,15 @@ class BoardRepository:
                     and_(Board.created_at == created, Board.id < last_id),
                 )
             )
-        async with self.transaction(write=False) as tx:
+        async with self.transaction(write=False, snapshot=True) as tx:
             db = tx._db
+            account_active = (
+                user_id is None
+                or await db.scalar(
+                    select(User.id).where(User.id == user_id, User.is_active.is_(True))
+                )
+                is not None
+            )
             boards = list(
                 (
                     await db.scalars(
@@ -1889,7 +1910,7 @@ class BoardRepository:
                 )
             ).all():
                 interests[board_id].append(slug)
-            return boards, interests
+            return boards, interests, await tx.media_batch(list(interests)), account_active
 
     async def home_data(
         self, user_id: int | None, *, board_id: UUID | None = None, slug: str | None = None
@@ -1982,4 +2003,5 @@ class BoardRepository:
                 layout,
                 account_active,
                 collections,
+                (await tx.media_batch([board.id]))[board.id],
             )

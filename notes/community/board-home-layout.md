@@ -1,6 +1,6 @@
 # Board 공식 홈 레이아웃 — #55 / #25
 
-운영자가 저장하는 UI Canvas 문서와 방문자의 현재 권한으로 계산하는 위젯 데이터를 분리한다. [#55](https://github.com/Blueprint4Agent/Canvanity/issues/55)는 백엔드 단위이며 구현·검증·ready PR·main 병합은 [worklog0296](../../worklog/0296-board-home-layout.md)와 이슈/PR에서 구분한다. 제품 편집 UI·개인 배치·Plaza/Profile 배치·공동 편집·미디어 업로드는 포함하지 않는다.
+운영자가 저장하는 UI Canvas 문서와 방문자의 현재 권한으로 계산하는 위젯 데이터를 분리한다. [#55](https://github.com/Blueprint4Agent/Canvanity/issues/55)는 백엔드 단위이며 구현·검증·ready PR·main 병합은 [worklog0296](../../worklog/0296-board-home-layout.md)와 이슈/PR에서 구분한다. 제품 편집 UI·개인 배치·Plaza/Profile 배치·공동 편집은 후속이며 미디어 업로드는 [#59](board-media.md) 계약을 따른다.
 
 ## 관리 API와 권한
 
@@ -46,7 +46,7 @@
 | type | source/config | 현재 widget_data |
 | --- | --- | --- |
 | board_intro | 별도 source 없음. | 현재 Board 허용 요약과 rules. |
-| board_cover | 별도 source/asset_id/URL 없음. | `media:null`. Board 미디어 연결은 후속. |
+| board_cover | 별도 source/asset_id/URL 없음. | 같은 snapshot의 현재 Board cover 요약 또는 `null`. [미디어 계약](board-media.md). |
 | shelf_navigation | 별도 source 없음. | 읽기 허용 및 is_visible인 Shelf 요약/액션만. |
 | canvas_collection | 현재 Board UUID, 선택 shelf_id, sort=latest, limit 1~20(기본 6). | 게시 snapshot header/고정 Tag만, items 최대 limit개. |
 
@@ -75,3 +75,8 @@ models/board.py의 기존 저장소가 홈 읽기 트랜잭션을 소유한다. 
 같은 source는 최대 limit으로 중복 제거한다. 최대 100개 고유 source를 하나의 ranked SQL로 조회하고 source별 최신 published_at/UUID 내림차순 최대 20개 header를 먼저 고른 뒤 고정 태그를 연결한다. 항목별 N+1·위젯별 서비스 호출·본문 SELECT는 없다. 응답은 최대 100위젯·위젯당 20 header·header당 10 Tag이며 중복 위젯은 각자의 limit만 잘라 사용한다. 높은 동시 처리량/대규모 Board SLA를 주장하지 않는다.
 
 SQLite와 실제 고유 schema PostgreSQL에서 기본 문서 왕복, 현재 역할/등급, 관리/방문자 분리, CAS 단일 승자, 권한 회수의 lock 대기, flush/commit 실패 원자성, 기존 Canvas/publication/Tag/Asset/ref/outbox 보존과 Board 삭제를 검증한다. 비밀 source 비노출·메뉴 숨김·고정 header/Tag·본문 미조회·metadata와 hydration 사이의 변경 일관성도 확인한다. 원래 개발 DB/env/파일은 변경하지 않는다.
+
+
+## Board 미디어 연계 — #59
+
+홈/상세/by-slug의 BoardSummary는 현재 avatar/cover UUID와 허용 요약을 media batch로 읽는다. board_cover.widget_data.media는 같은 summary.cover이며 저장 layout의 source/asset_id/URL 금지는 유지한다. can_manage_media는 변경 API의 공통 구조 관리 가드로 계산한다. media 변경은 공용 Board revision만 갱신하고 저장 layout/layout_revision은 바꾸지 않는다.
