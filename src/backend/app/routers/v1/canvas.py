@@ -1,8 +1,8 @@
 from collections.abc import Awaitable, Callable
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request, Response, status
+from fastapi import APIRouter, Depends, Query, Request, Response, status
 from fastapi.routing import APIRoute
 from starlette.types import Message
 
@@ -26,8 +26,10 @@ from app.models.canvas import (
     CanvasRevisionForm,
     CanvasUnpublishForm,
 )
+from app.models.canvas_feed import CanvasFeedFilters, CanvasFeedQuery, CanvasFeedResponse
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
+from app.services.canvas_feed import CanvasFeedService
 from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_REQUEST_BYTES
 
 
@@ -62,6 +64,68 @@ document_router = APIRouter(route_class=CanvasDocumentRoute)
 READ_CODES = (CanvasErrorCode.NOT_FOUND, CanvasErrorCode.UNAVAILABLE)
 READ_ERRORS = current_user_error_responses(canvas_error_responses(*READ_CODES))
 WRITE_CODES = (*READ_CODES, CanvasErrorCode.FORBIDDEN, CanvasErrorCode.CONFLICT)
+FEED_ERRORS = current_user_error_responses(
+    canvas_error_responses(*READ_CODES, CanvasErrorCode.INVALID_CURSOR),
+    {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
+)
+
+
+@router.get(
+    "/canvases",
+    response_model=CanvasFeedResponse,
+    responses=FEED_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def list_canvases(
+    query: Annotated[CanvasFeedQuery, Query()],
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasFeedService = Depends(),
+) -> CanvasFeedResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.list(user.id if user else None, query, scope="plaza")
+
+
+@router.get(
+    "/boards/{board_id}/canvases",
+    response_model=CanvasFeedResponse,
+    responses=FEED_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def list_board_canvases(
+    board_id: UUID,
+    query: Annotated[CanvasFeedFilters, Query()],
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasFeedService = Depends(),
+) -> CanvasFeedResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.list(
+        user.id if user else None,
+        CanvasFeedQuery(**query.model_dump(), board_id=board_id),
+        scope=f"board:{board_id}",
+    )
+
+
+@router.get(
+    "/shelves/{shelf_id}/canvases",
+    response_model=CanvasFeedResponse,
+    responses=FEED_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def list_shelf_canvases(
+    shelf_id: UUID,
+    query: Annotated[CanvasFeedFilters, Query()],
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasFeedService = Depends(),
+) -> CanvasFeedResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.list(
+        user.id if user else None,
+        CanvasFeedQuery(**query.model_dump(), shelf_id=shelf_id),
+        scope=f"shelf:{shelf_id}",
+    )
 
 
 @router.post(

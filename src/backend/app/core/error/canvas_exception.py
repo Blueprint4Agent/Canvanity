@@ -25,6 +25,11 @@ class CanvasErrorCode(Enum):
     INVALID_TAGS = ServiceErrorCode(
         "CANVAS_INVALID_TAGS", "Select existing tags.", status.HTTP_422_UNPROCESSABLE_CONTENT
     )
+    INVALID_CURSOR = ServiceErrorCode(
+        "CANVAS_INVALID_CURSOR",
+        "Invalid canvas feed cursor. Restart the list with the current scope and filters.",
+        status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
     CONFLICT = ServiceErrorCode(
         "CANVAS_REVISION_CONFLICT",
         "Canvas metadata revision conflict. Reload the latest canvas.",

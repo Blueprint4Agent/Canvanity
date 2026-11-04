@@ -79,4 +79,9 @@ GitHub의 fork 관계는 로컬 복제나 원격 URL만으로 생성되지 않�
 
 ## Canvas 게시·공개본 단건 열람 후속 작업
 
-2026-11-03: [#51 게시 계약](notes/community/canvas-publication.md)은 작성자의 명시적 publish/unpublish와 마지막 공개본 metadata/document/이미지 단건 읽기를 연결한다. 편집 draft/trashed와 공개 snapshot을 분리하고 현재 Board/Shelf/회원 정책·공개 상태 CAS·snapshot 태그/이미지 참조를 적용한다. startup은 Alembic만 스키마를 관리해 개발 reload 중 create_all의 선행 테이블 생성을 방지한다. 실제 검증/PR 게시·main 병합과 개발 DB 사고/복구는 worklog0294와 이슈/PR을 따른다. 목록/Plaza·썸네일·moderation·개인 draft 목록·archive/자동 purge·제품 UI/운영 배포는 후속이다.
+2026-11-03: [#51 게시 계약](notes/community/canvas-publication.md)은 작성자의 명시적 publish/unpublish와 마지막 공개본 metadata/document/이미지 단건 읽기를 연결한다. 편집 draft/trashed와 공개 snapshot을 분리하고 현재 Board/Shelf/회원 정책·공개 상태 CAS·snapshot 태그/이미지 참조를 적용한다. startup은 Alembic만 스키마를 관리해 개발 reload 중 create_all의 선행 테이블 생성을 방지한다. 실제 검증/PR 게시·main 병합과 개발 DB 사고/복구는 worklog0294와 이슈/PR을 따른다. 목록/Plaza는 아래 #53 계약으로 연결하며 썸네일·moderation·개인 draft 목록·archive/자동 purge·제품 UI/운영 배포는 후속이다.
+
+
+## 공개 Canvas 목록 후속 작업
+
+2026-11-03: #51/PR #52의 main 반영 뒤 [#53 공개 목록](notes/community/canvas-feed.md)은 Plaza·Board·Shelf의 게시 snapshot header를 같은 현재 권한으로 조회한다. 단일 statement의 계정/scope·Board/Shelf/회원 정책·정렬 header/게시태그, 최신순 keyset/엄격 cursor·공식 Interest/게시 Tag AND 필터를 제공하고 본문 JSONB를 읽지 않는다. 기존 인덱스를 재사용하며 새 migration은 없다. 신규 UI·Board 홈 동적 위젯/공식 layout·개인 draft 목록·썸네일/추천·moderation·archive는 후속이고 실제 검증/게시/병합은 worklog0295와 이슈/PR을 따른다.

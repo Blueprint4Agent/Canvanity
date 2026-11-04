@@ -1,6 +1,6 @@
 # 자유 Tag 사전과 Canvas 연결 — #49 / #24
 
-공식 Interest와 별도로 전역 자유 Tag를 검색·생성하고 Canvas 초안 메타데이터에 연결한다. [#49](https://github.com/Blueprint4Agent/Canvanity/issues/49)는 백엔드 완료 단위다. 구현·검증·PR 게시·main 병합은 이슈/PR에서 구분한다. 태그 입력 UI·추천·Board 자유 Tag·공개 목록은 #24/#8의 후속이다. [게시 단건 계약](canvas-publication.md)은 게시 당시 태그 ID/최초 표시명/순서를 별도 snapshot 관계에 고정한다.
+공식 Interest와 별도로 전역 자유 Tag를 검색·생성하고 Canvas 초안 메타데이터에 연결한다. [#49](https://github.com/Blueprint4Agent/Canvanity/issues/49)는 백엔드 완료 단위다. 구현·검증·PR 게시·main 병합은 이슈/PR에서 구분한다. 태그 입력 UI·추천·Board 자유 Tag는 #24의 후속이다. [공개 목록 #53](canvas-feed.md)은 공식 Interest와 게시된 Tag를 독립 AND 필터로 사용한다. [게시 단건 계약](canvas-publication.md)은 게시 당시 태그 ID/최초 표시명/순서를 별도 snapshot 관계에 고정한다.
 
 ## 이름과 재사용
 

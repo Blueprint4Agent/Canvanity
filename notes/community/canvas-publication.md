@@ -60,7 +60,7 @@ metadata·document·asset GET은 optional Bearer다. 토큰이 없으면 익명�
 
 Canvas의 현재 visibility와 snapshot.visibility 중 하나라도 members이면 active 멤버를 요구한다. 따라서 public→members 축소는 즉시 적용되고, members→public 확대는 새 snapshot을 게시해야 적용된다. 같은 Board Shelf 이동도 현재 목적지 읽기 정책을 즉시 적용하며 공개 내용은 유지한다. Board 자체의 private/public 전환은 기존 Owner 정책에 따라 현재 경계를 즉시 바꾼다.
 
-PostgreSQL 공개 읽기는 Board 공유 잠금→인증된 active User 공유 잠금→Canvas 공유 잠금 아래 현재 정책과 snapshot/태그/이미지 참조를 일관되게 읽는다. SQLite는 명시적 읽기 transaction을 사용한다. 이미 권한을 확보한 진행 중 요청은 snapshot을 마칠 수 있으며 전달된 정보의 회수는 보장하지 않는다. 이미지 파일 stat/get은 DB transaction이 닫힌 후 실행한다.
+PostgreSQL 공개 단건 읽기는 Board 공유 잠금→인증된 active User 공유 잠금→Canvas 공유 잠금 아래 현재 정책과 snapshot/태그/이미지 참조를 일관되게 읽는다. SQLite는 명시적 읽기 transaction을 사용한다. 이미 권한을 확보한 진행 중 요청은 snapshot을 마칠 수 있으며 전달된 정보의 회수는 보장하지 않는다. 이미지 파일 stat/get은 DB transaction이 닫힌 후 실행한다.
 
 ## 이미지·삭제·저장 책임
 
@@ -76,10 +76,10 @@ SQL·세션·ORM 쓰기·트랜잭션·DB 오류 변환은 `models/canvas.py`와
 
 - `canvas_publication_counters`: Canvas PK/FK CASCADE와 지속 BIGINT revision.
 - `canvas_publications`: Canvas PK/FK CASCADE, 현재 snapshot/source clocks·공개 필드/JSONB/게시 시각. `(published_at,canvas_id)` 인덱스.
-- `canvas_publication_tags`: `(canvas_id,tag_id)` PK, publication CASCADE·Tag RESTRICT, 최초 표시명/0~9 순서와 `(canvas_id,position)` UNIQUE, `(tag_id,canvas_id)` 조회 인덱스. 후속 공개 태그 필터는 mutable canvas_tags 대신 이 snapshot 연결을 사용한다.
+- `canvas_publication_tags`: `(canvas_id,tag_id)` PK, publication CASCADE·Tag RESTRICT, 최초 표시명/0~9 순서와 `(canvas_id,position)` UNIQUE, `(tag_id,canvas_id)` 조회 인덱스. [공개 목록 필터](canvas-feed.md)는 mutable canvas_tags 대신 이 snapshot 연결을 사용한다.
 
 기존 Document/Asset/ref/Tag/outbox를 가진 FK 활성 SQLite와 실제 PostgreSQL에서 이전0028→head 데이터 보존을 검증한다. counter/history 또는 publication 참조가 남은 downgrade는 거부해 CAS 이력과 파일 보호를 잃지 않는다. 데이터가 없는 새 테이블의 downgrade/upgrade는 기존 콘텐츠를 보존한다. 운영 사고 대응은 기존 rollforward-first를 따른다.
 
 API/SQLite 검사는 공개본 불변·현재 권한/view/API Key·이미지·CAS/overflow·휴지통/SET NULL/Board 삭제·flush/commit/불확실한 commit을 확인한다. opt-in 실제 PostgreSQL 검사는 고유 임시 schema에서 migration·JSONB·게시/취소/저장/metadata 경쟁, 현재 권한 회수의 lock wait, 공개 읽기의 공유 잠금 양방향, 취소/cleanup 양방향과 계정 삭제 경쟁을 확인하고 schema 제거를 재검증한다. 기본 전체 검사에서 opt-in은 skip되므로 별도 실행 결과를 worklog에 기록한다.
 
-목록/Plaza·cursor/필터·개인 draft 목록·운영자 moderation·Canvas archive/자동 purge·썸네일 생성·신규 UI/운영 배포는 이 단위에 포함하지 않는다. #51 완료가 상위 #8/#6/#7/#24 전체 완료를 의미하지 않는다.
+[목록/Plaza·cursor/필터 #53](canvas-feed.md)은 별도 백엔드 계약이다. 개인 draft 목록·운영자 moderation·Canvas archive/자동 purge·썸네일 생성·신규 UI/운영 배포는 이 단위에 포함하지 않는다. #51 완료가 상위 #8/#6/#7/#24 전체 완료를 의미하지 않는다.

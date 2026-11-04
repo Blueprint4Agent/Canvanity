@@ -6,6 +6,7 @@ from app.core.error.board_exception import BoardErrorCode, BoardException
 from app.models.board import (
     ACTIONS,
     BOARD_SETTING_FIELDS,
+    BOARD_STAFF_ROLES,
     Board,
     BoardAction,
     BoardMember,
@@ -15,8 +16,6 @@ from app.models.board import (
     BoardSettingsPatchForm,
     ShelfPolicy,
 )
-
-STAFF = {"owner", "admin", "moderator"}
 
 
 class BoardPermissionService:
@@ -49,7 +48,7 @@ class BoardPermissionService:
             )
         if member is None or member.status != "active":
             return False
-        staff = member.role in STAFF
+        staff = member.role in BOARD_STAFF_ROLES
         if policy.staff_only:
             return staff
         if staff and policy.staff_bypass:
