@@ -16,6 +16,7 @@ from app.models.canvas import (
     CanvasDocumentSaveForm,
     CanvasDocumentSaveResponse,
     CanvasDocumentValidationErrorResponse,
+    CanvasLikeResponse,
     CanvasMetadataValidationErrorResponse,
     CanvasPatchForm,
     CanvasPublicationDocumentResponse,
@@ -31,6 +32,7 @@ from app.models.canvas_list import CanvasListQuery, CanvasListResponse
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
 from app.services.canvas_feed import CanvasFeedService
+from app.services.canvas_like import CanvasLikeService
 from app.services.canvas_list import CanvasListService
 from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_REQUEST_BYTES
 
@@ -70,6 +72,56 @@ FEED_ERRORS = current_user_error_responses(
     canvas_error_responses(*READ_CODES, CanvasErrorCode.INVALID_CURSOR),
     {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
 )
+
+
+@router.get(
+    "/canvases/{canvas_id}/like",
+    response_model=CanvasLikeResponse,
+    responses=READ_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def get_canvas_like(
+    canvas_id: UUID,
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasLikeService = Depends(),
+) -> CanvasLikeResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.get(user.id if user else None, canvas_id)
+
+
+@router.put(
+    "/canvases/{canvas_id}/like",
+    response_model=CanvasLikeResponse,
+    responses=current_user_error_responses(
+        canvas_error_responses(*READ_CODES, CanvasErrorCode.FORBIDDEN)
+    ),
+)
+async def like_canvas(
+    canvas_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasLikeService = Depends(),
+) -> CanvasLikeResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.set(user.id, canvas_id, liked=True)
+
+
+@router.delete(
+    "/canvases/{canvas_id}/like",
+    response_model=CanvasLikeResponse,
+    responses=current_user_error_responses(
+        canvas_error_responses(*READ_CODES, CanvasErrorCode.FORBIDDEN)
+    ),
+)
+async def unlike_canvas(
+    canvas_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasLikeService = Depends(),
+) -> CanvasLikeResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.set(user.id, canvas_id, liked=False)
 
 
 @router.get("/me/canvases", response_model=CanvasListResponse, responses=FEED_ERRORS)

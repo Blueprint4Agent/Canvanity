@@ -121,15 +121,17 @@ class CanvasAccessService:
         canvas_id: UUID,
         *,
         view: str | None = None,
+        write: bool = False,
+        metadata_only: bool = False,
     ) -> tuple[Board, BoardMember | None, Canvas, CanvasPublication | None]:
         """Coherent current policy plus an explicit owner draft or published snapshot."""
         board_id = await tx.board_id(canvas_id)
         if board_id is None:
             raise CanvasException(CanvasErrorCode.NOT_FOUND)
-        board, member = await self.board(tx, user_id, board_id, write=False, read_lock=True)
+        board, member = await self.board(tx, user_id, board_id, write=write, read_lock=True)
         if user_id is not None:
             await self.active_account(tx, user_id)
-        canvas = await tx.canvas(canvas_id, shared=True)
+        canvas = await tx.canvas(canvas_id, locked=write, shared=not write)
         if canvas is None:
             raise CanvasException(CanvasErrorCode.NOT_FOUND)
         own = user_id is not None and canvas.author_id == user_id
@@ -137,7 +139,11 @@ class CanvasAccessService:
             if not own or member is None or member.status != "active":
                 raise CanvasException(CanvasErrorCode.NOT_FOUND)
             return board, member, canvas, None
-        publication = await tx.publication(canvas.id)
+        publication = (
+            await tx.publication(canvas.id, metadata_only=True)
+            if metadata_only
+            else await tx.publication(canvas.id)
+        )
         if canvas.status != "draft" or publication is None:
             raise CanvasException(CanvasErrorCode.NOT_FOUND)
         if "members" in (canvas.visibility, publication.visibility) and (
