@@ -72,6 +72,9 @@ for (const width of [390, 1440])
                 page.getByRole("heading", { name: "에이전트 연구소", exact: true }),
             ).toBeVisible();
             await expect(page.getByText("보드 개설자 · 뉴커머")).toBeVisible();
+            await expect(page.getByRole("button", { name: "보드 탈퇴", exact: true })).toHaveCount(
+                0,
+            );
             await expect(
                 page.getByRole("heading", { name: "공지사항", exact: true }),
             ).toBeVisible();
@@ -114,4 +117,100 @@ test("public entry signs in before creation and private home does not leak data"
     await page.goto("/b/private-board");
     await expect(page.getByText("보드가 없거나 접근할 수 없습니다.")).toBeVisible();
     await expect(page.getByRole("heading", { name: "공지사항" })).toHaveCount(0);
+});
+
+for (const width of [390, 1440])
+    for (const colorScheme of ["light", "dark"] as const) {
+        test(`public Board join and leave reload server membership at ${width}px ${colorScheme}`, async ({
+            page,
+        }, info) => {
+            await page.setViewportSize({ width, height: 1000 });
+            await page.emulateMedia({ colorScheme });
+            await setup(page, "user", "production");
+            let joined = false;
+            let joinAttempts = 0;
+            let leaveAttempts = 0;
+            await page.route("**/api/v1/boards/by-slug/agent-lab", (route) => {
+                const home = exampleHome({ ...exampleBoard, owner_id: 2 });
+                home.membership = joined ? { ...home.membership!, role: "member" } : null;
+                for (const shelf of home.shelves) {
+                    shelf.capabilities.create_canvas = false;
+                    shelf.capabilities.create_comment = joined && shelf.purpose === "general";
+                }
+                return route.fulfill({ json: home });
+            });
+            await page.route(`**/api/v1/boards/${exampleBoard.id}/join`, (route) => {
+                joinAttempts++;
+                if (joinAttempts === 1)
+                    return route.fulfill({
+                        status: 403,
+                        json: { detail: { error: "BOARD_FORBIDDEN" } },
+                    });
+                joined = true;
+                return route.fulfill({
+                    json: {
+                        role: "member",
+                        status: "active",
+                        grade_id: "20000000-0000-4000-8000-000000000001",
+                        grade_name: "뉴커머",
+                    },
+                });
+            });
+            await page.route(`**/api/v1/boards/${exampleBoard.id}/membership`, (route) => {
+                leaveAttempts++;
+                if (leaveAttempts === 1)
+                    return route.fulfill({
+                        status: 503,
+                        json: { detail: { error: "BOARD_UNAVAILABLE" } },
+                    });
+                joined = false;
+                return route.fulfill({ status: 204 });
+            });
+            await page.goto("/b/agent-lab");
+            await page.getByRole("button", { name: "보드 가입", exact: true }).click();
+            await expect(page.getByText("이 보드에서 요청한 작업을 할 수 없습니다.")).toBeVisible();
+            await page.getByRole("button", { name: "보드 가입", exact: true }).click();
+            await expect(page.getByText("보드 회원 · 뉴커머")).toBeVisible();
+            await expect(page.getByRole("button", { name: "보드 가입", exact: true })).toHaveCount(
+                0,
+            );
+            await page.reload();
+            await expect(page.getByText("보드 회원 · 뉴커머")).toBeVisible();
+            await page.getByRole("button", { name: "보드 탈퇴", exact: true }).click();
+            const dialog = page.getByRole("dialog", { name: "보드를 탈퇴할까요?" });
+            await captureVisual(page, {
+                path: info.outputPath("leave-membership.png"),
+                fullPage: true,
+            });
+            await dialog.getByRole("button", { name: "취소", exact: true }).click();
+            expect(leaveAttempts).toBe(0);
+            await page.getByRole("button", { name: "보드 탈퇴", exact: true }).click();
+            await dialog.getByRole("button", { name: "탈퇴하기", exact: true }).click();
+            await expect(
+                dialog.getByRole("button", { name: "탈퇴하기", exact: true }),
+            ).toBeEnabled();
+            await expect(dialog).toBeVisible();
+            await dialog.getByRole("button", { name: "탈퇴하기", exact: true }).click();
+            await expect(dialog).toHaveCount(0);
+            await expect(
+                page.getByRole("button", { name: "보드 가입", exact: true }),
+            ).toBeVisible();
+            expect(joinAttempts).toBe(2);
+            expect(leaveAttempts).toBe(2);
+        });
+    }
+
+test("guest Board login link preserves the same Board destination", async ({ page }) => {
+    await setup(page, null, "production");
+    const home = exampleHome();
+    home.membership = null;
+    await page.route("**/api/v1/boards/by-slug/agent-lab", (route) =>
+        route.fulfill({ json: home }),
+    );
+    await page.goto("/b/agent-lab");
+    await expect(page.getByRole("link", { name: "로그인하고 가입" })).toHaveAttribute(
+        "href",
+        "/login?next=%2Fb%2Fagent-lab",
+    );
+    await expect(page.getByRole("button", { name: "보드 탈퇴", exact: true })).toHaveCount(0);
 });

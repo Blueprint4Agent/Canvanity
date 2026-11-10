@@ -1673,7 +1673,7 @@
             "BOARD_LIMIT_REACHED": "보드는 최대 20개까지 만들 수 있습니다.",
             "BOARD_INVALID_INTEREST": "선택한 관심사를 확인하고 다시 시도해 주세요.",
             "BOARD_NOT_FOUND": "보드가 없거나 접근할 수 없습니다.",
-            "BOARD_FORBIDDEN": "이 작업을 할 수 있는 보드 권한이 없습니다.",
+            "BOARD_FORBIDDEN": "이 보드에서 요청한 작업을 할 수 없습니다.",
             "BOARD_INVALID_CURSOR": "목록이 변경됐습니다. 처음부터 다시 조회해 주세요.",
             "BOARD_REVISION_CONFLICT": "보드 정보가 변경됐습니다. 새로 불러온 뒤 시도해 주세요.",
             "BOARD_DELETE_CONFIRMATION": "보드 주소를 정확히 입력해 주세요.",
@@ -1681,7 +1681,14 @@
             "BOARD_INVALID_INPUT": "입력한 이름·주소·관심사를 확인해 주세요.",
             "BOARD_UNAVAILABLE": "보드를 불러오거나 저장하지 못했습니다. 입력한 내용은 유지됩니다. 다시 시도해 주세요.",
             "INVALID_TOKEN": "로그인이 만료됐습니다. 다시 로그인해 주세요.",
-            "USER_NOT_FOUND": "사용자 정보를 확인할 수 없습니다. 다시 로그인해 주세요."
-        }
+            "USER_NOT_FOUND": "사용자 정보를 확인할 수 없습니다. 다시 로그인해 주세요.",
+            "BOARD_OWNER_CANNOT_LEAVE": "소유자는 보드를 정리하거나 소유권을 이전한 뒤 탈퇴할 수 있습니다."
+        },
+        "join": "보드 가입",
+        "loginToJoin": "로그인하고 가입",
+        "leave": "보드 탈퇴",
+        "leaveTitle": "보드를 탈퇴할까요?",
+        "leaveHelp": "현재 회원 등급은 해제됩니다. 재가입하면 보드의 기본 등급으로 시작하며, 비공개 보드는 다시 초대받아야 합니다.",
+        "leaveConfirm": "탈퇴하기"
     }
 }
