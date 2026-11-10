@@ -6302,6 +6302,22 @@
                 "title": "CanvasImageNode",
                 "type": "object"
             },
+            "CanvasLikeResponse": {
+                "properties": {
+                    "count": {
+                        "minimum": 0.0,
+                        "title": "Count",
+                        "type": "integer"
+                    },
+                    "liked": {
+                        "title": "Liked",
+                        "type": "boolean"
+                    }
+                },
+                "required": ["count", "liked"],
+                "title": "CanvasLikeResponse",
+                "type": "object"
+            },
             "CanvasListItem": {
                 "properties": {
                     "canvas": {
@@ -22844,6 +22860,387 @@
                     }
                 ],
                 "summary": "Save Canvas Document",
+                "tags": ["Canvases"]
+            }
+        },
+        "/api/v1/canvases/{canvas_id}/like": {
+            "delete": {
+                "operationId": "unlike_canvas_api_v1_canvases__canvas_id__like_delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasLikeResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Unlike Canvas Api V1 Canvases  Canvas Id  Like Delete"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Unlike Canvas Api V1 Canvases  Canvas Id  Like Delete"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Unlike Canvas Api V1 Canvases  Canvas Id  Like Delete"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Unlike Canvas",
+                "tags": ["Canvases"]
+            },
+            "get": {
+                "operationId": "get_canvas_like_api_v1_canvases__canvas_id__like_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasLikeResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Get Canvas Like Api V1 Canvases  Canvas Id  Like Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Get Canvas Like Api V1 Canvases  Canvas Id  Like Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Get Canvas Like Api V1 Canvases  Canvas Id  Like Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "Get Canvas Like",
+                "tags": ["Canvases"]
+            },
+            "put": {
+                "operationId": "like_canvas_api_v1_canvases__canvas_id__like_put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasLikeResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Like Canvas Api V1 Canvases  Canvas Id  Like Put"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Like Canvas Api V1 Canvases  Canvas Id  Like Put"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Like Canvas Api V1 Canvases  Canvas Id  Like Put"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Like Canvas",
                 "tags": ["Canvases"]
             }
         },

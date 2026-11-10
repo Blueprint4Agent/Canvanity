@@ -167,3 +167,7 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## Board 미디어 — #59
 
 [대표 이미지/커버 계약](board-media.md)은 PUT/DELETE /boards/{board_id}/media/{slot}와 현재 버전 GET /media/{slot}/{asset_id}를 제공한다. multipart 한도/400 detail:string·strict revision·현재 Owner/Admin·optional Bearer·Board CAS/no-op/포화·미디어 요약과 typed 감사는 해당 계약/OpenAPI를 따른다. 목록/상세/slug/home/설정 응답은 현재 ref를 batch snapshot으로 제공하고 실제 cover widget에 같은 요약을 연결한다. 신규 UI는 후속이다.
+
+## Canvas 좋아요 — #63
+
+[좋아요 계약](canvas-likes.md)은 GET/PUT/DELETE /canvases/{canvas_id}/like와 현재 count/본인 liked를 제공한다. 게시본의 현재 읽기 정책을 공유하며 변경은 활성 세션과 Shelf react 정책을 요구한다. 중복 등록/취소는 멱등하고 본문/공개 revision은 바꾸지 않는다. 댓글·구독·통계·제품 UI는 후속이다.

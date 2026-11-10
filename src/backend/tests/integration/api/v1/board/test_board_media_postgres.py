@@ -767,11 +767,11 @@ def test_real_postgres_board_media_migration_locks_cas_snapshot_and_files(monkey
             await migrate("0029_canvas_publications")
             r = await seed_legacy(test_db)
             before = await old_state(test_db)
-            await migrate("head")
+            await migrate("0030_board_media")
             assert await old_state(test_db) == before
             await migrate("0029_canvas_publications", downgrade=True)
             assert await old_state(test_db) == before
-            await migrate("head")
+            await migrate("0030_board_media")
             await storage.initialize()
             await exercise(test_db, r, storage, location)
             await cleanup_delete_races(test_db, r, storage, location)

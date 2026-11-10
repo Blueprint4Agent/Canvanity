@@ -165,6 +165,8 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("POST", "/api/v1/canvases/{canvas_id}/restore"),
         ("POST", "/api/v1/canvases/{canvas_id}/publish"),
         ("POST", "/api/v1/canvases/{canvas_id}/unpublish"),
+        ("PUT", "/api/v1/canvases/{canvas_id}/like"),
+        ("DELETE", "/api/v1/canvases/{canvas_id}/like"),
         ("POST", "/api/v1/canvases/{canvas_id}/assets"),
         ("DELETE", "/api/v1/canvases/{canvas_id}/assets/{asset_id}"),
     }
@@ -435,6 +437,8 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
             },
         ),
         ("POST", canvas_path + "/unpublish", {"expected_publication_revision": 0}),
+        ("PUT", canvas_path + "/like", None),
+        ("DELETE", canvas_path + "/like", None),
     ]:
         assert client.request(method, target, headers=key, json=body).status_code == 401
     for suffix in ("", "/document"):

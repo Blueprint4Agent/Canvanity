@@ -47,11 +47,11 @@ def test_populated_sqlite_board_media_additive_upgrade_and_safe_downgrade(tmp_pa
             await migrate("0029_canvas_publications")
             r = await seed_legacy(test_db)
             before = await old_state(test_db)
-            await migrate("head")
+            await migrate("0030_board_media")
             assert await old_state(test_db) == before
             await migrate("0029_canvas_publications", downgrade=True)
             assert await old_state(test_db) == before
-            await migrate("head")
+            await migrate("0030_board_media")
             from uuid import uuid4
 
             asset_id = uuid4()

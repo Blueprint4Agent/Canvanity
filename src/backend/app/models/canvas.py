@@ -29,6 +29,7 @@ from sqlalchemy import (
     UniqueConstraint,
     Uuid,
     delete,
+    func,
     select,
     text,
     update,
@@ -36,7 +37,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, defer, mapped_column
 
 from app.core.db.session import Base, get_db
 from app.core.error.canvas_exception import CanvasErrorCode, CanvasException
@@ -105,6 +106,23 @@ class CanvasDocument(Base):
     document: Mapped[dict] = mapped_column(JSON().with_variant(JSONB(), "postgresql"))
     revision: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class CanvasLike(Base):
+    __tablename__ = "canvas_likes"
+    __table_args__ = (Index("ix_canvas_likes_user", "user_id"),)
+    canvas_id: Mapped[UUID] = mapped_column(
+        ForeignKey("canvases.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class CanvasLikeResponse(BaseModel):
+    count: int = Field(ge=0)
+    liked: bool
 
 
 class CanvasPublicationCounter(Base):
@@ -726,8 +744,34 @@ class CanvasTransaction:
     async def tags(self, canvas_id: UUID) -> list[TagResponse]:
         return await TagTransaction(self._db).canvas_tags(canvas_id)
 
-    async def publication(self, canvas_id: UUID) -> CanvasPublication | None:
+    async def publication(
+        self, canvas_id: UUID, *, metadata_only: bool = False
+    ) -> CanvasPublication | None:
+        if metadata_only:
+            return await self._db.scalar(
+                select(CanvasPublication)
+                .where(CanvasPublication.canvas_id == canvas_id)
+                .options(defer(CanvasPublication.document, raiseload=True))
+            )
         return await self._db.get(CanvasPublication, canvas_id)
+
+    async def like_state(self, canvas_id: UUID, user_id: int | None) -> CanvasLikeResponse:
+        count = await self._db.scalar(
+            select(func.count()).select_from(CanvasLike).where(CanvasLike.canvas_id == canvas_id)
+        )
+        liked = (
+            user_id is not None and await self._db.get(CanvasLike, (canvas_id, user_id)) is not None
+        )
+        return CanvasLikeResponse(count=count, liked=liked)
+
+    async def set_like(self, canvas_id: UUID, user_id: int, *, liked: bool) -> None:
+        # The service holds the Board write lock before reaching this mutation.
+        row = await self._db.get(CanvasLike, (canvas_id, user_id))
+        if liked and row is None:
+            self._db.add(CanvasLike(canvas_id=canvas_id, user_id=user_id))
+        elif not liked and row is not None:
+            await self._db.delete(row)
+        await self._db.flush()
 
     async def publication_revision(self, canvas_id: UUID) -> int:
         counter = await self._db.get(CanvasPublicationCounter, canvas_id)
