@@ -19,6 +19,7 @@ import { Button, FormCheckbox, InputField, InlineMessage } from "../../component
 import { useAuthContext } from "../../hooks/useAuth";
 import { useAuthApi, type OAuthProvider } from "../../hooks/api/auth/useAuthApi";
 import { useAppConfig } from "../../hooks/useFeatures";
+import { resolveLoginReturnPath } from "../../utils/authReturnPath";
 import { isValidEmail, isValidPassword } from "../../utils/validation";
 
 const REMEMBER_EMAIL_STORAGE_KEY = storageKey("template_remember_email");
@@ -168,14 +169,9 @@ export function LoginPage({ embedded = false }: { embedded?: boolean }) {
                 // ignore storage errors in restricted browser contexts
             }
             showToast(t("toast.loginSuccess"), { tone: "success" });
-            navigate(
-                ["/profile", "/my-canvas", "/board"].includes(
-                    new URLSearchParams(location.search).get("next") ?? "",
-                )
-                    ? new URLSearchParams(location.search).get("next")!
-                    : "/home",
-                { replace: true },
-            );
+            navigate(resolveLoginReturnPath(new URLSearchParams(location.search).get("next")), {
+                replace: true,
+            });
         } catch (nextError) {
             showToast(t("toast.loginError"), { tone: "error" });
             const detail = extractApiDetail(nextError);

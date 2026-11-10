@@ -1,5 +1,7 @@
 import { captureVisual } from "../fixtures/visual";
 import { expect, test } from "../fixtures/browser";
+import { exampleHome } from "../fixtures/boards";
+import { member, setup } from "../fixtures/runtime";
 
 const guestConfig = {
     billing_enabled: true,
@@ -31,7 +33,62 @@ test.beforeEach(async ({ page }) => {
         }),
     );
 });
+test("authenticated login guard returns to the requested Board", async ({ page }) => {
+    await setup(page, "user");
+    await page.route("**/api/v1/boards/by-slug/agent-lab", (route) =>
+        route.fulfill({ json: exampleHome() }),
+    );
+    await page.goto("/login?next=%2Fb%2Fagent-lab");
+    await expect(page).toHaveURL(/\/b\/agent-lab$/);
+    await expect(page.getByRole("heading", { name: "에이전트 연구소", exact: true })).toBeVisible();
+});
+
+test("authenticated login guard rejects an external destination", async ({ page }) => {
+    await setup(page, "user");
+    await page.goto("/login?next=https%3A%2F%2Fexample.com");
+    await expect(page).toHaveURL(/\/home$/);
+});
+
 for (const width of [390, 1440]) {
+    test(`successful email login returns to the requested Board at ${width}px`, async ({
+        page,
+    }, info) => {
+        await page.setViewportSize({ width, height: 1000 });
+        await setup(page, null);
+        let logins = 0;
+        await page.route("**/api/v1/auth/login", (route) => {
+            logins++;
+            return route.fulfill({
+                json: {
+                    access_token: "runtime-test",
+                    token_type: "bearer",
+                    user: { ...member, role: "user" },
+                },
+            });
+        });
+        await page.route("**/api/v1/auth/me", (route) =>
+            route.fulfill({ json: { ...member, role: "user" } }),
+        );
+        await page.route("**/api/v1/boards/by-slug/agent-lab", (route) =>
+            route.fulfill({ json: exampleHome() }),
+        );
+        await page.goto("/login?next=%2Fb%2Fagent-lab");
+        const dialog = page.getByRole("dialog", { name: "Log in or sign up" });
+        await dialog.getByLabel("Email", { exact: true }).fill("guest@example.com");
+        await dialog.getByRole("button", { name: "Continue", exact: true }).click();
+        await dialog.getByLabel("Password", { exact: true }).fill("Password123!");
+        await captureVisual(page, { path: info.outputPath("board-login.png"), fullPage: true });
+        await dialog.getByRole("button", { name: "Sign in", exact: true }).click();
+        await expect(page).toHaveURL(/\/b\/agent-lab$/);
+        await expect(
+            page.getByRole("heading", { name: "에이전트 연구소", exact: true }),
+        ).toBeVisible();
+        expect(logins).toBe(1);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
+            true,
+        );
+    });
+
     test(`guest home opens compact login and signup at ${width}px`, async ({ page }) => {
         await page.setViewportSize({ width, height: 850 });
         // When: entering the app without authentication.
