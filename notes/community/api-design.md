@@ -179,3 +179,7 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## Board 구독 — #65
 
 [구독 계약](board-subscriptions.md)은 세션 전용 GET/PUT/DELETE /boards/{board_id}/subscription과 GET /me/subscriptions/canvases를 제공한다. 가입 권한과 별도 관계이며 현재 읽기 정책의 공개 header만 기존 Feed statement에서 필터링한다. 사용자별 cursor·공식 Interest/게시 Tag 필터를 적용한다.
+
+## Canvas 조회·활동 통계 — #66
+
+[통계 계약](canvas-activity-stats.md)은 optional GET /canvases/{canvas_id}/stats와 세션 PUT /canvases/{canvas_id}/view를 제공한다. 현재 게시본 권한으로 실제 좋아요/노출 댓글·계정별 UTC 일 조회를 집계하며30일 활동 점수와 만료 원본 정리를 분리한다. GET은 기록을 만들지 않고 원본 명단/개인정보를 공개하지 않는다.

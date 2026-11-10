@@ -37,12 +37,14 @@ from app.models.canvas_comment import (
 )
 from app.models.canvas_feed import CanvasFeedFilters, CanvasFeedQuery, CanvasFeedResponse
 from app.models.canvas_list import CanvasListQuery, CanvasListResponse
+from app.models.canvas_stats import CanvasStatsResponse, CanvasViewResponse
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
 from app.services.canvas_comment import CanvasCommentService
 from app.services.canvas_feed import CanvasFeedService
 from app.services.canvas_like import CanvasLikeService
 from app.services.canvas_list import CanvasListService
+from app.services.canvas_stats import CanvasStatsService
 from app.utils.canvas_limits import MAX_CANVAS_DOCUMENT_REQUEST_BYTES
 
 
@@ -91,6 +93,33 @@ COMMENT_ERRORS = current_user_error_responses(
     ),
     {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
 )
+
+
+@router.get(
+    "/canvases/{canvas_id}/stats",
+    response_model=CanvasStatsResponse,
+    responses=READ_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def get_canvas_stats(
+    canvas_id: UUID,
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasStatsService = Depends(),
+) -> CanvasStatsResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.get(user.id if user else None, canvas_id)
+
+
+@router.put("/canvases/{canvas_id}/view", response_model=CanvasViewResponse, responses=READ_ERRORS)
+async def record_canvas_view(
+    canvas_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasStatsService = Depends(),
+) -> CanvasViewResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.record(user.id, canvas_id)
 
 
 @router.get(

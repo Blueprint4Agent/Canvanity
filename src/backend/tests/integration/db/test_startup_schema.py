@@ -81,7 +81,7 @@ def test_reload_with_pending_models_keeps_schema_owned_by_migrations(
     command.upgrade(config, "head")
     with sqlite3.connect(path) as connection:
         assert connection.execute("SELECT version_num FROM alembic_version").fetchone() == (
-            "0033_board_subscriptions",
+            "0034_canvas_views",
         )
         assert connection.execute("SELECT name FROM users WHERE id=1").fetchone() == ("Preserved",)
         assert connection.execute("PRAGMA foreign_key_check").fetchall() == []

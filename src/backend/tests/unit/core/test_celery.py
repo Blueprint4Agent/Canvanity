@@ -26,6 +26,7 @@ def test_celery_broker_is_independent_of_api_fakeredis() -> None:
         "lifecycle-mail-outbox": {"task": "b4fastapi.notifications.drain", "schedule": 60.0},
         "billing-reconciliation": {"task": "b4fastapi.billing.reconcile", "schedule": 300.0},
         "canvas-asset-cleanup": {"task": "canvanity.assets.cleanup", "schedule": 60.0},
+        "canvas-view-retention": {"task": "canvanity.canvas_stats.cleanup", "schedule": 3600.0},
     }
     assert app.conf.task_acks_late
     assert app.conf.task_time_limit < app.conf.broker_transport_options["visibility_timeout"]

@@ -2,6 +2,8 @@
 
 Canvas 이미지 정리 task `canvanity.assets.cleanup`는 Beat가 60초마다 발행한다. API/worker는 같은 DB·스토리지 설정과 local 볼륨을 사용한다. 원래 위치 확인·lease·재시도/수동 CLI는 [Canvas 이미지 에셋](../../notes/community/canvas-assets.md)을 따른다.
 
+Canvas 일 조회 정리 task `canvanity.canvas_stats.cleanup`는 Beat가 매시간 발행해 만료 원본을 최대1000개씩 삭제한다. 같은 릴리스/DB 설정의 worker와 Beat 하나를 실행해야 물리 삭제가 수행된다. 메일 비활성 배포도 조회 원본 정리를 사용하려면 두 프로세스를 명시적으로 운영한다. API 통계는 만료 자료를 즉시 제외하고, backlog는 후속 배치로 정리한다. 최소 수집·UTC30일 기간·중복/삭제와 실제 검증 범위는 [Canvas 조회·활동 통계](../../notes/community/canvas-activity-stats.md)를 따른다. 이번 구현에서 운영 프로세스를 구동하지 않았다.
+
 Celery 5.6 worker와 Beat를 API와 별도 프로세스로 실행합니다.
 가입 인증·비밀번호 재설정 메일은 이제 Celery worker에서 실행합니다.
 메일 기능을 켜면 별도 worker가 필요합니다. API 계약·DB 스키마는 유지하며
