@@ -171,6 +171,22 @@ class BoardMember(Base):
     joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
 
+class BoardSubscription(Base):
+    __tablename__ = "board_subscriptions"
+    __table_args__ = (Index("ix_board_subscriptions_user", "user_id", "board_id"),)
+    board_id: Mapped[UUID] = mapped_column(
+        ForeignKey("boards.id", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), primary_key=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+
+class BoardSubscriptionResponse(BaseModel):
+    subscribed: bool
+
+
 class BoardInterest(Base):
     __tablename__ = "board_interests"
     board_id: Mapped[UUID] = mapped_column(
@@ -1010,6 +1026,17 @@ class BoardTransaction:
 
     async def member(self, board_id: UUID, user_id: int) -> BoardMember | None:
         return await self._db.get(BoardMember, (board_id, user_id))
+
+    async def subscribed(self, board_id: UUID, user_id: int) -> bool:
+        return await self._db.get(BoardSubscription, (board_id, user_id)) is not None
+
+    async def set_subscription(self, board_id: UUID, user_id: int, *, subscribed: bool) -> None:
+        row = await self._db.get(BoardSubscription, (board_id, user_id))
+        if subscribed and row is None:
+            self._db.add(BoardSubscription(board_id=board_id, user_id=user_id))
+        elif not subscribed and row is not None:
+            await self._db.delete(row)
+        await self._db.flush()
 
     async def grade(self, grade_id: UUID) -> BoardMemberGrade | None:
         return await self._db.get(BoardMemberGrade, grade_id)

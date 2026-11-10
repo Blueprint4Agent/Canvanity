@@ -241,6 +241,22 @@ async def list_my_canvases(
     return await service.list(user.id, query)
 
 
+@router.get("/me/subscriptions/canvases", response_model=CanvasFeedResponse, responses=FEED_ERRORS)
+async def list_subscribed_canvases(
+    query: Annotated[CanvasFeedFilters, Query()],
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasFeedService = Depends(),
+) -> CanvasFeedResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.list(
+        user.id,
+        CanvasFeedQuery(**query.model_dump()),
+        scope=f"subscriptions:{user.id}",
+        subscribed=True,
+    )
+
+
 @router.get(
     "/canvases",
     response_model=CanvasFeedResponse,

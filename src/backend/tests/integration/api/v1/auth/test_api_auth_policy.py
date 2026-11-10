@@ -12,6 +12,7 @@ pytestmark = pytest.mark.primary_data
 
 SESSION_ONLY = [
     ("GET", "/api/v1/me/canvases", None),
+    ("GET", "/api/v1/me/subscriptions/canvases", None),
     ("POST", "/api/v1/tags", {"name": "session-only-tag"}),
     ("POST", "/api/v1/auth/me/password/code/verify", {"code": "123456"}),
     ("POST", "/api/v1/auth/me/deletion-code/verify", {"code": "123456"}),
@@ -138,6 +139,9 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("DELETE", "/api/v1/boards/{board_id}"),
         ("PATCH", "/api/v1/boards/{board_id}"),
         ("POST", "/api/v1/boards/{board_id}/join"),
+        ("GET", "/api/v1/boards/{board_id}/subscription"),
+        ("PUT", "/api/v1/boards/{board_id}/subscription"),
+        ("DELETE", "/api/v1/boards/{board_id}/subscription"),
         ("DELETE", "/api/v1/boards/{board_id}/membership"),
         ("GET", "/api/v1/boards/{board_id}/members"),
         ("POST", "/api/v1/boards/{board_id}/members"),
@@ -386,6 +390,8 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
         == 401
     )
     assert client.post(path + "/join", headers=key).status_code == 401
+    for method in ("GET", "PUT", "DELETE"):
+        assert client.request(method, path + "/subscription", headers=key).status_code == 401
     assert client.delete(path + "/membership", headers=key).status_code == 401
     assert client.get(path, headers=key).status_code == 404
     assert client.get(path, headers=bearer).status_code == 200

@@ -60,11 +60,19 @@ class CanvasFeedService:
         return payload.published_at, payload.canvas_id
 
     async def list(
-        self, user_id: int | None, query: CanvasFeedQuery, *, scope: str
+        self, user_id: int | None, query: CanvasFeedQuery, *, scope: str, subscribed: bool = False
     ) -> CanvasFeedResponse:
+        if subscribed:
+            if user_id is None:
+                raise AuthException(AuthErrorCode.INVALID_TOKEN)
+            scope = f"subscriptions:{user_id}"
         filter_hash = self._filter_hash(query)
         before = self._before(query.cursor, scope, filter_hash)
-        rows = await self.repository.read(user_id, query, before)
+        rows = (
+            await self.repository.read(user_id, query, before, subscribed=True)
+            if subscribed
+            else await self.repository.read(user_id, query, before)
+        )
         if not rows.account_active:
             raise AuthException(AuthErrorCode.USER_NOT_FOUND)
         if not rows.scope_readable:

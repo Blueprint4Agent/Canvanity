@@ -28,6 +28,7 @@ from app.models.board import (
     BoardOwnershipTransferResponse,
     BoardPageResponse,
     BoardSettingsPatchForm,
+    BoardSubscriptionResponse,
     BoardSummary,
     BoardUpdateResponse,
     MembershipSummary,
@@ -39,6 +40,7 @@ from app.services.board import BoardService
 from app.services.board_grade import BoardGradeService
 from app.services.board_layout import BoardLayoutService
 from app.services.board_membership import BoardMembershipService
+from app.services.board_subscription import BoardSubscriptionService
 from app.utils.board_layout_limits import MAX_BOARD_LAYOUT_REQUEST_BYTES
 
 
@@ -72,6 +74,51 @@ layout_router = APIRouter(route_class=BoardLayoutRoute)
 READ_ERRORS = current_user_error_responses(
     board_error_responses(BoardErrorCode.NOT_FOUND, BoardErrorCode.UNAVAILABLE)
 )
+
+
+@router.get(
+    "/{board_id}/subscription", response_model=BoardSubscriptionResponse, responses=READ_ERRORS
+)
+async def get_board_subscription(
+    board_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardSubscriptionService = Depends(),
+) -> BoardSubscriptionResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.get(user.id, board_id)
+
+
+@router.put(
+    "/{board_id}/subscription",
+    response_model=BoardSubscriptionResponse,
+    responses=current_user_error_responses(
+        board_error_responses(
+            BoardErrorCode.NOT_FOUND, BoardErrorCode.FORBIDDEN, BoardErrorCode.UNAVAILABLE
+        )
+    ),
+)
+async def subscribe_board(
+    board_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardSubscriptionService = Depends(),
+) -> BoardSubscriptionResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.set(user.id, board_id, subscribed=True)
+
+
+@router.delete(
+    "/{board_id}/subscription", response_model=BoardSubscriptionResponse, responses=READ_ERRORS
+)
+async def unsubscribe_board(
+    board_id: UUID,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: BoardSubscriptionService = Depends(),
+) -> BoardSubscriptionResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.set(user.id, board_id, subscribed=False)
 
 
 @router.get(
