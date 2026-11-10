@@ -27,10 +27,19 @@ from app.models.canvas import (
     CanvasRevisionForm,
     CanvasUnpublishForm,
 )
+from app.models.canvas_comment import (
+    CommentCreateForm,
+    CommentPage,
+    CommentPatchForm,
+    CommentQuery,
+    CommentResponse,
+    CommentRevisionForm,
+)
 from app.models.canvas_feed import CanvasFeedFilters, CanvasFeedQuery, CanvasFeedResponse
 from app.models.canvas_list import CanvasListQuery, CanvasListResponse
 from app.models.user import UserResponse
 from app.services.canvas import CanvasService
+from app.services.canvas_comment import CanvasCommentService
 from app.services.canvas_feed import CanvasFeedService
 from app.services.canvas_like import CanvasLikeService
 from app.services.canvas_list import CanvasListService
@@ -72,6 +81,103 @@ FEED_ERRORS = current_user_error_responses(
     canvas_error_responses(*READ_CODES, CanvasErrorCode.INVALID_CURSOR),
     {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
 )
+
+COMMENT_ERRORS = current_user_error_responses(
+    canvas_error_responses(
+        *READ_CODES,
+        CanvasErrorCode.FORBIDDEN,
+        CanvasErrorCode.INVALID_CURSOR,
+        CanvasErrorCode.COMMENT_CONFLICT,
+    ),
+    {status.HTTP_422_UNPROCESSABLE_CONTENT: {"model": CanvasMetadataValidationErrorResponse}},
+)
+
+
+@router.get(
+    "/canvases/{canvas_id}/comments",
+    response_model=CommentPage,
+    responses=COMMENT_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def list_canvas_comments(
+    canvas_id: UUID,
+    query: Annotated[CommentQuery, Query()],
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasCommentService = Depends(),
+) -> CommentPage:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.list(user.id if user else None, canvas_id, query)
+
+
+@router.post(
+    "/canvases/{canvas_id}/comments",
+    response_model=CommentResponse,
+    status_code=status.HTTP_201_CREATED,
+    responses=COMMENT_ERRORS,
+)
+async def create_canvas_comment(
+    canvas_id: UUID,
+    form: CommentCreateForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasCommentService = Depends(),
+) -> CommentResponse:
+    result = await service.create(user.id, canvas_id, form)
+    response.headers["Cache-Control"] = "private, no-store"
+    response.headers["Location"] = f"/api/v1/canvases/{canvas_id}/comments/{result.id}"
+    return result
+
+
+@router.get(
+    "/canvases/{canvas_id}/comments/{comment_id}",
+    response_model=CommentResponse,
+    responses=COMMENT_ERRORS,
+    openapi_extra={"security": [{}]},
+)
+async def get_canvas_comment(
+    canvas_id: UUID,
+    comment_id: UUID,
+    response: Response,
+    user: UserResponse | None = Depends(get_current_token_user),
+    service: CanvasCommentService = Depends(),
+) -> CommentResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.get(user.id if user else None, canvas_id, comment_id)
+
+
+@router.patch(
+    "/canvases/{canvas_id}/comments/{comment_id}",
+    response_model=CommentResponse,
+    responses=COMMENT_ERRORS,
+)
+async def change_canvas_comment(
+    canvas_id: UUID,
+    comment_id: UUID,
+    form: CommentPatchForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasCommentService = Depends(),
+) -> CommentResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.change(user.id, canvas_id, comment_id, form)
+
+
+@router.delete(
+    "/canvases/{canvas_id}/comments/{comment_id}",
+    response_model=CommentResponse,
+    responses=COMMENT_ERRORS,
+)
+async def delete_canvas_comment(
+    canvas_id: UUID,
+    comment_id: UUID,
+    form: CommentRevisionForm,
+    response: Response,
+    user: UserResponse = Depends(get_current_session_user),
+    service: CanvasCommentService = Depends(),
+) -> CommentResponse:
+    response.headers["Cache-Control"] = "private, no-store"
+    return await service.change(user.id, canvas_id, comment_id, form, delete=True)
 
 
 @router.get(

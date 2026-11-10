@@ -52,6 +52,8 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 
 ## 구현 진행 추적
 
+[#64 Canvas 댓글](canvas-comments.md)은 현재 게시본의 작성·조회·작성자 수정/삭제와 Board 운영진 숨김/복원을 제공한다. 좋아요 다음 독립 단위이며 검증/게시 상태는 worklog0302와 이슈/PR을 따른다.
+
 [#63 Canvas 좋아요](canvas-likes.md)는 #26의 첫 독립 백엔드 단위다. 현재 게시본/Board/Shelf 정책으로 멱등 등록·취소와 집계를 제공하며 댓글·구독·통계는 별도 후속이다. 검증/게시 상태는 worklog0301과 이슈/PR을 따른다.
 
 현재 진행은 [전체 로드맵 #1](https://github.com/Blueprint4Agent/Canvanity/issues/1), [Board·회원 운영 #22](https://github.com/Blueprint4Agent/Canvanity/issues/22), [Shelf #23](https://github.com/Blueprint4Agent/Canvanity/issues/23)에서 확인한다. [공개 가입·탈퇴 API #29](https://github.com/Blueprint4Agent/Canvanity/issues/29)는 PR #30으로 main에 반영했다. 로컬 구현·검증·게시·main 병합을 구분해 체크한다. 사용자 요청으로 신규 UI는 보류하고 백엔드 API·권한·계약부터 진행한다.

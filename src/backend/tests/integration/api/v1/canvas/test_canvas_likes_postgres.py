@@ -122,7 +122,7 @@ def test_postgres_migration_idempotence_policy_race_and_cascade(monkeypatch):
                 ),
             )
             before = await canvases.get(None, cid)
-            await migration("head")
+            await migration("0031_canvas_likes")
             assert await canvases.get(None, cid) == before
             likes = CanvasLikeService(access, CanvasRepository())
             results = await asyncio.gather(
@@ -175,7 +175,7 @@ def test_postgres_migration_idempotence_policy_race_and_cascade(monkeypatch):
                 await db.commit()
             assert (await likes.get(None, cid)).count == 0
             await migration("0030_board_media", downgrade=True)
-            await migration("head")
+            await migration("0031_canvas_likes")
             assert await canvases.get(None, cid) == before
         finally:
             if task is not None and not task.done():

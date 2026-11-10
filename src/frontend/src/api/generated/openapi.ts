@@ -1204,6 +1204,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/canvases/{canvas_id}/comments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Canvas Comments */
+        get: operations["list_canvas_comments_api_v1_canvases__canvas_id__comments_get"];
+        put?: never;
+        /** Create Canvas Comment */
+        post: operations["create_canvas_comment_api_v1_canvases__canvas_id__comments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canvases/{canvas_id}/comments/{comment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Canvas Comment */
+        get: operations["get_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Canvas Comment */
+        delete: operations["delete_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__delete"];
+        options?: never;
+        head?: never;
+        /** Change Canvas Comment */
+        patch: operations["change_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__patch"];
+        trace?: never;
+    };
     "/api/v1/canvases/{canvas_id}/document": {
         parameters: {
             query?: never;
@@ -4218,6 +4255,7 @@ export interface components {
                 | "CANVAS_INVALID_CURSOR"
                 | "CANVAS_REVISION_CONFLICT"
                 | "CANVAS_DOCUMENT_REVISION_CONFLICT"
+                | "CANVAS_COMMENT_REVISION_CONFLICT"
                 | "CANVAS_PUBLICATION_REVISION_CONFLICT"
                 | "CANVAS_DOCUMENT_INVALID"
                 | "CANVAS_DOCUMENT_TOO_LARGE"
@@ -4692,6 +4730,80 @@ export interface components {
             code: string;
             /** Password */
             password: string;
+        };
+        /** CommentCapabilities */
+        CommentCapabilities: {
+            /** Delete */
+            delete: boolean;
+            /** Edit */
+            edit: boolean;
+            /** Moderate */
+            moderate: boolean;
+        };
+        /** CommentCreateForm */
+        CommentCreateForm: {
+            /** Body */
+            body: string;
+        };
+        /** CommentPage */
+        CommentPage: {
+            /** Can Create */
+            can_create: boolean;
+            /** Items */
+            items: components["schemas"]["CommentResponse"][];
+            /** Next Cursor */
+            next_cursor?: string | null;
+        };
+        /** CommentPatchForm */
+        CommentPatchForm: {
+            /** Body */
+            body?: string | null;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Reason */
+            reason?: string | null;
+            /** Status */
+            status?: ("visible" | "hidden") | null;
+        };
+        /** CommentResponse */
+        CommentResponse: {
+            /** Author Id */
+            author_id: number | null;
+            /** Body */
+            body: string | null;
+            /**
+             * Canvas Id
+             * Format: uuid
+             */
+            canvas_id: string;
+            capabilities: components["schemas"]["CommentCapabilities"];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "visible" | "hidden" | "deleted";
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** CommentRevisionForm */
+        CommentRevisionForm: {
+            /** Expected Revision */
+            expected_revision: number;
         };
         /** ConnectedEvent */
         ConnectedEvent: {
@@ -15442,6 +15554,575 @@ export interface operations {
                     "application/json":
                         | components["schemas"]["CanvasErrorResponse"]
                         | components["schemas"]["AssetErrorResponse"];
+                };
+            };
+        };
+    };
+    list_canvas_comments_api_v1_canvases__canvas_id__comments_get: {
+        parameters: {
+            query?: {
+                status?: "visible" | "all";
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: never;
+            path: {
+                canvas_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentPage"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                     *         "message": "Comment revision conflict. Reload the latest comment."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    create_canvas_comment_api_v1_canvases__canvas_id__comments_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentCreateForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                     *         "message": "Comment revision conflict. Reload the latest comment."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    get_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                     *         "message": "Comment revision conflict. Reload the latest comment."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    delete_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentRevisionForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                     *         "message": "Comment revision conflict. Reload the latest comment."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    change_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+                comment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CommentPatchForm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommentResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Conflict */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                     *         "message": "Comment revision conflict. Reload the latest comment."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Unprocessable Content */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["CanvasErrorResponse"]
+                        | components["schemas"]["CanvasMetadataValidationErrorResponse"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
                 };
             };
         };
