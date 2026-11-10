@@ -170,6 +170,7 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("POST", "/api/v1/canvases/{canvas_id}/publish"),
         ("POST", "/api/v1/canvases/{canvas_id}/unpublish"),
         ("PUT", "/api/v1/canvases/{canvas_id}/like"),
+        ("PUT", "/api/v1/canvases/{canvas_id}/view"),
         ("DELETE", "/api/v1/canvases/{canvas_id}/like"),
         ("POST", "/api/v1/canvases/{canvas_id}/comments"),
         ("PATCH", "/api/v1/canvases/{canvas_id}/comments/{comment_id}"),
@@ -447,6 +448,7 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
         ),
         ("POST", canvas_path + "/unpublish", {"expected_publication_revision": 0}),
         ("PUT", canvas_path + "/like", None),
+        ("PUT", canvas_path + "/view", None),
         ("DELETE", canvas_path + "/like", None),
         ("POST", canvas_path + "/comments", {"body": "세션 전용"}),
         (

@@ -34,6 +34,7 @@ def create_celery_app(settings: Settings) -> Celery:
             "app.core.celery.notifications",
             "app.core.celery.billing",
             "app.core.celery.assets",
+            "app.core.celery.canvas_stats",
         ],
     )
     app.conf.update(
@@ -67,6 +68,7 @@ def create_celery_app(settings: Settings) -> Celery:
             "lifecycle-mail-outbox": {"task": "b4fastapi.notifications.drain", "schedule": 60.0},
             "billing-reconciliation": {"task": "b4fastapi.billing.reconcile", "schedule": 300.0},
             "canvas-asset-cleanup": {"task": "canvanity.assets.cleanup", "schedule": 60.0},
+            "canvas-view-retention": {"task": "canvanity.canvas_stats.cleanup", "schedule": 3600.0},
         },
     )
     return app

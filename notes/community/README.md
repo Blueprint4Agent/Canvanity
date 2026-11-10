@@ -52,6 +52,8 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 
 ## 구현 진행 추적
 
+[#66 Canvas 조회·활동 통계](canvas-activity-stats.md)는 실제 관계/계정별 일 조회의30일 집계와 bounded 만료 정리를 제공한다. 검증/게시 상태는 worklog0304와 이슈/PR을 따른다.
+
 [#65 Board 구독](board-subscriptions.md)은 가입과 별도인 본인 구독 상태/변경과 현재 권한의 구독 Canvas 피드를 제공한다. 검증/게시 상태는 worklog0303과 이슈/PR을 따른다.
 
 [#64 Canvas 댓글](canvas-comments.md)은 현재 게시본의 작성·조회·작성자 수정/삭제와 Board 운영진 숨김/복원을 제공한다. 좋아요 다음 독립 단위이며 검증/게시 상태는 worklog0302와 이슈/PR을 따른다.

@@ -1331,6 +1331,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/canvases/{canvas_id}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Canvas Stats */
+        get: operations["get_canvas_stats_api_v1_canvases__canvas_id__stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/canvases/{canvas_id}/unpublish": {
         parameters: {
             query?: never;
@@ -1342,6 +1359,23 @@ export interface paths {
         put?: never;
         /** Unpublish Canvas */
         post: operations["unpublish_canvas_api_v1_canvases__canvas_id__unpublish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/canvases/{canvas_id}/view": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Record Canvas View */
+        put: operations["record_canvas_view_api_v1_canvases__canvas_id__view_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4734,6 +4768,41 @@ export interface components {
             /** Width */
             width: number;
         };
+        /** CanvasStatsResponse */
+        CanvasStatsResponse: {
+            /**
+             * Activity Score
+             * @description 같은 기간 신규 좋아요+현재 visible 신규 댓글+view_count, 각1점
+             */
+            activity_score: number;
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /**
+             * Comment Count
+             * @description 현재 visible 댓글 수
+             */
+            comment_count: number;
+            /** Like Count */
+            like_count: number;
+            /**
+             * View Count
+             * @description 최근30개 UTC 날짜의 계정별 일 조회 수 합계
+             */
+            view_count: number;
+            /**
+             * Window Days
+             * @default 30
+             */
+            window_days: number;
+            /**
+             * Window Started On
+             * Format: date
+             */
+            window_started_on: string;
+        };
         /** CanvasTextNode */
         "CanvasTextNode-Input": {
             engine_element: components["schemas"]["CanvasEngineText"];
@@ -4764,6 +4833,12 @@ export interface components {
         CanvasUnpublishForm: {
             /** Expected Publication Revision */
             expected_publication_revision: number;
+        };
+        /** CanvasViewResponse */
+        CanvasViewResponse: {
+            /** Recorded */
+            recorded: boolean;
+            stats: components["schemas"]["CanvasStatsResponse"];
         };
         /** ChangePasswordForm */
         ChangePasswordForm: {
@@ -17162,6 +17237,96 @@ export interface operations {
             };
         };
     };
+    get_canvas_stats_api_v1_canvases__canvas_id__stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanvasStatsResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
     unpublish_canvas_api_v1_canvases__canvas_id__unpublish_post: {
         parameters: {
             query?: never;
@@ -17235,6 +17400,96 @@ export interface operations {
                      *     }
                      */
                     "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Unexpected server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InternalErrorResponse"];
+                };
+            };
+            /** @description Service Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "detail": {
+                     *         "error": "CANVAS_UNAVAILABLE",
+                     *         "message": "Unable to complete the canvas operation."
+                     *       }
+                     *     }
+                     */
+                    "application/json": components["schemas"]["CanvasErrorResponse"];
+                };
+            };
+        };
+    };
+    record_canvas_view_api_v1_canvases__canvas_id__view_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                canvas_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CanvasViewResponse"];
+                };
+            };
+            /** @description Unauthorized */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["APIKeyErrorResponse"];
+                };
+            };
+            /** @description Not Found */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json":
+                        | components["schemas"]["AuthErrorResponse"]
+                        | components["schemas"]["CanvasErrorResponse"];
                 };
             };
             /** @description Validation Error */

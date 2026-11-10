@@ -1,4 +1,7 @@
-"""Shared JSON and transport byte bounds; no persistence or permission policy."""
+"""Shared Canvas document bounds and daily-view retention limits."""
 
 MAX_CANVAS_DOCUMENT_BYTES = 2 * 1024 * 1024
 MAX_CANVAS_DOCUMENT_REQUEST_BYTES = MAX_CANVAS_DOCUMENT_BYTES + 64 * 1024
+
+CANVAS_VIEW_WINDOW_DAYS = 30
+CANVAS_VIEW_CLEANUP_BATCH_SIZE = 1000

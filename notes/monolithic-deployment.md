@@ -85,6 +85,8 @@ DB/Redis → 필요 시 메일 워커 → API → 선택된 Caddy 순서로 준�
 Beat·관측 도구는 계속 선택 사항입니다. 사용 중이라면 작업·관측 요건을 확인하고
 같은 릴리스·환경 구성으로 명시적으로 갱신하세요.
 
+[Canvas 일 조회 원본 정리](community/canvas-activity-stats.md)를 운영하면 메일 활성 여부와 별개로 같은 릴리스/DB의 worker와 Beat 하나가 필요합니다. 매시간 최대1000개씩 만료 원본을 지우며, 두 프로세스가 없으면 API 집계에서 만료 자료를 제외해도 원본 물리 삭제는 실행되지 않습니다. 기존 `make docker-celery-up` 선택형 프로필과 [Celery 가이드](../src/backend/CELERY.md)를 따릅니다.
+
 성공 조건에는 HTTP readiness·실행 모드·SPA·JavaScript 자산과 Caddy 경유 메트릭·
 문서·OpenAPI 차단이 포함됩니다. 공개 HTTPS 검사에서 인증서 검증을 끄지 않습니다.
 서비스별 준비 대기와 HTTP 재시도 구간은 각각 기본 120초이며

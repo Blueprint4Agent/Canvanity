@@ -19,6 +19,7 @@ from app.models import (
     board_media,  # noqa: F401
     canvas,  # noqa: F401
     canvas_comment,  # noqa: F401
+    canvas_stats,  # noqa: F401
     inbox,  # noqa: F401
     inquiry,  # noqa: F401
     interest,  # noqa: F401

@@ -7037,6 +7037,58 @@
                 "title": "CanvasSize",
                 "type": "object"
             },
+            "CanvasStatsResponse": {
+                "properties": {
+                    "activity_score": {
+                        "description": "같은 기간 신규 좋아요+현재 visible 신규 댓글+view_count, 각1점",
+                        "minimum": 0.0,
+                        "title": "Activity Score",
+                        "type": "integer"
+                    },
+                    "as_of": {
+                        "format": "date-time",
+                        "title": "As Of",
+                        "type": "string"
+                    },
+                    "comment_count": {
+                        "description": "현재 visible 댓글 수",
+                        "minimum": 0.0,
+                        "title": "Comment Count",
+                        "type": "integer"
+                    },
+                    "like_count": {
+                        "minimum": 0.0,
+                        "title": "Like Count",
+                        "type": "integer"
+                    },
+                    "view_count": {
+                        "description": "최근30개 UTC 날짜의 계정별 일 조회 수 합계",
+                        "minimum": 0.0,
+                        "title": "View Count",
+                        "type": "integer"
+                    },
+                    "window_days": {
+                        "default": 30,
+                        "title": "Window Days",
+                        "type": "integer"
+                    },
+                    "window_started_on": {
+                        "format": "date",
+                        "title": "Window Started On",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "like_count",
+                    "comment_count",
+                    "view_count",
+                    "activity_score",
+                    "window_started_on",
+                    "as_of"
+                ],
+                "title": "CanvasStatsResponse",
+                "type": "object"
+            },
             "CanvasTextNode-Input": {
                 "additionalProperties": false,
                 "properties": {
@@ -7105,6 +7157,20 @@
                 },
                 "required": ["expected_publication_revision"],
                 "title": "CanvasUnpublishForm",
+                "type": "object"
+            },
+            "CanvasViewResponse": {
+                "properties": {
+                    "recorded": {
+                        "title": "Recorded",
+                        "type": "boolean"
+                    },
+                    "stats": {
+                        "$ref": "#/components/schemas/CanvasStatsResponse"
+                    }
+                },
+                "required": ["recorded", "stats"],
+                "title": "CanvasViewResponse",
                 "type": "object"
             },
             "ChangePasswordForm": {
@@ -25012,6 +25078,133 @@
                 "tags": ["Canvases"]
             }
         },
+        "/api/v1/canvases/{canvas_id}/stats": {
+            "get": {
+                "operationId": "get_canvas_stats_api_v1_canvases__canvas_id__stats_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasStatsResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Get Canvas Stats Api V1 Canvases  Canvas Id  Stats Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Get Canvas Stats Api V1 Canvases  Canvas Id  Stats Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Get Canvas Stats Api V1 Canvases  Canvas Id  Stats Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "Get Canvas Stats",
+                "tags": ["Canvases"]
+            }
+        },
         "/api/v1/canvases/{canvas_id}/unpublish": {
             "post": {
                 "operationId": "unpublish_canvas_api_v1_canvases__canvas_id__unpublish_post",
@@ -25164,6 +25357,132 @@
                     }
                 ],
                 "summary": "Unpublish Canvas",
+                "tags": ["Canvases"]
+            }
+        },
+        "/api/v1/canvases/{canvas_id}/view": {
+            "put": {
+                "operationId": "record_canvas_view_api_v1_canvases__canvas_id__view_put",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasViewResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Record Canvas View Api V1 Canvases  Canvas Id  View Put"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Record Canvas View Api V1 Canvases  Canvas Id  View Put"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Record Canvas View Api V1 Canvases  Canvas Id  View Put"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HTTPValidationError"
+                                }
+                            }
+                        },
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Record Canvas View",
                 "tags": ["Canvases"]
             }
         },
