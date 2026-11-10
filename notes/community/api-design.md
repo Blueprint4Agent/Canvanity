@@ -171,3 +171,7 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## Canvas 좋아요 — #63
 
 [좋아요 계약](canvas-likes.md)은 GET/PUT/DELETE /canvases/{canvas_id}/like와 현재 count/본인 liked를 제공한다. 게시본의 현재 읽기 정책을 공유하며 변경은 활성 세션과 Shelf react 정책을 요구한다. 중복 등록/취소는 멱등하고 본문/공개 revision은 바꾸지 않는다. 댓글·구독·통계·제품 UI는 후속이다.
+
+## Canvas 댓글 — #64
+
+[댓글 계약](canvas-comments.md)은 게시본의 최신순 목록·작성/단건·작성자 수정/삭제·Board 운영진 숨김/복원을 제공한다. 독립 revision CAS와 삭제 tombstone·현재 권한을 적용하며 숨김 본문은 작성자/운영진만 읽는다. 답글·알림·제품 UI는 후속이다.

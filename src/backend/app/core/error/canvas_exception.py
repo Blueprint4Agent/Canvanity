@@ -40,6 +40,11 @@ class CanvasErrorCode(Enum):
         "Canvas document revision conflict. Reload the latest document.",
         status.HTTP_409_CONFLICT,
     )
+    COMMENT_CONFLICT = ServiceErrorCode(
+        "CANVAS_COMMENT_REVISION_CONFLICT",
+        "Comment revision conflict. Reload the latest comment.",
+        status.HTTP_409_CONFLICT,
+    )
     PUBLICATION_CONFLICT = ServiceErrorCode(
         "CANVAS_PUBLICATION_REVISION_CONFLICT",
         "Canvas publication state revision conflict. Reload the latest canvas.",

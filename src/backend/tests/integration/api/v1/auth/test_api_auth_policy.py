@@ -167,6 +167,9 @@ def test_openapi_session_only_inventory_is_explicit(integration_client):
         ("POST", "/api/v1/canvases/{canvas_id}/unpublish"),
         ("PUT", "/api/v1/canvases/{canvas_id}/like"),
         ("DELETE", "/api/v1/canvases/{canvas_id}/like"),
+        ("POST", "/api/v1/canvases/{canvas_id}/comments"),
+        ("PATCH", "/api/v1/canvases/{canvas_id}/comments/{comment_id}"),
+        ("DELETE", "/api/v1/canvases/{canvas_id}/comments/{comment_id}"),
         ("POST", "/api/v1/canvases/{canvas_id}/assets"),
         ("DELETE", "/api/v1/canvases/{canvas_id}/assets/{asset_id}"),
     }
@@ -439,6 +442,17 @@ def test_board_mutations_require_session_and_private_reads_do_not_accept_api_key
         ("POST", canvas_path + "/unpublish", {"expected_publication_revision": 0}),
         ("PUT", canvas_path + "/like", None),
         ("DELETE", canvas_path + "/like", None),
+        ("POST", canvas_path + "/comments", {"body": "세션 전용"}),
+        (
+            "PATCH",
+            canvas_path + "/comments/00000000-0000-0000-0000-000000000001",
+            {"expected_revision": 0, "body": "세션 전용"},
+        ),
+        (
+            "DELETE",
+            canvas_path + "/comments/00000000-0000-0000-0000-000000000001",
+            {"expected_revision": 0},
+        ),
     ]:
         assert client.request(method, target, headers=key, json=body).status_code == 401
     for suffix in ("", "/document"):

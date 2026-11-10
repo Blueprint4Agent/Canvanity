@@ -6061,6 +6061,7 @@
                             "CANVAS_INVALID_CURSOR",
                             "CANVAS_REVISION_CONFLICT",
                             "CANVAS_DOCUMENT_REVISION_CONFLICT",
+                            "CANVAS_COMMENT_REVISION_CONFLICT",
                             "CANVAS_PUBLICATION_REVISION_CONFLICT",
                             "CANVAS_DOCUMENT_INVALID",
                             "CANVAS_DOCUMENT_TOO_LARGE",
@@ -7111,6 +7112,205 @@
                 },
                 "required": ["code", "password"],
                 "title": "ChangePasswordForm",
+                "type": "object"
+            },
+            "CommentCapabilities": {
+                "properties": {
+                    "delete": {
+                        "title": "Delete",
+                        "type": "boolean"
+                    },
+                    "edit": {
+                        "title": "Edit",
+                        "type": "boolean"
+                    },
+                    "moderate": {
+                        "title": "Moderate",
+                        "type": "boolean"
+                    }
+                },
+                "required": ["edit", "delete", "moderate"],
+                "title": "CommentCapabilities",
+                "type": "object"
+            },
+            "CommentCreateForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "body": {
+                        "maxLength": 5000,
+                        "minLength": 1,
+                        "title": "Body",
+                        "type": "string"
+                    }
+                },
+                "required": ["body"],
+                "title": "CommentCreateForm",
+                "type": "object"
+            },
+            "CommentPage": {
+                "properties": {
+                    "can_create": {
+                        "title": "Can Create",
+                        "type": "boolean"
+                    },
+                    "items": {
+                        "items": {
+                            "$ref": "#/components/schemas/CommentResponse"
+                        },
+                        "title": "Items",
+                        "type": "array"
+                    },
+                    "next_cursor": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Next Cursor"
+                    }
+                },
+                "required": ["items", "can_create"],
+                "title": "CommentPage",
+                "type": "object"
+            },
+            "CommentPatchForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "body": {
+                        "anyOf": [
+                            {
+                                "maxLength": 5000,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Body"
+                    },
+                    "expected_revision": {
+                        "maximum": 9.223372036854776e18,
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    },
+                    "reason": {
+                        "anyOf": [
+                            {
+                                "maxLength": 500,
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Reason"
+                    },
+                    "status": {
+                        "anyOf": [
+                            {
+                                "enum": ["visible", "hidden"],
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Status"
+                    }
+                },
+                "required": ["expected_revision"],
+                "title": "CommentPatchForm",
+                "type": "object"
+            },
+            "CommentResponse": {
+                "properties": {
+                    "author_id": {
+                        "anyOf": [
+                            {
+                                "type": "integer"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Author Id"
+                    },
+                    "body": {
+                        "anyOf": [
+                            {
+                                "type": "string"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "title": "Body"
+                    },
+                    "canvas_id": {
+                        "format": "uuid",
+                        "title": "Canvas Id",
+                        "type": "string"
+                    },
+                    "capabilities": {
+                        "$ref": "#/components/schemas/CommentCapabilities"
+                    },
+                    "created_at": {
+                        "format": "date-time",
+                        "title": "Created At",
+                        "type": "string"
+                    },
+                    "id": {
+                        "format": "uuid",
+                        "title": "Id",
+                        "type": "string"
+                    },
+                    "revision": {
+                        "title": "Revision",
+                        "type": "integer"
+                    },
+                    "status": {
+                        "enum": ["visible", "hidden", "deleted"],
+                        "title": "Status",
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "format": "date-time",
+                        "title": "Updated At",
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "canvas_id",
+                    "author_id",
+                    "body",
+                    "status",
+                    "revision",
+                    "created_at",
+                    "updated_at",
+                    "capabilities"
+                ],
+                "title": "CommentResponse",
+                "type": "object"
+            },
+            "CommentRevisionForm": {
+                "additionalProperties": false,
+                "properties": {
+                    "expected_revision": {
+                        "maximum": 9.223372036854776e18,
+                        "minimum": 0.0,
+                        "title": "Expected Revision",
+                        "type": "integer"
+                    }
+                },
+                "required": ["expected_revision"],
+                "title": "CommentRevisionForm",
                 "type": "object"
             },
             "ConnectedEvent": {
@@ -22532,6 +22732,868 @@
                 ],
                 "summary": "Read Asset",
                 "tags": ["Assets"]
+            }
+        },
+        "/api/v1/canvases/{canvas_id}/comments": {
+            "get": {
+                "operationId": "list_canvas_comments_api_v1_canvases__canvas_id__comments_get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "status",
+                        "required": false,
+                        "schema": {
+                            "default": "visible",
+                            "enum": ["visible", "all"],
+                            "title": "Status",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "limit",
+                        "required": false,
+                        "schema": {
+                            "default": 20,
+                            "maximum": 100,
+                            "minimum": 1,
+                            "title": "Limit",
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "cursor",
+                        "required": false,
+                        "schema": {
+                            "anyOf": [
+                                {
+                                    "maxLength": 2048,
+                                    "minLength": 1,
+                                    "type": "string"
+                                },
+                                {
+                                    "type": "null"
+                                }
+                            ],
+                            "title": "Cursor"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CommentPage"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 List Canvas Comments Api V1 Canvases  Canvas Id  Comments Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 List Canvas Comments Api V1 Canvases  Canvas Id  Comments Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 List Canvas Comments Api V1 Canvases  Canvas Id  Comments Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                                        "message": "Comment revision conflict. Reload the latest comment."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 List Canvas Comments Api V1 Canvases  Canvas Id  Comments Get"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "List Canvas Comments",
+                "tags": ["Canvases"]
+            },
+            "post": {
+                "operationId": "create_canvas_comment_api_v1_canvases__canvas_id__comments_post",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommentCreateForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CommentResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Create Canvas Comment Api V1 Canvases  Canvas Id  Comments Post"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Create Canvas Comment Api V1 Canvases  Canvas Id  Comments Post"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Create Canvas Comment Api V1 Canvases  Canvas Id  Comments Post"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                                        "message": "Comment revision conflict. Reload the latest comment."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Create Canvas Comment Api V1 Canvases  Canvas Id  Comments Post"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Create Canvas Comment",
+                "tags": ["Canvases"]
+            }
+        },
+        "/api/v1/canvases/{canvas_id}/comments/{comment_id}": {
+            "delete": {
+                "operationId": "delete_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__delete",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "comment_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Comment Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommentRevisionForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CommentResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Delete Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Delete Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Delete Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                                        "message": "Comment revision conflict. Reload the latest comment."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Delete Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Delete"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Delete Canvas Comment",
+                "tags": ["Canvases"]
+            },
+            "get": {
+                "operationId": "get_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__get",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "comment_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Comment Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CommentResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Get Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Get Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Get Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                                        "message": "Comment revision conflict. Reload the latest comment."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Get Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Get"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    },
+                    {}
+                ],
+                "summary": "Get Canvas Comment",
+                "tags": ["Canvases"]
+            },
+            "patch": {
+                "operationId": "change_canvas_comment_api_v1_canvases__canvas_id__comments__comment_id__patch",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "canvas_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Canvas Id",
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "in": "path",
+                        "name": "comment_id",
+                        "required": true,
+                        "schema": {
+                            "format": "uuid",
+                            "title": "Comment Id",
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CommentPatchForm"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/CommentResponse"
+                                }
+                            }
+                        },
+                        "description": "Successful Response"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 401 Change Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Unauthorized"
+                    },
+                    "403": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/APIKeyErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 403 Change Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/AuthErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 404 Change Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Not Found"
+                    },
+                    "409": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_COMMENT_REVISION_CONFLICT",
+                                        "message": "Comment revision conflict. Reload the latest comment."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Conflict"
+                    },
+                    "422": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "anyOf": [
+                                        {
+                                            "$ref": "#/components/schemas/CanvasErrorResponse"
+                                        },
+                                        {
+                                            "$ref": "#/components/schemas/CanvasMetadataValidationErrorResponse"
+                                        }
+                                    ],
+                                    "title": "Response 422 Change Canvas Comment Api V1 Canvases  Canvas Id  Comments  Comment Id  Patch"
+                                }
+                            }
+                        },
+                        "description": "Unprocessable Content"
+                    },
+                    "500": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Unexpected server error"
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "example": {
+                                    "detail": {
+                                        "error": "CANVAS_UNAVAILABLE",
+                                        "message": "Unable to complete the canvas operation."
+                                    }
+                                },
+                                "schema": {
+                                    "$ref": "#/components/schemas/CanvasErrorResponse"
+                                }
+                            }
+                        },
+                        "description": "Service Unavailable"
+                    }
+                },
+                "security": [
+                    {
+                        "OAuth2PasswordBearer": []
+                    }
+                ],
+                "summary": "Change Canvas Comment",
+                "tags": ["Canvases"]
             }
         },
         "/api/v1/canvases/{canvas_id}/document": {

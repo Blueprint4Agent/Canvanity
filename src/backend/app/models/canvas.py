@@ -986,13 +986,15 @@ class CanvasTransaction:
 
 
 class CanvasRepository:
+    transaction_type = CanvasTransaction
+
     @asynccontextmanager
     async def transaction(self, *, write: bool = True) -> AsyncIterator[CanvasTransaction]:
         try:
             async with get_db() as db:
                 if db.bind.dialect.name == "sqlite":
                     await db.execute(text("BEGIN IMMEDIATE" if write else "BEGIN"))
-                yield CanvasTransaction(db)
+                yield self.transaction_type(db)
                 if write:
                     await db.commit()
         except SQLAlchemyError as error:
