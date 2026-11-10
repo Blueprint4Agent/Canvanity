@@ -175,3 +175,7 @@ Plaza /home, 내 프로필 홈 /my-canvas, Board 탐색 /board는 유지한다. 
 ## Canvas 댓글 — #64
 
 [댓글 계약](canvas-comments.md)은 게시본의 최신순 목록·작성/단건·작성자 수정/삭제·Board 운영진 숨김/복원을 제공한다. 독립 revision CAS와 삭제 tombstone·현재 권한을 적용하며 숨김 본문은 작성자/운영진만 읽는다. 답글·알림·제품 UI는 후속이다.
+
+## Board 구독 — #65
+
+[구독 계약](board-subscriptions.md)은 세션 전용 GET/PUT/DELETE /boards/{board_id}/subscription과 GET /me/subscriptions/canvases를 제공한다. 가입 권한과 별도 관계이며 현재 읽기 정책의 공개 header만 기존 Feed statement에서 필터링한다. 사용자별 cursor·공식 Interest/게시 Tag 필터를 적용한다.

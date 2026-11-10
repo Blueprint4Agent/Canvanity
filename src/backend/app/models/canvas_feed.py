@@ -21,6 +21,7 @@ from app.models.board import (
     BoardMember,
     BoardMemberGrade,
     BoardPolicy,
+    BoardSubscription,
     Shelf,
     ShelfPolicy,
 )
@@ -107,7 +108,7 @@ class CanvasFeedRows:
 
 class CanvasFeedRepository:
     @staticmethod
-    def _readable_boards(user_id: int | None, board_id: UUID | None):
+    def _readable_boards(user_id: int | None, board_id: UUID | None, *, subscribed: bool = False):
         active = func.coalesce(BoardMember.status == "active", false())
         return (
             select(
@@ -129,6 +130,11 @@ class CanvasFeedRepository:
                 ),
                 or_(Board.visibility == "public", active),
                 Board.id == board_id if board_id is not None else true(),
+                exists().where(
+                    BoardSubscription.board_id == Board.id, BoardSubscription.user_id == user_id
+                )
+                if subscribed
+                else true(),
             )
             .cte("readable_boards")
         )
@@ -231,8 +237,10 @@ class CanvasFeedRepository:
         user_id: int | None,
         query: CanvasFeedQuery,
         before: tuple[datetime, UUID] | None,
+        *,
+        subscribed: bool = False,
     ) -> CanvasFeedRows:
-        boards = self._readable_boards(user_id, query.board_id)
+        boards = self._readable_boards(user_id, query.board_id, subscribed=subscribed)
         shelves = self._readable_shelves(boards, query.shelf_id)
         scope = true()
         if query.shelf_id is not None:

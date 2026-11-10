@@ -400,7 +400,7 @@ def test_real_postgres_tag_race_metadata_cas_permissions_and_populated_migration
             async with test_db() as db:
                 assert (
                     await db.scalar(text("SELECT version_num FROM alembic_version"))
-                    == "0032_canvas_comments"
+                    == "0033_board_subscriptions"
                 )
             await assert_tag_transactions(test_db, seed)
         finally:

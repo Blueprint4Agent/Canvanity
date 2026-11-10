@@ -52,6 +52,8 @@ Smart Shelf·활동량 자동 승급·가입 승인/초대·다중 Shelf·독립
 
 ## 구현 진행 추적
 
+[#65 Board 구독](board-subscriptions.md)은 가입과 별도인 본인 구독 상태/변경과 현재 권한의 구독 Canvas 피드를 제공한다. 검증/게시 상태는 worklog0303과 이슈/PR을 따른다.
+
 [#64 Canvas 댓글](canvas-comments.md)은 현재 게시본의 작성·조회·작성자 수정/삭제와 Board 운영진 숨김/복원을 제공한다. 좋아요 다음 독립 단위이며 검증/게시 상태는 worklog0302와 이슈/PR을 따른다.
 
 [#63 Canvas 좋아요](canvas-likes.md)는 #26의 첫 독립 백엔드 단위다. 현재 게시본/Board/Shelf 정책으로 멱등 등록·취소와 집계를 제공하며 댓글·구독·통계는 별도 후속이다. 검증/게시 상태는 worklog0301과 이슈/PR을 따른다.
